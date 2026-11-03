@@ -1,0 +1,524 @@
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { AttachmentsComponent } from '../../core/files/attachments.component';
+import { Api } from '../../core/api/api.service';
+import { PaymentMethod, Sale, SaleLine, SaleReturn } from '../../core/api/models';
+import { loaded } from '../../core/data/data';
+import { formatMoney } from '../../core/format/format';
+import { SettingsStore } from '../../core/format/settings.store';
+import { Translations } from '../../core/i18n/translations.store';
+import { SHARED } from '../../core/shared';
+import { SessionStore } from '../../core/session/session.store';
+import { ToastService } from '../../core/ui/toast.service';
+import { ReceiptComponent } from '../pos/receipt.component';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
+
+@Component({
+  selector: 'app-sale-detail',
+  imports: [TranslatePipe, ...SHARED, ReceiptComponent, AttachmentsComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="page">
+      @if (sale.value(); as s) {
+        <div class="page-head no-print">
+          <div>
+            <a class="muted row" routerLink="/sales"
+              ><app-icon name="arrow-left" [size]="15" /> {{ 'sales.sales' | t }}</a
+            >
+            <h1 class="row" style="margin-top:6px">
+              {{ s.number }} <app-status [value]="s.status" />
+            </h1>
+            <p class="sub">
+              {{ s.createdAt | when }} · {{ s.branchName }} · cashier {{ s.cashierName }}
+            </p>
+          </div>
+          <div class="actions">
+            <button class="btn" type="button" (click)="printing.set(true)">
+              <app-icon name="printer" [size]="16" /> {{ 'sales.receipt' | t }}
+            </button>
+            @if (session.can('sales.refund') && returnable().length) {
+              <button class="btn primary" type="button" (click)="openReturn()">
+                <app-icon name="undo" [size]="16" /> {{ 'sales.returnItems' | t }}
+              </button>
+            }
+          </div>
+        </div>
+        <div class="grid kpis mb">
+          <app-stat
+            [label]="'sales.total' | t"
+            [value]="s.total | compactMoney"
+            [hint]="s.total | money"
+            icon="receipt"
+            tone="blue"
+            [caption]="'sales.inclTax' | t"
+          />
+          <app-stat
+            [label]="'sales.paid' | t"
+            [value]="s.paidTotal | compactMoney"
+            [hint]="s.paidTotal | money"
+            icon="wallet"
+            tone="green"
+            [caption]="s.changeDue ? 'change ' + (s.changeDue | money) : 'no change due'"
+          />
+          <app-stat
+            [label]="'sales.discount' | t"
+            [value]="s.discountTotal | compactMoney"
+            [hint]="s.discountTotal | money"
+            icon="percent"
+            tone="orange"
+            [caption]="s.discountPercent + '%'"
+          />
+          <app-stat
+            [label]="'sales.tax' | t"
+            [value]="s.taxTotal | compactMoney"
+            [hint]="s.taxTotal | money"
+            icon="file"
+            tone="purple"
+            [caption]="'sales.collected' | t"
+          />
+        </div>
+        <div class="grid" style="grid-template-columns:minmax(0,2fr) minmax(0,1fr)">
+          <div class="card">
+            <div class="card-head">
+              <h3>{{ 'sales.items' | t }}</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>{{ 'sales.medicine' | t }}</th>
+                    <th>{{ 'sales.batch' | t }}</th>
+                    <th>{{ 'sales.expiry' | t }}</th>
+                    <th class="right">{{ 'sales.qty' | t }}</th>
+                    <th class="right">{{ 'sales.returned' | t }}</th>
+                    <th class="right">{{ 'sales.price' | t }}</th>
+                    <th class="right">{{ 'sales.discount' | t }}</th>
+                    <th class="right">{{ 'sales.tax' | t }}</th>
+                    <th class="right">{{ 'sales.total' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (l of s.lines; track l.uid) {
+                    <tr>
+                      <td class="strong">
+                        {{ l.productName }}
+                        @if (l.serialNumbers.length) {
+                          <div class="serials">
+                            @for (sn of l.serialNumbers; track sn) {
+                              <span
+                                class="badge mono"
+                                [class]="
+                                  l.returnedSerialNumbers.includes(sn)
+                                    ? 'badge mono gray'
+                                    : 'badge mono purple'
+                                "
+                                [title]="l.returnedSerialNumbers.includes(sn) ? 'Returned' : 'Sold'"
+                                >{{ sn }}</span
+                              >
+                            }
+                          </div>
+                        }
+                        @if (l.warrantyEndsOn) {
+                          <div class="faint small">Warranty until {{ l.warrantyEndsOn | day }}</div>
+                        }
+                      </td>
+                      <td class="mono">{{ l.batchNumber === '-' ? '—' : l.batchNumber }}</td>
+                      <td class="muted">{{ l.expiryDate ? (l.expiryDate | day) : '—' }}</td>
+                      <td class="right">{{ l.quantity }}</td>
+                      <td class="right" [class.text-red]="l.returnedQuantity > 0">
+                        {{ l.returnedQuantity }}
+                      </td>
+                      <td class="right">{{ l.unitPrice | money }}</td>
+                      <td class="right">{{ l.discount | money }}</td>
+                      <td class="right">{{ l.tax | money }}</td>
+                      <td class="right strong">{{ l.lineTotal | money }}</td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="8">{{ 'sales.total' | t }}</td>
+                    <td class="right">{{ s.total | money }}</td>
+                  </tr>
+                </tfoot>
+              </table>
+            </div>
+          </div>
+          <div class="stack">
+            <div class="card card-pad">
+              <h3 class="mb">{{ 'sales.customerPayment' | t }}</h3>
+              <dl class="dl" style="grid-template-columns:1fr">
+                <div>
+                  <dt>{{ 'sales.customer' | t }}</dt>
+                  <dd>{{ s.customerName ?? 'Walk-in customer' }}</dd>
+                </div>
+                @for (p of s.payments; track $index) {
+                  <div>
+                    <dt>{{ p.method | label }}{{ p.reference ? ' · ' + p.reference : '' }}</dt>
+                    <dd>
+                      {{ p.amount | money: p.currency ?? undefined }}
+                      @if (p.currency && p.baseAmount !== undefined && p.amount !== p.baseAmount) {
+                        <small class="muted block"
+                          >@ {{ p.exchangeRate | num }} = {{ p.baseAmount | money }}</small
+                        >
+                      }
+                    </dd>
+                  </div>
+                }
+              </dl>
+            </div>
+            @if (s.prescription; as rx) {
+              <div class="card card-pad">
+                <h3 class="mb row">
+                  <app-icon name="stethoscope" [size]="16" /> {{ 'sales.prescription' | t }}
+                </h3>
+                <dl class="dl" style="grid-template-columns:1fr 1fr">
+                  <div>
+                    <dt>{{ 'sales.prescriber' | t }}</dt>
+                    <dd>{{ rx.prescriberName }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'sales.registration' | t }}</dt>
+                    <dd>{{ rx.prescriberRegistration }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'sales.reference' | t }}</dt>
+                    <dd>{{ rx.reference }}</dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'sales.patient' | t }}</dt>
+                    <dd>{{ rx.patientName }}</dd>
+                  </div>
+                </dl>
+              </div>
+            }
+          </div>
+        </div>
+
+        <app-attachments
+          class="block mt"
+          ownerType="SALE"
+          [ownerUid]="s.uid"
+          purpose="PRESCRIPTION"
+          [canManage]="session.can('sales.sell')"
+        />
+
+        <app-modal [open]="printing()" [title]="'sales.receipt' | t" (closed)="printing.set(false)">
+          <app-receipt [sale]="s" />
+          <ng-container footer
+            ><button class="btn primary" type="button" (click)="print()">
+              <app-icon name="printer" [size]="16" /> {{ 'sales.print' | t }}
+            </button></ng-container
+          >
+        </app-modal>
+      } @else {
+        <app-empty [loading]="sale.loading()" icon="receipt" [title]="'sales.saleNotFound' | t" />
+      }
+    </div>
+
+    <app-modal
+      [open]="returning()"
+      [title]="'sales.returnItems' | t"
+      [wide]="true"
+      (closed)="returning.set(false)"
+    >
+      <div class="stack">
+        <p class="muted">{{ 'sales.returnedUnitsGoBackToThe' | t }}</p>
+        <div class="table-wrap" style="border:1px solid var(--border);border-radius:12px">
+          <table class="table compact">
+            <thead>
+              <tr>
+                <th>{{ 'sales.product' | t }}</th>
+                <th>{{ 'sales.batch' | t }}</th>
+                <th class="right">{{ 'sales.sold' | t }}</th>
+                <th class="right">{{ 'sales.returnable' | t }}</th>
+                <th class="right">{{ 'sales.return' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of returnable(); track l.uid) {
+                <tr>
+                  <td>
+                    {{ l.productName }}
+                    @if (l.serialNumbers.length) {
+                      <div class="serials">
+                        @for (sn of returnableSerials(l); track sn) {
+                          <label
+                            class="serial-pick"
+                            [class.on]="pickedSerials()[l.uid]?.includes(sn)"
+                          >
+                            <input
+                              type="checkbox"
+                              [checked]="pickedSerials()[l.uid]?.includes(sn)"
+                              (change)="toggleSerial(l, sn)"
+                            />
+                            <span class="mono">{{ sn }}</span>
+                          </label>
+                        }
+                      </div>
+                    }
+                  </td>
+                  <td class="mono">{{ l.batchNumber === '-' ? '—' : l.batchNumber }}</td>
+                  <td class="right">{{ l.quantity }}</td>
+                  <td class="right">{{ l.quantity - l.returnedQuantity }}</td>
+                  <td class="right">
+                    <input
+                      class="input sm"
+                      style="width:80px"
+                      type="number"
+                      min="0"
+                      [max]="l.quantity - l.returnedQuantity"
+                      [value]="quantities()[l.uid] ?? 0"
+                      [readonly]="!!l.serialNumbers.length"
+                      (input)="setQuantity(l, +$any($event.target).value)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        <div class="form-grid">
+          <div class="field">
+            <label>{{ 'sales.reason' | t }}</label
+            ><input
+              class="input"
+              [value]="reason()"
+              (input)="reason.set($any($event.target).value)"
+              [placeholder]="'sales.wrongItemAdverseReaction' | t"
+            />
+          </div>
+          <div class="field">
+            <label>{{ 'sales.refundMethod' | t }}</label>
+            <select
+              class="select"
+              [value]="refundMethod()"
+              (change)="refundMethod.set($any($event.target).value)"
+            >
+              <option value="CASH">{{ 'sales.cash' | t }}</option>
+              <option value="MOBILE_MONEY">{{ 'sales.mobileMoney' | t }}</option>
+              <option value="CARD">{{ 'sales.card' | t }}</option>
+              <option value="CREDIT">{{ 'sales.storeCredit' | t }}</option>
+            </select>
+          </div>
+          @if (foreignTenders().length) {
+            <div class="field">
+              <label>{{ 'sales.refundIn' | t }}</label>
+              <select
+                class="select"
+                [value]="refundCurrency() ?? ''"
+                [disabled]="!foreignRefundAllowed()"
+                (change)="refundCurrency.set($any($event.target).value || null)"
+              >
+                <option value="">{{ settings.currency() }}</option>
+                @for (tender of foreignTenders(); track tender.currency) {
+                  <option [value]="tender.currency">{{ tender.currency }}</option>
+                }
+              </select>
+            </div>
+          }
+        </div>
+        @if (foreignTenders().length && !foreignRefundAllowed()) {
+          <p class="muted small">{{ foreignRefundBlockedReason() | t }}</p>
+        }
+        @if (foreignEstimate(); as e) {
+          <div class="notice tone-blue fx-estimate">
+            {{
+              'sales.foreignRefundEstimate' | t: { amount: e.amount, base: e.base, rate: e.rate }
+            }}
+          </div>
+        }
+      </div>
+      <ng-container footer>
+        <button class="btn" type="button" (click)="returning.set(false)">
+          {{ 'sales.cancel' | t }}
+        </button>
+        <button class="btn primary" type="button" [disabled]="busy()" (click)="submitReturn()">
+          {{ 'sales.recordReturn' | t }}
+        </button>
+      </ng-container>
+    </app-modal>
+  `,
+  styles: `
+    .fx-estimate {
+      margin-top: 12px;
+    }
+    .serials {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 4px;
+    }
+    .serial-pick {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 3px 8px;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      font-size: 12px;
+      cursor: pointer;
+    }
+    .serial-pick.on {
+      border-color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 8%, transparent);
+    }
+  `,
+})
+export default class SaleDetailPage {
+  protected readonly session = inject(SessionStore);
+  private readonly api = inject(Api);
+  private readonly toasts = inject(ToastService);
+  readonly uid = input.required<string>();
+  protected readonly sale = loaded<Sale>(() => ({ path: `/sales/${this.uid()}` }));
+  protected readonly printing = signal(false);
+  protected readonly returning = signal(false);
+  protected readonly busy = signal(false);
+  protected readonly quantities = signal<Partial<Record<string, number>>>({});
+  protected readonly reason = signal('');
+  protected readonly refundMethod = signal<PaymentMethod>('CASH');
+  protected readonly refundCurrency = signal<string | null>(null);
+  protected readonly settings = inject(SettingsStore);
+  private readonly translations = inject(Translations);
+
+  /** The foreign currencies the sale was tendered in, each with the rate locked at the sale. */
+  protected readonly foreignTenders = computed(() => {
+    const base = this.settings.currency();
+    const seen = new Map<string, number>();
+    for (const p of this.sale.value()?.payments ?? []) {
+      if (p.currency && p.currency !== base && p.exchangeRate && !seen.has(p.currency)) {
+        seen.set(p.currency, p.exchangeRate);
+      }
+    }
+    return [...seen].map(([currency, rate]) => ({ currency, rate }));
+  });
+
+  /** Credit, insurance and account credit are kept in the base currency, as the API insists. */
+  private readonly baseOnlyPayment = computed(() =>
+    (this.sale.value()?.payments ?? []).some(
+      (p) => !['CASH', 'CARD', 'MOBILE_MONEY'].includes(p.method),
+    ),
+  );
+
+  protected readonly foreignRefundAllowed = computed(
+    () => !this.baseOnlyPayment() && this.refundMethod() !== 'CREDIT',
+  );
+
+  protected readonly foreignRefundBlockedReason = computed(() =>
+    this.baseOnlyPayment() ? 'sales.foreignRefundSaleBlocked' : 'sales.foreignRefundMethodBlocked',
+  );
+
+  /** What the customer gets back in the chosen currency, at the sale's rate. */
+  protected readonly foreignEstimate = computed(() => {
+    const currency = this.foreignRefundAllowed() ? this.refundCurrency() : null;
+    const tender = this.foreignTenders().find((t) => t.currency === currency);
+    if (!tender) {
+      return null;
+    }
+    const base = this.returnable().reduce(
+      (sum, l) => sum + ((this.quantities()[l.uid] ?? 0) * l.lineTotal) / l.quantity,
+      0,
+    );
+    if (base <= 0) {
+      return null;
+    }
+    return {
+      amount: formatMoney(base / tender.rate, tender.currency),
+      base: formatMoney(base, this.settings.currency()),
+      rate: tender.rate.toLocaleString('en-US', { maximumFractionDigits: 4 }),
+    };
+  });
+  protected readonly returnable = computed(() =>
+    (this.sale.value()?.lines ?? []).filter((l) => l.quantity > l.returnedQuantity),
+  );
+
+  /** The serials of a line picked to come back, by sale line uid. */
+  protected readonly pickedSerials = signal<Partial<Record<string, string[]>>>({});
+
+  protected returnableSerials(line: SaleLine): string[] {
+    return line.serialNumbers.filter((sn) => !line.returnedSerialNumbers.includes(sn));
+  }
+
+  /** Ticking a serial sets the line's return quantity to the number ticked. */
+  protected toggleSerial(line: SaleLine, serial: string): void {
+    const current = this.pickedSerials()[line.uid] ?? [];
+    const next = current.includes(serial)
+      ? current.filter((sn) => sn !== serial)
+      : [...current, serial];
+    this.pickedSerials.update((p) => ({ ...p, [line.uid]: next }));
+    this.quantities.update((q) => ({ ...q, [line.uid]: next.length }));
+  }
+
+  protected openReturn(): void {
+    this.quantities.set({});
+    this.pickedSerials.set({});
+    this.reason.set('');
+    this.refundCurrency.set(null);
+    this.returning.set(true);
+  }
+
+  protected setQuantity(line: SaleLine, quantity: number): void {
+    const max = line.quantity - line.returnedQuantity;
+    this.quantities.update((q) => ({
+      ...q,
+      [line.uid]: Math.min(Math.max(Math.floor(quantity) || 0, 0), max),
+    }));
+  }
+
+  protected async submitReturn(): Promise<void> {
+    const lines = Object.entries(this.quantities())
+      .filter((entry): entry is [string, number] => (entry[1] ?? 0) > 0)
+      .map(([saleLineUid, quantity]) => ({
+        saleLineUid,
+        quantity,
+        serialNumbers: this.pickedSerials()[saleLineUid] ?? null,
+      }));
+    if (!lines.length) {
+      this.toasts.error(this.translations.t('toast.returnNeedsQuantity'));
+      return;
+    }
+    if (!this.reason().trim()) {
+      this.toasts.error(this.translations.t('toast.returnNeedsReason'));
+      return;
+    }
+    this.busy.set(true);
+    try {
+      const result = await this.api.post<SaleReturn>(`/sales/${this.uid()}/returns`, {
+        reason: this.reason(),
+        refundMethod: this.refundMethod(),
+        refundCurrency: this.foreignRefundAllowed() ? this.refundCurrency() : null,
+        lines,
+      });
+      this.toasts.success(this.returnRecorded(result));
+      this.returning.set(false);
+      await this.sale.reload();
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** "SRN-… recorded · refund TZS 10,000", plus the foreign amount and exchange gain or loss. */
+  private returnRecorded(r: SaleReturn): string {
+    if (!r.refundCurrency) {
+      return this.translations.t('toast.returnRecorded', {
+        number: r.number,
+        amount: formatMoney(r.refundTotal, this.settings.currency()),
+      });
+    }
+    const difference = r.fxDifference ?? 0;
+    let key = 'toast.returnRecordedForeign';
+    if (difference > 0) {
+      key = 'toast.returnRecordedFxLoss';
+    } else if (difference < 0) {
+      key = 'toast.returnRecordedFxGain';
+    }
+    return this.translations.t(key, {
+      number: r.number,
+      amount: formatMoney(r.refundForeignAmount, r.refundCurrency),
+      difference: formatMoney(Math.abs(difference), this.settings.currency()),
+    });
+  }
+
+  protected print(): void {
+    window.print();
+  }
+}

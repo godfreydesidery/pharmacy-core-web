@@ -1,0 +1,79 @@
+/**
+ * Per-area dictionaries, merged into EN and SW. Each feature area keeps its keys in its own pair of
+ * files, `<area>.en.ts` and `<area>.sw.ts`, so areas can be translated independently. Register a
+ * new pair here: import both and add them to the two spreads below.
+ */
+import { ADMIN_EN } from './admin.en';
+import { ADMIN_SW } from './admin.sw';
+import { INSURANCE_EN } from './insurance.en';
+import { INSURANCE_SW } from './insurance.sw';
+import { NOTIFICATIONS_EN } from './notifications.en';
+import { NOTIFICATIONS_SW } from './notifications.sw';
+import { PLATFORM_EN } from './platform.en';
+import { PLATFORM_SW } from './platform.sw';
+import { RECEIVABLES_EN } from './receivables.en';
+import { RECEIVABLES_SW } from './receivables.sw';
+import { REPORTS_EN } from './reports.en';
+import { REPORTS_SW } from './reports.sw';
+import { CATALOGUE_EN } from './catalogue.en';
+import { CATALOGUE_SW } from './catalogue.sw';
+import { ENUM_EN } from './enum.en';
+import { ERRORS_EN } from './errors.en';
+import { ERRORS_SW } from './errors.sw';
+import { ENUM_SW } from './enum.sw';
+import { FINANCE_EN } from './finance.en';
+import { FINANCE_SW } from './finance.sw';
+import { INVENTORY_EN } from './inventory.en';
+import { INVENTORY_SW } from './inventory.sw';
+import { MESSAGES_EN } from './messages.en';
+import { MESSAGES_SW } from './messages.sw';
+import { PARTNERS_EN } from './partners.en';
+import { PARTNERS_SW } from './partners.sw';
+import { POS_EN } from './pos.en';
+import { POS_SW } from './pos.sw';
+import { PURCHASING_EN } from './purchasing.en';
+import { PURCHASING_SW } from './purchasing.sw';
+import { SALES_EN } from './sales.en';
+import { SALES_SW } from './sales.sw';
+import { SHELL_EN } from './shell.en';
+import { SHELL_SW } from './shell.sw';
+
+export const EN_AREAS: Readonly<Record<string, string>> = {
+  ...SHELL_EN,
+  ...FINANCE_EN,
+  ...REPORTS_EN,
+  ...RECEIVABLES_EN,
+  ...INSURANCE_EN,
+  ...NOTIFICATIONS_EN,
+  ...PLATFORM_EN,
+  ...ADMIN_EN,
+  ...POS_EN,
+  ...SALES_EN,
+  ...INVENTORY_EN,
+  ...PURCHASING_EN,
+  ...CATALOGUE_EN,
+  ...PARTNERS_EN,
+  ...ENUM_EN,
+  ...ERRORS_EN,
+  ...MESSAGES_EN,
+};
+
+export const SW_AREAS: Readonly<Record<string, string>> = {
+  ...SHELL_SW,
+  ...FINANCE_SW,
+  ...REPORTS_SW,
+  ...RECEIVABLES_SW,
+  ...INSURANCE_SW,
+  ...NOTIFICATIONS_SW,
+  ...PLATFORM_SW,
+  ...ADMIN_SW,
+  ...POS_SW,
+  ...SALES_SW,
+  ...INVENTORY_SW,
+  ...PURCHASING_SW,
+  ...CATALOGUE_SW,
+  ...PARTNERS_SW,
+  ...ENUM_SW,
+  ...ERRORS_SW,
+  ...MESSAGES_SW,
+};

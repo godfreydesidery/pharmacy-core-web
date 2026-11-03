@@ -1,0 +1,196 @@
+<aside class="sidebar">
+  <a class="brand" routerLink="/">
+    @if (logo.url(); as logoUrl) {
+      <img class="tenant-logo" [src]="logoUrl" alt="" />
+    } @else {
+      <app-logo [size]="36" />
+    }
+    <span class="brand-text"><b>Pharmacy</b><small>Management System</small></span>
+  </a>
+
+  <nav class="nav" aria-label="Main">
+    @if (platformNav().length) {
+      <div class="section">{{ 'nav.platform' | t }}</div>
+      @for (item of platformNav(); track item.id) {
+        <a
+          class="item"
+          [routerLink]="item.path"
+          routerLinkActive="active"
+          [routerLinkActiveOptions]="{ exact: true }"
+          [title]="'nav.' + item.id | t: null : item.label"
+        >
+          <app-icon [name]="item.icon" />
+          <span class="label">{{ 'nav.' + item.id | t: null : item.label }}</span>
+        </a>
+      }
+    }
+
+    @if (tenantNav().length) {
+      @if (platformNav().length) {
+        <div class="section">{{ session.tenant()?.name }}</div>
+      }
+      @for (item of tenantNav(); track item.id) {
+        @if (item.children) {
+          <div
+            class="group"
+            [class.open]="isOpen(item.id)"
+            [class.flying]="flyout()?.id === item.id"
+          >
+            <button
+              #groupButton
+              class="item"
+              type="button"
+              [class.active]="isGroupActive(item) && (!isOpen(item.id) || collapsed())"
+              [attr.aria-expanded]="collapsed() ? flyout()?.id === item.id : isOpen(item.id)"
+              (click)="onGroup(item, groupButton)"
+              [title]="'nav.' + item.id | t: null : item.label"
+            >
+              <app-icon [name]="item.icon" />
+              <span class="label">{{ 'nav.' + item.id | t: null : item.label }}</span>
+              <app-icon class="chev" name="chevron" [size]="16" />
+            </button>
+            <div
+              class="sub"
+              [style.top.px]="flyout()?.id === item.id ? flyout()?.top : null"
+              [style.bottom.px]="flyout()?.id === item.id ? flyout()?.bottom : null"
+            >
+              <div class="sub-title">{{ 'nav.' + item.id | t: null : item.label }}</div>
+              @for (link of item.children; track link.path) {
+                <a
+                  [routerLink]="link.path"
+                  routerLinkActive="active"
+                  [routerLinkActiveOptions]="{ exact: true }"
+                  >{{ navKey(link.path) | t: null : link.label }}</a
+                >
+              }
+            </div>
+          </div>
+        } @else {
+          <a
+            class="item"
+            [routerLink]="item.path"
+            routerLinkActive="active"
+            [title]="'nav.' + item.id | t: null : item.label"
+          >
+            <app-icon [name]="item.icon" />
+            <span class="label">{{ 'nav.' + item.id | t: null : item.label }}</span>
+          </a>
+        }
+      }
+    }
+  </nav>
+
+  <div class="promo">
+    <app-logo [size]="30" />
+    <b>Pharmacy ERP</b>
+    <small>{{ 'nav.promo.tagline' | t }}</small>
+  </div>
+</aside>
+<div class="scrim" (click)="mobileOpen.set(false)"></div>
+
+<div class="main">
+  <header class="topbar no-print">
+    <button
+      class="icon-btn"
+      type="button"
+      (click)="toggleMenu()"
+      [attr.aria-label]="'shell.toggleMenu' | t"
+    >
+      <app-icon name="menu" [size]="20" />
+    </button>
+
+    @if (session.tenant(); as tenant) {
+      <a class="workspace" routerLink="/workspace" [title]="'shell.switchPharmacy' | t">
+        @if (logo.url(); as logoUrl) {
+          <img class="ws-mark ws-logo" [src]="logoUrl" alt="" />
+        } @else {
+          <span class="ws-mark">{{ tenant.code.slice(0, 2) }}</span>
+        }
+        <span class="ws-text"
+          ><b>{{ tenant.name }}</b
+          ><small>{{ session.workspace()?.roleName }}</small></span
+        >
+      </a>
+      @if (session.branches().length) {
+        <label class="branch">
+          <app-icon name="building" [size]="16" />
+          <select
+            class="select sm"
+            (change)="switchBranch($any($event.target).value)"
+            [attr.aria-label]="'shell.branch' | t"
+          >
+            @if (session.isRoot() || session.workspace()?.allBranches) {
+              <option value="" [selected]="!session.branch()">
+                {{ 'common.allBranches' | t }}
+              </option>
+            }
+            @for (branch of session.branches(); track branch.uid) {
+              <option [value]="branch.uid" [selected]="branch.uid === session.branch()?.uid">
+                {{ branch.name }}
+              </option>
+            }
+          </select>
+        </label>
+      }
+    } @else if (session.isRoot()) {
+      <a class="workspace" routerLink="/workspace">
+        <span class="ws-mark root"><app-icon name="key" [size]="15" /></span>
+        <span class="ws-text"
+          ><b>{{ 'shell.platform' | t }}</b
+          ><small>{{ 'shell.choosePharmacy' | t }}</small></span
+        >
+      </a>
+    }
+
+    <div class="spacer"></div>
+
+    @if (session.isRoot()) {
+      <span class="badge purple root-badge"
+        ><app-icon name="key" [size]="13" /> {{ 'shell.rootAdministrator' | t }}</span
+      >
+    }
+    <app-language-switch class="hide-sm" [compact]="true" />
+    <app-bell />
+    <button
+      class="icon-btn"
+      type="button"
+      (click)="theme.toggle()"
+      [attr.aria-label]="(theme.isDark() ? 'shell.lightTheme' : 'shell.darkTheme') | t"
+    >
+      <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" />
+    </button>
+    <div class="user">
+      <button class="user-chip" type="button" (click)="userMenu.set(!userMenu())">
+        <span class="avatar">{{ initials() }}</span>
+        <span class="who"
+          ><b>{{ session.user()?.name }}</b
+          ><small>{{ session.user()?.email }}</small></span
+        >
+        <app-icon name="chevron" [size]="15" />
+      </button>
+      @if (userMenu()) {
+        <div class="menu" role="menu">
+          <a routerLink="/workspace" role="menuitem"
+            ><app-icon name="transfer" [size]="16" /> {{ 'shell.switchPharmacy' | t }}</a
+          >
+          <a routerLink="/account" role="menuitem"
+            ><app-icon name="lock" [size]="16" /> {{ 'shell.account' | t }}</a
+          >
+          <button type="button" class="danger" role="menuitem" (click)="signOut()">
+            <app-icon name="logout" [size]="16" /> {{ 'shell.signOut' | t }}
+          </button>
+        </div>
+      }
+    </div>
+  </header>
+
+  @if (session.tenant()?.status === 'SUSPENDED') {
+    <div class="suspended notice tone-red no-print">
+      <app-icon name="alert" /> {{ 'shell.suspended' | t }}
+    </div>
+  }
+
+  <main class="content">
+    <router-outlet />
+  </main>
+</div>

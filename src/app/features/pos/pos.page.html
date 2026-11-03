@@ -1,0 +1,500 @@
+<div class="page">
+  <div class="page-head no-print">
+    <div>
+      <h1>{{ 'pos.pointOfSale' | t }}</h1>
+      <p class="sub">
+        {{ session.branch()?.name ?? 'No branch chosen' }} · earliest-expiring batches are sold
+        first
+      </p>
+    </div>
+    <div class="actions">
+      @if (session.can('sales.view')) {
+        <a class="btn" routerLink="/sales"
+          ><app-icon name="file" [size]="16" /> {{ 'pos.salesHistory' | t }}</a
+        >
+      }
+    </div>
+  </div>
+
+  @if (!session.branch()) {
+    <app-branch-required what="Selling" />
+  } @else {
+    <div class="pos no-print">
+      <section class="card catalogue">
+        <div class="toolbar" style="border: 0">
+          <label class="search grow">
+            <app-icon name="search" [size]="16" />
+            <input
+              [placeholder]="'pos.searchNameGenericSkuOrScan' | t"
+              [value]="q()"
+              (input)="q.set($any($event.target).value)"
+              autofocus
+            />
+          </label>
+        </div>
+        @if (categories.value(); as cats) {
+          <div class="chips" style="padding: 0 16px 14px">
+            <button
+              type="button"
+              class="chip"
+              [class.active]="!categoryUid()"
+              (click)="categoryUid.set(null)"
+            >
+              {{ 'pos.all' | t }}
+            </button>
+            @for (c of cats; track c.uid) {
+              @if (!c.parentUid || categoryUid() === c.uid) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.active]="categoryUid() === c.uid"
+                  (click)="categoryUid.set(c.uid)"
+                >
+                  {{ c.name }}
+                </button>
+              }
+            }
+          </div>
+        }
+        <div class="grid-products">
+          @for (p of products.value()?.items ?? []; track p.productUid) {
+            <button
+              type="button"
+              class="product"
+              [disabled]="p.quantityOnHand <= 0"
+              (click)="add(p)"
+            >
+              <div class="top">
+                <span class="thumb tone-{{ typeOf(p).tone }}" [title]="typeOf(p).label"
+                  ><app-icon [name]="typeOf(p).icon" [size]="16"
+                /></span>
+                @if (p.requiresSerialAtSale) {
+                  <span class="badge purple" [title]="'pos.scanTheSerialNumberAtSale' | t"
+                    >S/N</span
+                  >
+                }
+                @if (p.schedule !== 'OTC') {
+                  <span
+                    class="badge"
+                    [class]="p.schedule === 'CONTROLLED' ? 'badge red' : 'badge purple'"
+                    >Rx</span
+                  >
+                }
+                <span
+                  class="badge dot"
+                  [class]="p.quantityOnHand <= 0 ? 'badge dot red' : 'badge dot green'"
+                  >{{ p.quantityOnHand <= 0 ? 'Out' : p.quantityOnHand + ' left' }}</span
+                >
+              </div>
+              <b>{{ p.name }}</b>
+              <small
+                >{{ p.genericName ?? '' }}{{ p.strength ? ' · ' + p.strength : ''
+                }}{{ p.dosageForm ? ' · ' + (p.dosageForm | label) : '' }}</small
+              >
+              <span class="price">{{ p.sellingPrice | money }}</span>
+            </button>
+          } @empty {
+            <div style="grid-column: 1/-1">
+              <app-empty
+                [loading]="products.loading()"
+                icon="pill"
+                [title]="'pos.noProducts' | t"
+                text="Nothing matches, or no stock has been received here yet."
+              />
+            </div>
+          }
+        </div>
+      </section>
+
+      <aside class="card cart">
+        <div class="card-head" style="padding-bottom: 12px; border-bottom: 1px solid var(--border)">
+          <h3>
+            {{ 'pos.currentSale' | t }} <span class="badge blue">{{ totals().items }}</span>
+          </h3>
+          @if (lines().length) {
+            <button class="btn ghost sm" type="button" (click)="clear()">
+              <app-icon name="trash" [size]="14" /> {{ 'pos.clear' | t }}
+            </button>
+          }
+        </div>
+
+        @if (session.can('partners.view')) {
+          <div class="pad">
+            <app-lookup
+              #customerLookup
+              path="/customers"
+              [placeholder]="'pos.walkInCustomerSearchToAttach' | t"
+              [display]="customerName"
+              [detail]="customerDetail"
+              (picked)="pickCustomer($event)"
+            />
+            @if (customer(); as c) {
+              <div class="credit-strip">
+                @if (account(); as a) {
+                  <span
+                    class="badge"
+                    [class]="a.onHold ? 'badge red' : a.balance > 0 ? 'badge blue' : 'badge gray'"
+                  >
+                    {{
+                      a.onHold
+                        ? 'Account on hold'
+                        : a.balance > 0
+                          ? 'Owes ' + (a.balance | money)
+                          : 'No balance'
+                    }}
+                  </span>
+                  @if (a.unallocatedCredit > 0) {
+                    <span class="badge green">Credit {{ a.unallocatedCredit | money }}</span>
+                  }
+                  @if (session.can('sales.credit') && !a.onHold && a.creditLimit > 0) {
+                    <span class="muted">Available {{ a.available | money }}</span>
+                  }
+                }
+                <button
+                  type="button"
+                  class="chip sm"
+                  (click)="pickCustomer(null); customerLookup.setText('')"
+                >
+                  <app-icon name="x" [size]="12" /> {{ 'pos.walkIn' | t }}
+                </button>
+              </div>
+            }
+            @if (member(); as m) {
+              <div class="coverage" [class.off]="!useInsurance()">
+                <div class="row between">
+                  <label class="check">
+                    <input
+                      type="checkbox"
+                      [checked]="useInsurance()"
+                      (change)="toggleInsurance(!useInsurance())"
+                    />
+                    <b>{{ m.payerName }}</b
+                    >&nbsp;<span class="muted">{{ m.schemeName }} · {{ m.memberNumber }}</span>
+                  </label>
+                  <app-icon name="shield" [size]="16" />
+                </div>
+                @if (useInsurance()) {
+                  @if (coverage(); as cq) {
+                    <div class="split">
+                      <div>
+                        <small>{{ 'pos.insurerPays' | t }}</small
+                        ><b class="text-green">{{ cq.covered | money }}</b>
+                      </div>
+                      <div>
+                        <small>{{ 'pos.coPay' | t }}</small
+                        ><b>{{ cq.copay | money }}</b>
+                      </div>
+                      <div>
+                        <small>{{ 'pos.notCovered' | t }}</small
+                        ><b [class.text-red]="cq.notCovered > 0">{{ cq.notCovered | money }}</b>
+                      </div>
+                    </div>
+                    @for (note of cq.notes; track note) {
+                      <small class="muted block">{{ note }}</small>
+                    }
+                  } @else if (coverageError(); as e) {
+                    <small class="text-red block">{{ e }}</small>
+                  } @else if (lines().length) {
+                    <small class="muted block">{{ 'pos.checkingCover' | t }}</small>
+                  }
+                  <div class="row wrap" style="gap: 6px">
+                    <input
+                      class="input sm"
+                      style="flex: 1"
+                      placeholder="Pre-authorisation no.{{
+                        m.requiresPreauth ? ' (required)' : ''
+                      }}"
+                      [value]="preauthNumber()"
+                      (input)="preauthNumber.set($any($event.target).value)"
+                    />
+                    <input
+                      class="input sm mono"
+                      style="width: 110px"
+                      placeholder="ICD-10"
+                      [value]="diagnosisCode()"
+                      (input)="diagnosisCode.set($any($event.target).value.toUpperCase())"
+                    />
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+
+        <div class="lines">
+          @for (line of lines(); track line.product.productUid) {
+            <div class="line">
+              <div class="grow">
+                <b>{{ line.product.name }}</b>
+                <small>{{ line.product.sellingPrice | money }} × {{ line.quantity }}</small>
+                @if (line.serials?.length) {
+                  <span class="serials">
+                    @for (serial of line.serials; track serial) {
+                      <span class="badge purple mono">{{ serial }}</span>
+                    }
+                  </span>
+                }
+              </div>
+              <div class="qty">
+                <button
+                  type="button"
+                  (click)="setQty(line, line.quantity - 1)"
+                  [attr.aria-label]="'pos.less' | t"
+                >
+                  <app-icon name="minus" [size]="14" />
+                </button>
+                <input
+                  type="number"
+                  [value]="line.quantity"
+                  (change)="setQty(line, +$any($event.target).value)"
+                  min="0"
+                />
+                <button
+                  type="button"
+                  (click)="setQty(line, line.quantity + 1)"
+                  [attr.aria-label]="'pos.more' | t"
+                >
+                  <app-icon name="plus" [size]="14" />
+                </button>
+              </div>
+              <b class="amount">{{ line.product.sellingPrice * line.quantity | money }}</b>
+            </div>
+          } @empty {
+            <app-empty
+              icon="cart"
+              [title]="'pos.cartIsEmpty' | t"
+              text="Tap a product or scan a barcode."
+            />
+          }
+        </div>
+
+        <div class="pad totals">
+          @if (session.can('sales.discount') && maxDiscount() > 0) {
+            <div class="row between">
+              <span class="muted">{{ 'pos.discount' | t }}</span>
+              <input
+                class="input sm"
+                style="width: 90px"
+                type="number"
+                min="0"
+                [max]="maxDiscount()"
+                [value]="discountPercent()"
+                (change)="setDiscount(+$any($event.target).value)"
+              />
+            </div>
+          }
+          <div class="row between">
+            <span class="muted">{{ 'pos.subtotal' | t }}</span
+            ><span>{{ totals().subtotal | money }}</span>
+          </div>
+          @if (totals().discount) {
+            <div class="row between">
+              <span class="muted">{{ 'pos.discount2' | t }}</span
+              ><span>− {{ totals().discount | money }}</span>
+            </div>
+          }
+          <div class="row between">
+            <span class="muted">{{ 'pos.tax' | t }}</span
+            ><span>{{ totals().tax | money }}</span>
+          </div>
+          <div class="row between grand">
+            <span>{{ 'pos.total' | t }}</span
+            ><span class="text-primary">{{ totals().total | money }}</span>
+          </div>
+        </div>
+
+        <div class="pad stack" style="gap: 8px">
+          @for (payment of payments(); track $index; let i = $index) {
+            <div class="payment">
+              <select
+                class="select sm"
+                [value]="payment.method"
+                (change)="setMethod(i, $any($event.target).value)"
+              >
+                @for (m of methods; track m.method) {
+                  <option [value]="m.method">{{ m.label }}</option>
+                }
+              </select>
+              @if (accepted().length > 1) {
+                <select
+                  class="select sm currency"
+                  [value]="payment.currency ?? base()"
+                  (change)="setCurrency(i, $any($event.target).value)"
+                  [attr.aria-label]="'pos.paymentCurrency' | t"
+                >
+                  @for (c of accepted(); track c) {
+                    <option [value]="c" [selected]="c === (payment.currency ?? base())">
+                      {{ c }}
+                    </option>
+                  }
+                </select>
+              }
+              <input
+                class="input sm"
+                type="number"
+                min="0"
+                step="any"
+                [value]="payment.amount"
+                (input)="setAmount(i, +$any($event.target).value)"
+                [attr.aria-label]="'pos.amount' | t"
+              />
+              @if (payment.method !== 'CASH') {
+                <input
+                  class="input sm"
+                  [placeholder]="'pos.reference' | t"
+                  [value]="payment.reference ?? ''"
+                  (input)="setReference(i, $any($event.target).value)"
+                />
+              }
+              @if (payments().length > 1) {
+                <button
+                  type="button"
+                  class="icon-btn sm"
+                  (click)="removePayment(i)"
+                  [attr.aria-label]="'pos.removePayment' | t"
+                >
+                  <app-icon name="x" [size]="14" />
+                </button>
+              }
+            </div>
+            @if (payment.currency && payment.currency !== base()) {
+              <div class="fx-note muted">
+                {{ payment.amount | money: payment.currency }} at {{ payment.exchangeRate | num }} =
+                <b>{{ baseValue(payment) | money }}</b>
+              </div>
+            }
+          }
+          <div class="row wrap" style="gap: 6px">
+            <button type="button" class="chip" (click)="exact()">{{ 'pos.exact' | t }}</button>
+            @for (amount of [1000, 2000, 5000, 10000]; track amount) {
+              <button type="button" class="chip" (click)="quickCash(amount)">
+                {{ amount | num }}
+              </button>
+            }
+            <button type="button" class="chip" (click)="addPayment()">{{ 'pos.split' | t }}</button>
+          </div>
+          <div class="row between">
+            <span class="muted">{{ 'pos.paid' | t }}</span
+            ><b>{{ paid() | money }}</b>
+          </div>
+          @if (balance() > 0) {
+            <div class="row between text-red">
+              <span>{{ 'pos.balanceDue' | t }}</span
+              ><b>{{ balance() | money }}</b>
+            </div>
+            @if (canCredit()) {
+              <label class="check on-account" [class.active]="balanceToAccount()">
+                <input
+                  type="checkbox"
+                  [checked]="balanceToAccount()"
+                  (change)="balanceToAccount.set(!balanceToAccount())"
+                  [disabled]="!!account()?.onHold"
+                />
+                Put {{ balance() | money }} on {{ customer()!.name }}'s account
+                @if (account(); as a) {
+                  <small class="muted">(available {{ a.available | money }})</small>
+                }
+              </label>
+            }
+          } @else if (nonCashExcess() > 0 && customer()) {
+            <label class="check on-account" [class.active]="excessToAccount()">
+              <input
+                type="checkbox"
+                [checked]="excessToAccount()"
+                (change)="excessToAccount.set(!excessToAccount())"
+              />
+              Keep the {{ nonCashExcess() | money }} overpaid on {{ customer()!.name }}'s account as
+              credit
+            </label>
+          } @else if (change() > 0) {
+            <div class="row between text-green">
+              <span>{{ 'pos.change' | t }}</span
+              ><b>{{ change() | money }}</b>
+            </div>
+          }
+          @if (rxNeeded()) {
+            <button type="button" class="notice tone-purple rx" (click)="rxOpen.set(true)">
+              <app-icon name="stethoscope" [size]="16" />
+              {{
+                prescription()
+                  ? 'Prescription ' + prescription()!.reference + ' attached'
+                  : 'Prescription required — tap to capture'
+              }}
+            </button>
+          }
+        </div>
+
+        <div class="pad" style="padding-top: 0">
+          <button
+            type="button"
+            class="btn success lg block"
+            [disabled]="busy() || !lines().length"
+            (click)="checkout()"
+          >
+            <app-icon name="check" [size]="18" /> {{ busy() ? 'Completing…' : 'Complete sale' }}
+          </button>
+        </div>
+      </aside>
+    </div>
+  }
+</div>
+
+<app-serial-picker
+  [product]="serialFor()"
+  [selected]="serialsOnSale()"
+  (picked)="pickedSerials($event)"
+  (closed)="serialFor.set(null)"
+/>
+
+<app-modal [open]="rxOpen()" [title]="'pos.prescription' | t" (closed)="rxOpen.set(false)">
+  <form class="form-grid" [formGroup]="rxForm" (ngSubmit)="savePrescription()">
+    <div class="field full">
+      <div class="notice tone-purple">
+        <app-icon name="stethoscope" /> {{ 'pos.theCartHoldsPrescriptionOnlyMedicine' | t }}
+      </div>
+    </div>
+    <div class="field">
+      <label>{{ 'pos.prescriberName' | t }}</label
+      ><input class="input" formControlName="prescriberName" />
+    </div>
+    <div class="field">
+      <label>{{ 'pos.registrationNo' | t }}</label
+      ><input class="input" formControlName="prescriberRegistration" placeholder="MCT-1234" />
+    </div>
+    <div class="field">
+      <label>{{ 'pos.prescriptionReference' | t }}</label
+      ><input class="input" formControlName="reference" />
+    </div>
+    <div class="field">
+      <label>{{ 'pos.patientName' | t }}</label
+      ><input class="input" formControlName="patientName" />
+    </div>
+    <div class="field full">
+      <label>{{ 'files.prescriptionImage' | t }}</label>
+      <app-upload
+        [compact]="true"
+        accept="image/png,image/jpeg,image/webp,application/pdf"
+        (picked)="prescriptionFile.set($event)"
+      />
+      <span class="hint">{{ 'files.prescriptionImageHint' | t }}</span>
+    </div>
+  </form>
+  <ng-container footer>
+    <button class="btn" type="button" (click)="rxOpen.set(false)">{{ 'pos.cancel' | t }}</button>
+    <button class="btn primary" type="button" (click)="savePrescription()">
+      {{ 'pos.saveAndCompleteSale' | t }}
+    </button>
+  </ng-container>
+</app-modal>
+
+<app-modal [open]="!!receipt()" [title]="'pos.saleCompleted' | t" (closed)="receipt.set(null)">
+  @if (receipt(); as sale) {
+    <app-receipt [sale]="sale" />
+  }
+  <ng-container footer>
+    <button class="btn" type="button" (click)="receipt.set(null)">{{ 'pos.newSale' | t }}</button>
+    <button class="btn primary" type="button" (click)="print()">
+      <app-icon name="printer" [size]="16" /> {{ 'pos.printReceipt' | t }}
+    </button>
+  </ng-container>
+</app-modal>

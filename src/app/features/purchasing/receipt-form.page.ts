@@ -1,0 +1,473 @@
+import { CurrencyRateComponent } from '../../core/ui/currency-rate.component';
+import { SettingsStore } from '../../core/format/settings.store';
+import { convertHalfEven } from '../../core/format/format';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
+import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
+import { Router } from '@angular/router';
+import { Api } from '../../core/api/api.service';
+import {
+  GoodsReceipt,
+  Product,
+  PurchaseOrder,
+  Supplier,
+  TrackingMode,
+} from '../../core/api/models';
+import { isoDay } from '../../core/format/format';
+import { SHARED } from '../../core/shared';
+import { SessionStore } from '../../core/session/session.store';
+import { applyApiError, controlError, validate } from '../../core/ui/forms';
+import { LookupComponent } from '../../core/ui/lookup.component';
+import { TRACKING_MODES, defaultTracking, parseSerials } from '../../core/ui/product-types';
+import { ToastService } from '../../core/ui/toast.service';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { Translations } from '../../core/i18n/translations.store';
+
+type ReceiptLine = FormGroup<{
+  productUid: FormControl<string>;
+  productName: FormControl<string>;
+  /** The product's tracking: what the line must carry (batch, expiry, serial numbers). */
+  tracking: FormControl<TrackingMode>;
+  batchNumber: FormControl<string>;
+  expiryDate: FormControl<string>;
+  /** SERIAL products: the units' serial numbers, one per line (pasted or scanned). */
+  serials: FormControl<string>;
+  quantity: FormControl<number>;
+  unitCost: FormControl<number>;
+}>;
+
+@Component({
+  selector: 'app-receipt-form',
+  imports: [TranslatePipe, ...SHARED, LookupComponent, CurrencyRateComponent],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="page">
+      <div class="page-head">
+        <div>
+          <a class="muted row" routerLink="/purchasing/receipts"
+            ><app-icon name="arrow-left" [size]="15" /> {{ 'purchasing.goodsReceipts' | t }}</a
+          >
+          <h1 style="margin-top:6px">{{ 'purchasing.receiveGoods' | t }}</h1>
+          <p class="sub">
+            {{ order() ? 'Against ' + order()!.number + ' · ' : '' }}into
+            {{ session.branch()?.name ?? '—' }}. Stock goes up as soon as you save.
+          </p>
+        </div>
+        <div class="actions">
+          <a class="btn" routerLink="/purchasing/receipts">{{ 'purchasing.cancel' | t }}</a>
+          <button
+            class="btn primary"
+            type="button"
+            [disabled]="busy() || !session.branch()"
+            (click)="save()"
+          >
+            <app-icon name="check" [size]="16" /> {{ 'purchasing.recordReceipt' | t }}
+          </button>
+        </div>
+      </div>
+      @if (!session.branch()) {
+        <app-branch-required what="Receiving goods" />
+      } @else {
+        <form [formGroup]="form" class="stack">
+          <div class="card card-pad form-grid three">
+            <div class="field">
+              <label>{{ 'purchasing.supplier' | t }}</label>
+              @if (order(); as o) {
+                <input class="input" [value]="o.supplierName" disabled />
+              } @else {
+                <app-lookup
+                  #supplierLookup
+                  path="/suppliers"
+                  [placeholder]="'purchasing.searchSuppliers' | t"
+                  [display]="supplierName"
+                  (picked)="form.controls.supplierUid.setValue($event?.uid ?? '')"
+                />
+              }
+              @if (err('supplierUid'); as m) {
+                <span class="error">{{ m }}</span>
+              }
+            </div>
+            <div class="field">
+              <label>{{ 'purchasing.supplierInvoiceNo' | t }}</label
+              ><input class="input" formControlName="supplierInvoiceNumber" />
+            </div>
+            <div class="field">
+              <label>{{ 'purchasing.note' | t }}</label
+              ><input class="input" formControlName="note" />
+            </div>
+            <div class="field full">
+              <label>{{ 'purchasing.currency' | t }}</label>
+              <app-currency-rate
+                [(currency)]="currency"
+                [(rate)]="rate"
+                [lockCurrency]="!!order()"
+              />
+              @if (order(); as o) {
+                @if (o.currency !== base()) {
+                  <span class="hint muted"
+                    >The order locked {{ o.exchangeRate | num }} {{ base() }} per {{ o.currency }};
+                    change it only if the supplier invoiced at another rate.</span
+                  >
+                }
+              }
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-head">
+              <h3>{{ 'purchasing.itemsReceived' | t }}</h3>
+              @if (!order()) {
+                <div style="width:min(420px,60%)">
+                  <app-lookup
+                    path="/products"
+                    [placeholder]="'purchasing.addAProduct' | t"
+                    [display]="productName"
+                    [keepText]="false"
+                    (picked)="addProduct($event)"
+                  />
+                </div>
+              }
+            </div>
+            <div class="table-wrap">
+              <table class="table" formArrayName="lines">
+                <thead>
+                  <tr>
+                    <th>{{ 'purchasing.product' | t }}</th>
+                    <th>{{ 'purchasing.batchNumber' | t }}</th>
+                    <th>{{ 'purchasing.expiry' | t }}</th>
+                    <th class="right">{{ 'purchasing.quantity' | t }}</th>
+                    <th class="right">{{ 'purchasing.unitCost' | t }}</th>
+                    <th class="right">{{ 'purchasing.lineTotal' | t }}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (line of lines.controls; track line; let i = $index) {
+                    <tr [formGroupName]="i">
+                      <td class="strong">
+                        {{ line.value.productName }}
+                        <div class="faint small">{{ trackingLabel(line.value.tracking) }}</div>
+                      </td>
+                      <td>
+                        @if (line.value.tracking === 'QUANTITY') {
+                          <span class="faint">—</span>
+                        } @else {
+                          <input
+                            class="input sm"
+                            style="width:130px"
+                            formControlName="batchNumber"
+                            [placeholder]="line.value.tracking === 'SERIAL' ? 'optional' : ''"
+                            [class.invalid]="
+                              line.controls.batchNumber.touched && line.controls.batchNumber.invalid
+                            "
+                          />
+                        }
+                      </td>
+                      <td>
+                        @if (line.value.tracking === 'BATCH_EXPIRY') {
+                          <input
+                            class="input sm"
+                            style="width:150px"
+                            type="date"
+                            [min]="today"
+                            formControlName="expiryDate"
+                            [class.invalid]="
+                              line.controls.expiryDate.touched && line.controls.expiryDate.invalid
+                            "
+                          />
+                        } @else {
+                          <span class="faint">{{ 'purchasing.noExpiry' | t }}</span>
+                        }
+                      </td>
+                      <td class="right">
+                        <input
+                          class="input sm"
+                          style="width:90px"
+                          type="number"
+                          min="1"
+                          formControlName="quantity"
+                          [readonly]="line.value.tracking === 'SERIAL'"
+                          (input)="touch()"
+                        />
+                      </td>
+                      <td class="right">
+                        <input
+                          class="input sm"
+                          style="width:110px"
+                          type="number"
+                          min="0"
+                          step="any"
+                          formControlName="unitCost"
+                          (input)="touch()"
+                        />
+                      </td>
+                      <td class="right">
+                        {{
+                          (line.value.quantity ?? 0) * (line.value.unitCost ?? 0)
+                            | money: currency()
+                        }}
+                      </td>
+                      <td class="right">
+                        <button class="icon-btn sm" type="button" (click)="removeLine(i)">
+                          <app-icon name="trash" [size]="14" />
+                        </button>
+                      </td>
+                    </tr>
+                    @if (line.value.tracking === 'SERIAL') {
+                      <tr class="serial-row" [formGroupName]="i">
+                        <td colspan="7">
+                          <div class="serial-entry">
+                            <app-icon name="barcode" [size]="16" />
+                            <textarea
+                              class="input mono"
+                              rows="2"
+                              formControlName="serials"
+                              [placeholder]="'purchasing.serialNumbersOnePerLineScan' | t"
+                              (input)="syncSerials(line)"
+                              [class.invalid]="
+                                line.controls.serials.touched && line.controls.serials.invalid
+                              "
+                            ></textarea>
+                            <span class="badge purple">{{ serialCount(line) }} unit(s)</span>
+                          </div>
+                        </td>
+                      </tr>
+                    }
+                  } @empty {
+                    <tr>
+                      <td colspan="7">
+                        <app-empty
+                          icon="download"
+                          [title]="'purchasing.noItems' | t"
+                          text="Add the products in the delivery."
+                        />
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+                <tfoot>
+                  <tr>
+                    <td colspan="5">{{ 'purchasing.total' | t }}</td>
+                    <td class="right">{{ total() | money: currency() }}</td>
+                    <td></td>
+                  </tr>
+                  @if (currency() !== base()) {
+                    <tr class="muted">
+                      <td colspan="5">Stock cost in {{ base() }} at {{ rate() | num }}</td>
+                      <td class="right">{{ baseTotal() | money }}</td>
+                      <td></td>
+                    </tr>
+                  }
+                </tfoot>
+              </table>
+            </div>
+          </div>
+        </form>
+      }
+    </div>
+  `,
+  styles: `
+    .serial-row td {
+      padding-top: 0;
+      border-top: 0;
+    }
+    .serial-entry {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      color: var(--muted);
+    }
+    .serial-entry textarea {
+      flex: 1;
+      min-height: 42px;
+    }
+  `,
+})
+export default class ReceiptFormPage implements OnInit {
+  protected readonly session = inject(SessionStore);
+  private readonly api = inject(Api);
+  private readonly toasts = inject(ToastService);
+  private readonly translations = inject(Translations);
+  private readonly router = inject(Router);
+  private readonly fb = inject(FormBuilder).nonNullable;
+  readonly po = input<string | undefined>();
+  protected readonly order = signal<PurchaseOrder | null>(null);
+  protected readonly busy = signal(false);
+  protected readonly today = isoDay();
+  private readonly version = signal(0);
+  protected readonly base = inject(SettingsStore).currency;
+  /** The receipt's currency (the order's, when against one) and its rate in base units. */
+  protected readonly currency = signal(this.base());
+  protected readonly rate = signal(1);
+  private readonly supplierLookup = viewChild<LookupComponent>('supplierLookup');
+
+  protected readonly form = this.fb.group({
+    purchaseOrderUid: [''],
+    supplierUid: ['', Validators.required],
+    supplierInvoiceNumber: [''],
+    note: [''],
+    lines: this.fb.array<ReceiptLine>([]),
+  });
+  protected get lines(): FormArray<ReceiptLine> {
+    return this.form.controls.lines;
+  }
+  protected readonly total = computed(() => {
+    this.version();
+    return this.lines.controls.reduce(
+      (sum, l) => sum + (l.value.quantity ?? 0) * (l.value.unitCost ?? 0),
+      0,
+    );
+  });
+  protected readonly baseTotal = computed(() =>
+    convertHalfEven(this.total(), this.rate(), this.base()),
+  );
+  protected readonly supplierName = (s: Supplier) => s.name;
+  protected readonly productName = (p: Product) => p.name;
+
+  async ngOnInit(): Promise<void> {
+    const uid = this.po();
+    if (!uid) {
+      return;
+    }
+    const order = await this.api.get<PurchaseOrder>(`/purchase-orders/${uid}`);
+    this.order.set(order);
+    this.currency.set(order.currency ?? this.base());
+    this.rate.set(order.exchangeRate ?? 1);
+    this.form.patchValue({ purchaseOrderUid: order.uid, supplierUid: order.supplierUid });
+    const outstanding = order.lines.filter((line) => line.quantity > line.receivedQuantity);
+    const products = await Promise.all(
+      outstanding.map((line) =>
+        this.api
+          .get<Product>(`/products/${line.productUid}`, undefined, { noBranch: true, silent: true })
+          .catch(() => null),
+      ),
+    );
+    outstanding.forEach((line, i) =>
+      this.lines.push(
+        this.line(
+          line.productUid,
+          line.productName,
+          line.quantity - line.receivedQuantity,
+          line.unitCost,
+          products[i]?.trackingMode ?? defaultTracking(products[i]?.productType),
+        ),
+      ),
+    );
+    this.touch();
+  }
+
+  private line(
+    productUid: string,
+    productName: string,
+    quantity: number,
+    unitCost: number,
+    tracking: TrackingMode = 'BATCH_EXPIRY',
+  ): ReceiptLine {
+    const batched = tracking === 'BATCH_EXPIRY' || tracking === 'BATCH';
+    return this.fb.group({
+      productUid: [productUid, Validators.required],
+      productName: [productName],
+      tracking: [tracking],
+      batchNumber: ['', batched ? Validators.required : []],
+      expiryDate: ['', tracking === 'BATCH_EXPIRY' ? Validators.required : []],
+      serials: ['', tracking === 'SERIAL' ? Validators.required : []],
+      quantity: [quantity, [Validators.required, Validators.min(1)]],
+      unitCost: [unitCost, [Validators.required, Validators.min(0)]],
+    });
+  }
+
+  protected trackingLabel(mode: TrackingMode | undefined): string {
+    return TRACKING_MODES.find((m) => m.code === mode)?.label ?? mode ?? '';
+  }
+
+  protected serialCount(line: ReceiptLine): number {
+    return parseSerials(line.controls.serials.value).length;
+  }
+
+  /** The quantity of a SERIAL line is the number of serial numbers entered. */
+  protected syncSerials(line: ReceiptLine): void {
+    line.controls.quantity.setValue(Math.max(this.serialCount(line), 1));
+    this.touch();
+  }
+
+  protected err(name: string): string | null {
+    return controlError(this.form.get(name));
+  }
+
+  protected touch(): void {
+    this.version.update((v) => v + 1);
+  }
+
+  protected addProduct(product: Product | null): void {
+    if (product) {
+      this.lines.push(
+        this.line(
+          product.uid,
+          product.name,
+          1,
+          product.costPrice,
+          product.trackingMode ?? defaultTracking(product.productType),
+        ),
+      );
+      this.touch();
+    }
+  }
+
+  protected removeLine(index: number): void {
+    this.lines.removeAt(index);
+    this.touch();
+  }
+
+  protected async save(): Promise<void> {
+    if (!validate(this.form)) {
+      this.toasts.error(this.translations.t('toast.completeLines'));
+      return;
+    }
+    if (!this.lines.length) {
+      this.toasts.error(this.translations.t('toast.addItem'));
+      return;
+    }
+    const value = this.form.getRawValue();
+    this.busy.set(true);
+    try {
+      const receipt = await this.api.post<GoodsReceipt>(
+        '/goods-receipts',
+        {
+          purchaseOrderUid: value.purchaseOrderUid || null,
+          supplierUid: value.supplierUid,
+          supplierInvoiceNumber: value.supplierInvoiceNumber || null,
+          note: value.note || null,
+          lines: value.lines.map(
+            ({ productUid, tracking, batchNumber, expiryDate, serials, quantity, unitCost }) => ({
+              productUid,
+              batchNumber: tracking === 'QUANTITY' ? null : batchNumber.trim() || null,
+              expiryDate: tracking === 'BATCH_EXPIRY' ? expiryDate || null : null,
+              quantity,
+              unitCost,
+              serialNumbers: tracking === 'SERIAL' ? parseSerials(serials) : null,
+            }),
+          ),
+          currency: this.currency(),
+          exchangeRate: this.currency() === this.base() ? null : this.rate(),
+        },
+        { silent: true },
+      );
+      this.toasts.success(this.translations.t('toast.receiptRecorded', { number: receipt.number }));
+      await this.router.navigate(['/purchasing/receipts', receipt.uid]);
+    } catch (failure) {
+      if (!applyApiError(this.form, failure)) {
+        this.toasts.error((failure as Error).message);
+      }
+    } finally {
+      this.busy.set(false);
+    }
+    void this.supplierLookup;
+  }
+}
