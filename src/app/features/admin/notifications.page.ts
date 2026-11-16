@@ -212,7 +212,7 @@ type Tab = 'templates' | 'deliveries' | 'providers';
             }
           </div>
         </div>
-      } @else {
+      } @else if (tab() === 'deliveries') {
         <div class="card">
           <div class="toolbar">
             <select
