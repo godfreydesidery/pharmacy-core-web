@@ -99,4 +99,8 @@ export const PLANS_EN: Readonly<Record<string, string>> = {
     'Upgrade the plan to use it: Administration → Subscription shows the plans and how to pay.',
   'gate.howStaff': "Ask your pharmacy's administrator to upgrade the plan.",
   'gate.seePlans': 'See plans and upgrade',
+  'plans.downgrade.confirm':
+    '{{plan}} is below what this pharmacy uses now:\n{{lines}}\n\nIts existing records stay, but it cannot add more beyond the new limits, and the modules listed close. Change the plan?',
+  'plans.downgrade.limit': '{{limit}}: {{used}} in use, {{allowed}} allowed',
+  'plans.downgrade.feature': '{{feature}} is not included',
 };

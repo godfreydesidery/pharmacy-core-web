@@ -100,4 +100,8 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
     'Panda mpango ili uitumie: Utawala → Usajili inaonyesha mipango na jinsi ya kulipa.',
   'gate.howStaff': 'Mwombe msimamizi wa famasia yako apandishe mpango.',
   'gate.seePlans': 'Tazama mipango na upande',
+  'plans.downgrade.confirm':
+    '{{plan}} iko chini ya matumizi ya sasa ya famasia hii:\n{{lines}}\n\nKumbukumbu zilizopo zinabaki, lakini haiwezi kuongeza zaidi ya viwango vipya, na moduli zilizotajwa zinafungwa. Badilisha mpango?',
+  'plans.downgrade.limit': '{{limit}}: {{used}} zinatumika, {{allowed}} zinaruhusiwa',
+  'plans.downgrade.feature': '{{feature}} haijajumuishwa',
 };
