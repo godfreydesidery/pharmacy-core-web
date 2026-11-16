@@ -51,7 +51,7 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
   'plans.plan': 'Kifurushi',
   'plans.period': 'Kipindi',
   'plans.trialEnds': 'Majaribio yanaisha',
-  'plans.trialEndsOn': 'Majaribio yako ya bure yanaisha tarehe {date}.',
+  'plans.trialEndsOn': 'Majaribio yako ya bure yanaisha tarehe {{date}}.',
   'plans.graceEnds': 'Muda wa nyongeza unaisha',
   'plans.changePlan': 'Badilisha kifurushi',
   'plans.extendTrial': 'Ongeza majaribio (siku)',
@@ -72,9 +72,9 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
   'plans.current': 'Cha sasa',
   'plans.upgradeHint':
     'Huduma zisizo kwenye kifurushi chako hazionekani kwenye menyu. Mwombe msimamizi wa mfumo akubadilishie kifurushi.',
-  'plans.banner.trial': 'Majaribio ya bure ya {plan}: zimebaki siku {days}.',
+  'plans.banner.trial': 'Majaribio ya bure ya {{plan}}: zimebaki siku {{days}}.',
   'plans.banner.pastDue':
-    'Usajili wako haujalipwa. Lipa kabla ya tarehe {date} ili uendelee kutumia mfumo.',
+    'Usajili wako haujalipwa. Lipa kabla ya tarehe {{date}} ili uendelee kutumia mfumo.',
   'plans.banner.see': 'Angalia usajili',
   'plans.mrr': 'Mapato ya mwezi',
   'plans.mrrCaption': 'Ya kila mwezi, usajili hai',
