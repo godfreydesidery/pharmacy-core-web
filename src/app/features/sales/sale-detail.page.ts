@@ -162,7 +162,13 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 </div>
                 @for (p of s.payments; track $index) {
                   <div>
-                    <dt>{{ p.method | label }}{{ p.reference ? ' · ' + p.reference : '' }}</dt>
+                    <dt>
+                      {{
+                        p.channel
+                          ? ('till.channel.' + p.channel | t: null : p.channel)
+                          : (p.method | label)
+                      }}{{ p.reference ? ' · ' + p.reference : '' }}
+                    </dt>
                     <dd>
                       {{ p.amount | money: p.currency ?? undefined }}
                       @if (p.currency && p.baseAmount !== undefined && p.amount !== p.baseAmount) {

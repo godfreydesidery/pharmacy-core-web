@@ -85,7 +85,11 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         @for (p of sale().payments; track $index) {
           <div class="row between small">
             <span class="muted"
-              >{{ p.method | label }}{{ p.reference ? ' · ' + p.reference : '' }}</span
+              >{{
+                p.channel
+                  ? ('till.channel.' + p.channel | t: null : p.channel)
+                  : (p.method | label)
+              }}{{ p.reference ? ' · ' + p.reference : '' }}</span
             ><span
               >{{ p.amount | money: p.currency ?? undefined }}
               @if (p.currency && p.baseAmount !== undefined && p.amount !== p.baseAmount) {
