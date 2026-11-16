@@ -26,6 +26,8 @@ import { REPORTS_SW } from './reports.sw';
 import { CATALOGUE_EN } from './catalogue.en';
 import { CONTROLLED_EN } from './controlled.en';
 import { COUNTS_EN } from './counts.en';
+import { LABELS_EN } from './labels.en';
+import { LABELS_SW } from './labels.sw';
 import { TILL_EN } from './till.en';
 import { TILL_SW } from './till.sw';
 import { STOCKOPS_EN } from './stockops.en';
@@ -89,6 +91,7 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...PLANS_EN,
   ...CONTROLLED_EN,
   ...COUNTS_EN,
+  ...LABELS_EN,
   ...TILL_EN,
   ...STOCKOPS_EN,
   ...SHIFTS_EN,
@@ -124,6 +127,7 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...PLANS_SW,
   ...CONTROLLED_SW,
   ...COUNTS_SW,
+  ...LABELS_SW,
   ...TILL_SW,
   ...STOCKOPS_SW,
   ...SHIFTS_SW,

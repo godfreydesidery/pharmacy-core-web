@@ -1,7 +1,9 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { SaleSummary } from '../../core/api/models';
 import { debounced, pagedList } from '../../core/data/data';
-import { downloadCsv, humanize } from '../../core/format/format';
+import { downloadCsv } from '../../core/format/format';
+import { enumLabel } from '../../core/format/pipes';
+import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -141,8 +143,11 @@ export default class SalesPage {
       : null,
   );
 
+  private readonly translations = inject(Translations);
+
+  /** The sale's payment methods in the current language. */
   protected methods(sale: SaleSummary): string {
-    return sale.paymentMethods.map(humanize).join(', ');
+    return sale.paymentMethods.map((m) => enumLabel(this.translations, m)).join(', ');
   }
 
   protected export(): void {
