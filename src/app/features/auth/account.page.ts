@@ -9,6 +9,7 @@ import { LanguageSwitchComponent } from '../../core/i18n/language-switch.compone
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { NotificationPreferencesComponent } from '../../core/notifications/notification-preferences.component';
 import { AccountSecurityComponent } from './account-security.component';
+import { ProfileSectionComponent } from './profile-section.component';
 import { Translations } from '../../core/i18n/translations.store';
 
 function matching(group: AbstractControl): ValidationErrors | null {
@@ -20,6 +21,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
 @Component({
   selector: 'app-account',
   imports: [
+    ProfileSectionComponent,
     ...SHARED,
     LanguageSwitchComponent,
     TranslatePipe,
@@ -31,10 +33,11 @@ function matching(group: AbstractControl): ValidationErrors | null {
     <div class="page">
       <div class="page-head">
         <div>
-          <h1>Account</h1>
+          <h1>{{ 'ui.account.title' | t }}</h1>
           <p class="sub">{{ session.user()?.name }} · {{ session.user()?.email }}</p>
         </div>
       </div>
+      <app-profile-section />
       <div class="card card-pad stack language-card" style="max-width:520px;margin-bottom:18px">
         <h3>{{ 'account.language' | t }}</h3>
         <p class="muted">{{ 'account.languageHint' | t }}</p>
@@ -46,9 +49,9 @@ function matching(group: AbstractControl): ValidationErrors | null {
         [formGroup]="form"
         (ngSubmit)="save()"
       >
-        <h3>Change password</h3>
+        <h3>{{ 'ui.account.changePassword' | t }}</h3>
         <div class="field">
-          <label>Current password</label
+          <label>{{ 'ui.account.currentPassword' | t }}</label
           ><input
             class="input"
             type="password"
@@ -60,20 +63,20 @@ function matching(group: AbstractControl): ValidationErrors | null {
           }
         </div>
         <div class="field">
-          <label>New password</label
+          <label>{{ 'ui.account.newPassword' | t }}</label
           ><input
             class="input"
             type="password"
             formControlName="newPassword"
             autocomplete="new-password"
           />
-          <span class="hint">At least 8 characters.</span>
+          <span class="hint">{{ 'ui.account.atLeast8' | t }}</span>
           @if (err('newPassword'); as m) {
             <span class="error">{{ m }}</span>
           }
         </div>
         <div class="field">
-          <label>Confirm new password</label
+          <label>{{ 'ui.account.confirmPassword' | t }}</label
           ><input
             class="input"
             type="password"
@@ -81,12 +84,12 @@ function matching(group: AbstractControl): ValidationErrors | null {
             autocomplete="new-password"
           />
           @if (form.errors?.['mismatch'] && form.controls.confirm.touched) {
-            <span class="error">The passwords differ</span>
+            <span class="error">{{ 'ui.account.passwordsDiffer' | t }}</span>
           }
         </div>
         <div class="actions">
           <button class="btn primary" type="submit" [disabled]="busy()">
-            <app-icon name="check" [size]="16" /> Update password
+            <app-icon name="check" [size]="16" /> {{ 'ui.account.updatePassword' | t }}
           </button>
         </div>
       </form>

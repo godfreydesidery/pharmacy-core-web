@@ -10,6 +10,7 @@ import {
   signal,
 } from '@angular/core';
 import { formatCompact } from '../format/format';
+import { TranslatePipe } from '../i18n/t.pipe';
 
 export interface ChartPoint {
   label: string;
@@ -345,11 +346,17 @@ export class DonutComponent {
 
 @Component({
   selector: 'app-bar-chart',
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { style: 'display:block' },
   template: `
     @if (geometry(); as g) {
-      <svg [attr.width]="g.width" [attr.height]="height()" role="img" aria-label="Bar chart">
+      <svg
+        [attr.width]="g.width"
+        [attr.height]="height()"
+        role="img"
+        [attr.aria-label]="'ui.chart.bar' | t"
+      >
         @for (tick of g.ticks; track tick.y) {
           <line
             [attr.x1]="g.left"

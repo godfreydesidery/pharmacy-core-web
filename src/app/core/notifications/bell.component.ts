@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, ElementRef, inject, signal } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { WhenPipe } from '../format/pipes';
+import { TranslatePipe } from '../i18n/t.pipe';
 import { IconComponent } from '../ui/icon.component';
 import { InAppNotification } from './notification.models';
 import { NotificationsStore } from './notifications.store';
@@ -8,7 +9,7 @@ import { NotificationsStore } from './notifications.store';
 /** The top bar's bell: a live unread badge and a panel of the newest notifications. */
 @Component({
   selector: 'app-bell',
-  imports: [IconComponent, RouterLink, WhenPipe],
+  imports: [IconComponent, RouterLink, WhenPipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:click)': 'outside($event)', '(document:keydown.escape)': 'open.set(false)' },
   template: `
@@ -17,7 +18,9 @@ import { NotificationsStore } from './notifications.store';
       type="button"
       (click)="toggle()"
       [attr.aria-label]="
-        store.unread() ? store.unread() + ' unread notifications' : 'Notifications'
+        store.unread()
+          ? ('ui.bell.unread' | t: { count: store.unread() })
+          : ('ui.bell.notifications' | t)
       "
       [attr.aria-expanded]="open()"
     >
@@ -26,15 +29,15 @@ import { NotificationsStore } from './notifications.store';
         <span class="count" aria-hidden="true">{{ badge }}</span>
       }
       @if (store.live()) {
-        <span class="live" title="Live"></span>
+        <span class="live" [title]="'ui.bell.live' | t"></span>
       }
     </button>
     @if (open()) {
-      <div class="panel" role="dialog" aria-label="Notifications">
+      <div class="panel" role="dialog" [attr.aria-label]="'ui.bell.notifications' | t">
         <div class="head">
-          <b>Notifications</b>
+          <b>{{ 'ui.bell.notifications' | t }}</b>
           @if (store.unread()) {
-            <span class="badge blue">{{ store.unread() }} new</span>
+            <span class="badge blue">{{ 'ui.bell.new' | t: { count: store.unread() } }}</span>
           }
           <span class="grow"></span>
           <button
@@ -43,7 +46,7 @@ import { NotificationsStore } from './notifications.store';
             [disabled]="!store.unread()"
             (click)="readAll()"
           >
-            <app-icon name="check" [size]="14" /> Mark all read
+            <app-icon name="check" [size]="14" /> {{ 'ui.bell.markAllRead' | t }}
           </button>
         </div>
         <div class="list">
@@ -59,12 +62,12 @@ import { NotificationsStore } from './notifications.store';
           } @empty {
             <div class="empty-state">
               <app-icon name="bell" [size]="28" />
-              <span>You're all caught up.</span>
+              <span>{{ 'ui.bell.caughtUp' | t }}</span>
             </div>
           }
         </div>
         <a class="foot" routerLink="/notifications" (click)="open.set(false)"
-          >View all notifications <app-icon name="chevron-right" [size]="14"
+          >{{ 'ui.bell.viewAll' | t }} <app-icon name="chevron-right" [size]="14"
         /></a>
       </div>
     }

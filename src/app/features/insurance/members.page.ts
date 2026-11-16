@@ -114,7 +114,7 @@ import { Translations } from '../../core/i18n/translations.store';
 
     <app-modal
       [open]="open()"
-      [title]="current() ? 'Edit membership' : 'Enrol member'"
+      [title]="current() ? ('ui.l.editMembership' | t) : ('ui.l.enrolMember' | t)"
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form">

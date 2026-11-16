@@ -9,6 +9,7 @@ import { SessionStore } from '../../core/session/session.store';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
+import { OverdrawWarningComponent } from './overdraw-warning.component';
 
 const CATEGORIES: ExpenseCategory[] = [
   'RENT',
@@ -25,7 +26,7 @@ const METHODS = ['CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CARD'];
 
 @Component({
   selector: 'app-expenses',
-  imports: [...SHARED],
+  imports: [...SHARED, OverdrawWarningComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -41,7 +42,7 @@ const METHODS = ['CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CARD'];
               type="button"
               [disabled]="!session.branch()"
               (click)="openForm()"
-              [title]="session.branch() ? '' : 'Choose a branch to record an expense'"
+              [title]="session.branch() ? '' : ('ui.l.chooseABranchToRecordAn' | t)"
             >
               <app-icon name="plus" [size]="16" /> {{ 'finance.recordExpense' | t }}
             </button>
@@ -55,7 +56,7 @@ const METHODS = ['CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CARD'];
           [hint]="shownTotal() | money"
           icon="wallet"
           tone="red"
-          [caption]="list.items().length + ' expenses'"
+          [caption]="list.items().length + ('ui.l.preExpenses' | t)"
         />
       </div>
       <div class="card">
@@ -163,6 +164,11 @@ const METHODS = ['CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CARD'];
             }
           </select>
         </div>
+        <app-overdraw-warning
+          class="full"
+          [amount]="+form.controls.amount.value"
+          [method]="form.controls.paymentMethod.value"
+        />
         <div class="field full">
           <label>{{ 'finance.description' | t }}</label
           ><input class="input" formControlName="description" />

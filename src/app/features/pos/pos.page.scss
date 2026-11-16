@@ -164,9 +164,42 @@
     grid-template-columns: minmax(0, 1fr) 340px;
   }
 }
+/* The sticky cart bar exists only where the cart is stacked below the products. */
+.cart-bar {
+  display: none;
+}
 @media (max-width: 1024px) {
   .pos {
     grid-template-columns: 1fr;
+    padding-bottom: 72px;
+  }
+  .cart-bar {
+    position: fixed;
+    left: 12px;
+    right: 12px;
+    bottom: 12px;
+    z-index: 30;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border: 0;
+    border-radius: 14px;
+    background: var(--primary);
+    color: #fff;
+    font-size: 15px;
+    box-shadow: var(--shadow);
+    cursor: pointer;
+  }
+  .cart-bar .grow {
+    flex: 1;
+    text-align: right;
+  }
+  .cart-bar .pay {
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    font-weight: 600;
   }
   .cart {
     position: static;

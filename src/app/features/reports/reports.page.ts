@@ -1,8 +1,10 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { PaymentReportRow, ProductReportRow, ProfitLoss, SalesReport } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
-import { downloadCsv, formatDate, formatMoney, humanize, isoDay } from '../../core/format/format';
+import { downloadCsv, formatDate, formatMoney, isoDay } from '../../core/format/format';
+import { enumLabel } from '../../core/format/pipes';
 import { SettingsStore } from '../../core/format/settings.store';
+import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { BarSeries, DonutSegment } from '../../core/ui/charts';
@@ -26,7 +28,8 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
         <div>
           <h1>{{ 'reports.reports' | t }}</h1>
           <p class="sub">
-            {{ session.branch()?.name ?? 'All branches' }} · {{ from() | day }} – {{ to() | day }}
+            {{ session.branch()?.name ?? ('ui.l.allBranches' | t) }} · {{ from() | day }} –
+            {{ to() | day }}
           </p>
         </div>
         <div class="actions">
@@ -48,7 +51,9 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
           />
           <div class="segmented">
             @for (p of presets; track p.days) {
-              <button type="button" (click)="preset(p.days)">{{ p.label }}</button>
+              <button type="button" (click)="preset(p.days)">
+                {{ 'ui.preset.' + p.label | t: null : p.label }}
+              </button>
             }
           </div>
           <button class="btn" type="button" (click)="export()">
@@ -60,7 +65,7 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
         <div class="tabs">
           @for (t of tabs; track t.id) {
             <button type="button" [class.active]="tab() === t.id" (click)="tab.set(t.id)">
-              {{ t.label }}
+              {{ 'ui.reports.tab.' + t.id | t: null : t.label }}
             </button>
           }
         </div>
@@ -76,7 +81,7 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
                 [hint]="r.totals.net | money"
                 icon="cart"
                 tone="blue"
-                [caption]="r.totals.invoices + ' invoices'"
+                [caption]="r.totals.invoices + ('ui.l.preInvoices' | t)"
               />
               <app-stat
                 [label]="'reports.grossProfit' | t"
@@ -84,7 +89,7 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
                 [hint]="r.totals.profit | money"
                 icon="trend"
                 tone="green"
-                [caption]="margin(r.totals.profit, r.totals.net) + ' margin'"
+                [caption]="margin(r.totals.profit, r.totals.net) + ('ui.l.preMargin' | t)"
               />
               <app-stat
                 [label]="'reports.discounts' | t"
@@ -359,6 +364,7 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
   `,
 })
 export default class ReportsPage {
+  private readonly translations = inject(Translations);
   protected readonly session = inject(SessionStore);
   private readonly settings = inject(SettingsStore);
   protected readonly tabs = TABS;
@@ -421,19 +427,19 @@ export default class ReportsPage {
     const money = (v: number) => formatMoney(v, this.settings.currency());
     return [
       {
-        label: 'Cost of sales',
+        label: this.translations.t('ui.reports.costOfSales'),
         value: p.costOfSales,
         color: '#f97316',
         display: money(p.costOfSales),
       },
       {
-        label: 'Expenses',
+        label: this.translations.t('ui.reports.expenses'),
         value: p.totalExpenses,
         color: '#ef4444',
         display: money(p.totalExpenses),
       },
       {
-        label: 'Net profit',
+        label: this.translations.t('ui.reports.netProfit'),
         value: Math.max(p.netProfit, 0),
         color: '#16a34a',
         display: money(p.netProfit),
@@ -445,7 +451,7 @@ export default class ReportsPage {
   );
   protected readonly paymentSegments = computed<DonutSegment[]>(() =>
     (this.payments.value() ?? []).map((p, i) => ({
-      label: humanize(p.method),
+      label: enumLabel(this.translations, p.method),
       value: p.amount,
       color: COLORS[i % COLORS.length],
       display: formatMoney(p.amount, this.settings.currency()),

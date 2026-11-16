@@ -21,7 +21,8 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
             >
             <h1 style="margin-top:6px">{{ r.number }}</h1>
             <p class="sub">
-              {{ r.supplierName }} · received {{ r.createdAt | when }} by {{ r.createdBy }}
+              {{ r.supplierName }} ·
+              {{ 'ui.t.receivedBy' | t: { when: r.createdAt | when, by: r.createdBy } }}
             </p>
           </div>
           <div class="actions">
@@ -59,7 +60,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 <dd>1 {{ r.currency }} = {{ r.exchangeRate | num }} {{ base() }}</dd>
               </div>
               <div>
-                <dt>In {{ base() }}</dt>
+                <dt>{{ 'ui.t.inBase' | t: { base: base() } }}</dt>
                 <dd class="strong">{{ r.baseTotal | money }}</dd>
               </div>
             }
@@ -100,7 +101,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 </tr>
                 @if (r.currency !== base()) {
                   <tr class="muted">
-                    <td colspan="5">Stock cost in {{ base() }}</td>
+                    <td colspan="5">{{ 'ui.t.stockCostIn' | t: { base: base() } }}</td>
                     <td class="right">{{ r.baseTotal | money }}</td>
                   </tr>
                 }
@@ -108,7 +109,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
             </table>
           </div>
           @if (r.note) {
-            <div class="card-pad muted">Note: {{ r.note }}</div>
+            <div class="card-pad muted">{{ 'ui.t.note' | t: { note: r.note } }}</div>
           }
         </div>
         <app-attachments

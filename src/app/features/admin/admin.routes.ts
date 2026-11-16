@@ -27,6 +27,12 @@ export default [
     loadComponent: () => import('./settings.page'),
   },
   {
+    path: 'subscription',
+    title: 'Subscription',
+    data: { permission: 'settings.manage' },
+    loadComponent: () => import('./subscription.page'),
+  },
+  {
     path: 'webhooks',
     title: 'Integrations',
     data: { permission: 'integrations.manage' },
@@ -43,5 +49,11 @@ export default [
     title: 'Audit log',
     data: { permission: 'settings.manage' },
     loadComponent: () => import('./audit.page'),
+  },
+  {
+    path: 'payment-methods',
+    title: 'Payment methods',
+    data: { permission: 'settings.manage' },
+    loadComponent: () => import('./payment-methods.page'),
   },
 ] satisfies Routes;

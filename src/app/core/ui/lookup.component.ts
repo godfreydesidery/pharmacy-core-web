@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { Api, Query } from '../api/api.service';
 import { Page } from '../api/models';
+import { TranslatePipe } from '../i18n/t.pipe';
 import { IconComponent } from './icon.component';
 
 /**
@@ -17,7 +18,7 @@ import { IconComponent } from './icon.component';
  */
 @Component({
   selector: 'app-lookup',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:click)': 'outside($event)' },
   template: `
@@ -25,7 +26,7 @@ import { IconComponent } from './icon.component';
       <label class="search" [class.sm]="small()">
         <app-icon name="search" [size]="15" />
         <input
-          [placeholder]="placeholder()"
+          [placeholder]="placeholder() ?? ('ui.lookup.search' | t)"
           [value]="text()"
           (input)="type($any($event.target).value)"
           (focus)="focus()"
@@ -33,7 +34,12 @@ import { IconComponent } from './icon.component';
           (keydown.enter)="$event.preventDefault(); pickFirst()"
         />
         @if (text()) {
-          <button type="button" class="icon-btn sm" (click)="clear()" aria-label="Clear">
+          <button
+            type="button"
+            class="icon-btn sm"
+            (click)="clear()"
+            [attr.aria-label]="'ui.clear' | t"
+          >
             <app-icon name="x" [size]="14" />
           </button>
         }
@@ -48,7 +54,9 @@ import { IconComponent } from './icon.component';
               }
             </button>
           } @empty {
-            <div class="none">{{ loading() ? 'Searching…' : 'No match' }}</div>
+            <div class="none">
+              {{ (loading() ? 'ui.lookup.searching' : 'ui.lookup.noMatch') | t }}
+            </div>
           }
         </div>
       }
@@ -113,7 +121,7 @@ export class LookupComponent {
   private readonly host = inject(ElementRef<HTMLElement>);
   readonly path = input.required<string>();
   readonly query = input<Query>({});
-  readonly placeholder = input('Search…');
+  readonly placeholder = input<string | null>(null);
   readonly small = input(false);
   readonly display = input<(item: any) => string>((item) => String(item?.name ?? ''));
   readonly detail = input<(item: any) => string | null>(() => null);

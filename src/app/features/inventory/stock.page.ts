@@ -38,8 +38,8 @@ import { Translations } from '../../core/i18n/translations.store';
         <div>
           <h1>{{ 'inventory.stock' | t }}</h1>
           <p class="sub">
-            {{ session.branch()?.name ?? 'Choose a branch' }} · quantities by batch, earliest expiry
-            first
+            {{ session.branch()?.name ?? ('ui.l.chooseABranch' | t) }} ·
+            {{ 'ui.t.stockSub' | t }}
           </p>
         </div>
         <div class="actions">
@@ -60,16 +60,16 @@ import { Translations } from '../../core/i18n/translations.store';
       </div>
 
       @if (!session.branch()) {
-        <app-branch-required what="Stock" />
+        <app-branch-required [what]="'ui.what.stock' | t" />
       } @else {
         @if (summary.value(); as s) {
           <div class="grid kpis mb">
             <app-stat
-              [label]="'inventory.productsInStock' | t"
-              [value]="s.inStock"
+              [label]="'ui.stock.onHand' | t"
+              [value]="s.inStock + s.lowStock"
               icon="box"
               tone="green"
-              [caption]="s.products + ' products tracked'"
+              [caption]="'ui.stock.onHandHint' | t: { count: s.products }"
             />
             <app-stat
               [label]="'inventory.stockValueCost' | t"
@@ -77,7 +77,7 @@ import { Translations } from '../../core/i18n/translations.store';
               [hint]="s.costValue | money"
               icon="wallet"
               tone="blue"
-              [caption]="'retail ' + (s.retailValue | money)"
+              [caption]="('ui.l.retailSp' | t) + (s.retailValue | money)"
             />
             <app-stat
               [label]="'inventory.lowStock' | t"
@@ -98,7 +98,7 @@ import { Translations } from '../../core/i18n/translations.store';
               [value]="s.expiringSoon"
               icon="clock"
               tone="purple"
-              [caption]="s.expired + ' expired'"
+              [caption]="s.expired + ('ui.l.preExpired' | t)"
             />
           </div>
         }
@@ -127,7 +127,7 @@ import { Translations } from '../../core/i18n/translations.store';
             >
               <option value="">{{ 'inventory.allTypes' | t }}</option>
               @for (t of types; track t.code) {
-                <option [value]="t.code">{{ t.label }}</option>
+                <option [value]="t.code">{{ 'ui.ptype.' + t.code | t: null : t.label }}</option>
               }
             </select>
             @if (categories.value(); as cats) {
@@ -170,7 +170,7 @@ import { Translations } from '../../core/i18n/translations.store';
                       <div class="cell-main">
                         <span
                           class="thumb tone-{{ typeOf(item).tone }}"
-                          [title]="typeOf(item).label"
+                          [title]="'ui.ptype.' + typeOf(item).code | t: null : typeOf(item).label"
                           ><app-icon [name]="typeOf(item).icon" [size]="16"
                         /></span>
                         <div>
@@ -199,7 +199,11 @@ import { Translations } from '../../core/i18n/translations.store';
                     <td class="right strong">{{ item.quantity | num }}</td>
                     <td class="right muted">{{ item.reorderLevel | num }}</td>
                     <td>
-                      {{ expires(item.trackingMode) ? (item.nearestExpiry | day) : 'No expiry' }}
+                      {{
+                        expires(item.trackingMode)
+                          ? (item.nearestExpiry | day)
+                          : ('ui.l.noExpiry' | t)
+                      }}
                     </td>
                     <td class="right">{{ item.batchCount }}</td>
                     <td class="right">{{ item.sellingPrice | money }}</td>
@@ -213,7 +217,7 @@ import { Translations } from '../../core/i18n/translations.store';
                         [loading]="list.loading()"
                         icon="box"
                         [title]="'inventory.noStock' | t"
-                        text="Receive goods or record opening stock to begin."
+                        [text]="'ui.empty.stock' | t"
                       />
                     </td>
                   </tr>
@@ -235,7 +239,9 @@ import { Translations } from '../../core/i18n/translations.store';
     <app-drawer
       [open]="!!selected()"
       [title]="selected()?.productName ?? ''"
-      [subtitle]="(selected()?.quantity ?? 0) + ' on hand at ' + (session.branch()?.name ?? '')"
+      [subtitle]="
+        (selected()?.quantity ?? 0) + ('ui.l.preOnHandAtSp' | t) + (session.branch()?.name ?? '')
+      "
       (closed)="selected.set(null)"
     >
       <div class="stack">
@@ -268,7 +274,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 [class.active]="serialStatus() === f.value"
                 (click)="filterSerials(f.value)"
               >
-                {{ f.label }}
+                {{ (f.value ? 'enum.' + f.value : 'ui.invites.all') | t: null : f.label }}
               </button>
             }
           </div>
@@ -280,9 +286,9 @@ import { Translations } from '../../core/i18n/translations.store';
               <div class="grow">
                 <b class="mono">{{ u.serialNumber }}</b>
                 <div class="muted" style="font-size:12px">
-                  Batch {{ u.batchNumber }}
+                  {{ 'ui.t.batch' | t: { batch: u.batchNumber } }}
                   @if (u.saleReference) {
-                    · sold on {{ u.saleReference }} {{ u.soldAt | day }}
+                    · {{ 'ui.t.soldOn' | t: { reference: u.saleReference, date: u.soldAt | day } }}
                   }
                 </div>
               </div>
@@ -314,10 +320,10 @@ import { Translations } from '../../core/i18n/translations.store';
                 <b class="mono">{{ b.batchNumber }}</b>
                 <div class="muted" style="font-size:12px">
                   @if (b.expiryDate) {
-                    Expires {{ b.expiryDate | day }} ·
-                    {{ b.expired ? 'expired' : b.daysLeft + ' days left' }} ·
+                    {{ 'ui.t.expires' | t: { date: b.expiryDate | day } }} ·
+                    {{ b.expired ? ('ui.t.expired' | t) : b.daysLeft + ('ui.l.preDaysLeft' | t) }} ·
                   } @else {
-                    No expiry ·
+                    {{ 'ui.l.noExpiry' | t }} ·
                   }
                   cost {{ b.unitCost | money }}
                 </div>
@@ -364,7 +370,9 @@ import { Translations } from '../../core/i18n/translations.store';
         </div>
         @if (openingTracking() !== 'QUANTITY') {
           <div class="field">
-            <label>Batch number{{ openingTracking() === 'SERIAL' ? ' (optional)' : '' }}</label
+            <label
+              >{{ 'ui.t.batchNumber' | t
+              }}{{ openingTracking() === 'SERIAL' ? ('ui.l.preOptional' | t) : '' }}</label
             ><input class="input" formControlName="batchNumber" />
             @if (err('batchNumber'); as m) {
               <span class="error">{{ m }}</span>
@@ -390,9 +398,7 @@ import { Translations } from '../../core/i18n/translations.store';
               placeholder="WCH-0001&#10;WCH-0002"
               (input)="syncSerialCount()"
             ></textarea>
-            <span class="hint"
-              >{{ serialCount() }} serial number(s) = {{ serialCount() }} unit(s)</span
-            >
+            <span class="hint">{{ 'ui.t.serialUnits' | t: { count: serialCount() } }}</span>
             @if (err('serialNumbers'); as m) {
               <span class="error">{{ m }}</span>
             }

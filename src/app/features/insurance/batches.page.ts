@@ -92,7 +92,7 @@ import { Translations } from '../../core/i18n/translations.store';
                       [loading]="batches.loading()"
                       icon="layers"
                       [title]="'insurance.noBatchesYet' | t"
-                      text="Create a batch to submit a period's draft claims to a payer."
+                      [text]="'ui.empty.batches' | t"
                     />
                   </td>
                 </tr>

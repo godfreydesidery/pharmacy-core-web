@@ -104,7 +104,7 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
     </div>
     <app-modal
       [open]="open()"
-      [title]="current() ? 'Edit ' + current()!.name : 'Add supplier'"
+      [title]="current() ? ('ui.l.editSp' | t) + current()!.name : ('ui.l.addSupplier' | t)"
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
@@ -138,6 +138,17 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
               <option [value]="t">{{ t | label }}</option>
             }
           </select>
+        </div>
+        <div class="field">
+          <label for="supplier-lead-time">{{ 'partners.leadTimeDays' | t }}</label
+          ><input
+            id="supplier-lead-time"
+            class="input"
+            type="number"
+            min="0"
+            max="365"
+            formControlName="leadTimeDays"
+          />
         </div>
         <div class="field full">
           <label>{{ 'partners.address' | t }}</label
@@ -185,6 +196,7 @@ export default class SuppliersPage {
     paymentTerms: ['NET_30' as PaymentTerms],
     address: [''],
     active: [true],
+    leadTimeDays: [7, [Validators.min(0), Validators.max(365)]],
   });
 
   protected err(name: string): string | null {
@@ -202,6 +214,7 @@ export default class SuppliersPage {
       paymentTerms: supplier?.paymentTerms ?? 'NET_30',
       address: supplier?.address ?? '',
       active: supplier?.active ?? true,
+      leadTimeDays: supplier?.leadTimeDays ?? 7,
     });
     this.open.set(true);
   }
@@ -220,6 +233,7 @@ export default class SuppliersPage {
       paymentTerms: v.paymentTerms,
       address: v.address || null,
       active: v.active,
+      leadTimeDays: v.leadTimeDays,
     };
     const current = this.current();
     this.busy.set(true);

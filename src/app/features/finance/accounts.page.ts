@@ -77,7 +77,7 @@ const TONES: Record<AccountType, string> = {
                       [loading]="accounts.loading()"
                       icon="book"
                       [title]="'finance.noAccountsYet' | t"
-                      text="The chart is created with the first posting."
+                      [text]="'ui.empty.accounts' | t"
                     />
                   </td>
                 </tr>

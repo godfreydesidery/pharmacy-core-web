@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
 import { Tone, toneOf } from '../format/format';
 import { enumLabel } from '../format/pipes';
+import { TranslatePipe } from '../i18n/t.pipe';
 import { Translations } from '../i18n/translations.store';
 import { IconComponent } from './icon.component';
 import { ToastService } from './toast.service';
@@ -65,7 +66,7 @@ export class StatComponent {
 /** The empty or loading state of a list. */
 @Component({
   selector: 'app-empty',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="empty">
@@ -77,7 +78,7 @@ export class StatComponent {
         </div>
       } @else {
         <app-icon [name]="icon()" [size]="34" [stroke]="1.4" />
-        <b>{{ title() }}</b>
+        <b>{{ title() ?? ('ui.empty.nothing' | t) }}</b>
         <span>{{ text() }}</span>
       }
     </div>
@@ -86,20 +87,25 @@ export class StatComponent {
 export class EmptyComponent {
   readonly loading = input(false);
   readonly icon = input('box');
-  readonly title = input('Nothing here yet');
+  readonly title = input<string | null>(null);
   readonly text = input('');
 }
 
 /** "Load more" under a cursor-paged list. */
 @Component({
   selector: 'app-pager',
+  imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="table-foot">
-      <span>{{ count() }} shown{{ total() !== null ? ' of ' + total() : '' }}</span>
+      <span>{{
+        total() !== null
+          ? ('ui.pager.shownOf' | t: { count: count(), total: total() })
+          : ('ui.pager.shown' | t: { count: count() })
+      }}</span>
       @if (hasMore()) {
         <button class="btn sm" type="button" [disabled]="loading()" (click)="more.emit()">
-          {{ loading() ? 'Loading…' : 'Load more' }}
+          {{ (loading() ? 'common.loading' : 'ui.pager.loadMore') | t }}
         </button>
       }
     </div>

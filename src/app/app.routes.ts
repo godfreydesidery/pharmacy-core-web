@@ -143,6 +143,11 @@ export const routes: Routes = [
           { path: 'admin', loadChildren: () => import('./features/admin/admin.routes') },
         ],
       },
+      {
+        path: '**',
+        title: 'Page not found',
+        loadComponent: () => import('./features/misc/not-found.page'),
+      },
     ],
   },
   { path: '**', redirectTo: '' },

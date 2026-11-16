@@ -51,10 +51,33 @@ const TENANT_ROUTES = [
   '/admin/webhooks',
   '/admin/notifications',
   '/admin/audit',
+  '/sales/shifts',
+  '/sales/vouchers',
+  '/inventory/controlled',
+  '/inventory/repack',
+  '/inventory/stock-counts',
+  '/inventory/recalls',
+  '/inventory/destructions',
+  '/purchasing/reorder',
+  '/purchasing/supplier-returns',
+  '/catalogue/pricing',
+  '/finance/statements',
+  '/finance/opening-balances',
+  '/finance/period-lock',
+  '/admin/payment-methods',
+  '/admin/subscription',
 ];
 /** List pages whose first row links to a detail page. */
 const DETAIL_FROM = ['/sales', '/catalogue/products', '/purchasing/receipts', '/receivables', '/platform/tenants'];
-const PLATFORM_ROUTES = ['/platform', '/platform/tenants', '/platform/root-admins', '/platform/audit'];
+const PLATFORM_ROUTES = [
+  '/platform',
+  '/platform/tenants',
+  '/platform/root-admins',
+  '/platform/audit',
+  '/platform/plans',
+  '/platform/payment-methods',
+  '/platform/message-providers',
+];
 
 type Problems = string[];
 

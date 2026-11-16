@@ -150,7 +150,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 type="button"
                 class="chip-x"
                 (click)="removeCurrency(c)"
-                [attr.aria-label]="'Remove ' + c"
+                [attr.aria-label]="('ui.l.removeSp' | t) + c"
               >
                 <app-icon name="x" [size]="12" />
               </button>

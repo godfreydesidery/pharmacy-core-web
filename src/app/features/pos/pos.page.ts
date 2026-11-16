@@ -1,5 +1,5 @@
-import { LatestRate } from '../../core/api/models';
-import { minorUnits } from '../../core/format/format';
+import { LatestRate, PaymentRequest, PricedLine, TillMethod } from '../../core/api/models';
+import { formatMoney, minorUnits } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -7,6 +7,8 @@ import {
   inject,
   signal,
   viewChild,
+  untracked,
+  effect,
 } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
@@ -42,13 +44,13 @@ import {
   withSerials,
 } from './cart';
 import { SerialPickerComponent } from './serial-picker.component';
+import { ShiftBarComponent } from './shift-bar.component';
 import { productTypeOf } from '../../core/ui/product-types';
 import { ReceiptComponent } from './receipt.component';
 import { FilesService } from '../../core/files/files.service';
 import { UploadComponent } from '../../core/files/upload.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { AccountView, CoverageQuote, MemberView } from '../../core/api/credit.models';
-import { effect } from '@angular/core';
 import { Translations } from '../../core/i18n/translations.store';
 
 const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
@@ -60,6 +62,16 @@ const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
   { method: 'ACCOUNT_CREDIT', label: 'Account credit', icon: 'cash' },
 ];
 
+/** Common notes per currency, smallest first, for the quick-cash chips. */
+const NOTES: Readonly<Record<string, number[]>> = {
+  TZS: [1000, 2000, 5000, 10000],
+  KES: [50, 100, 200, 500, 1000],
+  UGX: [1000, 2000, 5000, 10000, 20000, 50000],
+  USD: [1, 5, 10, 20, 50, 100],
+  EUR: [5, 10, 20, 50, 100],
+  GBP: [5, 10, 20, 50],
+};
+
 @Component({
   selector: 'app-pos',
   imports: [
@@ -69,6 +81,7 @@ const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
     UploadComponent,
     TranslatePipe,
     SerialPickerComponent,
+    ShiftBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pos.page.html',
@@ -82,6 +95,80 @@ export default class PosPage {
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   protected readonly methods = METHODS;
+  /** The methods this pharmacy accepts at the till, from the payment registry. */
+  protected readonly tillMethods = loaded<TillMethod[]>(() =>
+    this.session.branch() ? { path: '/pos/payment-methods' } : null,
+  );
+  /** Methods only the system books (insurance, on account, account credit). */
+  protected readonly internalMethods = METHODS.filter((m) =>
+    ['INSURANCE', 'CREDIT', 'ACCOUNT_CREDIT'].includes(m.method),
+  );
+  /** The phone number and pending request of each payment row pushed to a phone. */
+  protected readonly push = signal<
+    Record<number, { phone: string; request: PaymentRequest | null; busy: boolean }>
+  >({});
+
+  /** The registered method of a payment row, if it was picked from the registry. */
+  protected tillMethodOf(payment: SalePayment): TillMethod | undefined {
+    return (this.tillMethods.value() ?? []).find((m) => m.code === payment.channel);
+  }
+
+  /** Picks a registry method (sets how it is booked and its channel) or an internal one. */
+  protected choose(index: number, value: string): void {
+    const till = (this.tillMethods.value() ?? []).find((m) => m.code === value);
+    this.payments.update((list) =>
+      list.map((p, i) =>
+        i === index
+          ? till
+            ? { ...p, method: till.kind as PaymentMethod, channel: till.code, reference: null }
+            : { ...p, method: value as PaymentMethod, channel: null, reference: null }
+          : p,
+      ),
+    );
+    this.push.update((all) => ({ ...all, [index]: { phone: '', request: null, busy: false } }));
+  }
+
+  protected setPhone(index: number, phone: string): void {
+    this.push.update((all) => ({
+      ...all,
+      [index]: { ...(all[index] ?? { request: null, busy: false }), phone },
+    }));
+  }
+
+  /** Sends a payment request to the customer's phone and waits for the provider's answer. */
+  protected async sendToPhone(index: number): Promise<void> {
+    const payment = this.payments()[index];
+    const state = this.push()[index];
+    if (!payment?.channel || !state?.phone) {
+      this.toasts.error(this.translations.t('pos.phoneNeeded'));
+      return;
+    }
+    this.push.update((all) => ({ ...all, [index]: { ...state, busy: true } }));
+    try {
+      let request = await this.api.post<PaymentRequest>('/pos/payment-requests', {
+        methodCode: payment.channel,
+        amount: payment.amount,
+        currency: payment.currency ?? this.base(),
+        phone: state.phone,
+      });
+      for (let i = 0; i < 60 && request.status === 'PENDING'; i++) {
+        this.push.update((all) => ({ ...all, [index]: { ...state, request, busy: true } }));
+        await new Promise((r) => setTimeout(r, 2000));
+        request = await this.api.get<PaymentRequest>(`/pos/payment-requests/${request.uid}`);
+      }
+      this.push.update((all) => ({ ...all, [index]: { ...state, request, busy: false } }));
+      if (request.status === 'CONFIRMED') {
+        this.setReference(index, request.uid);
+        this.toasts.success(this.translations.t('pos.paymentConfirmed'));
+      } else {
+        this.toasts.error(
+          this.translations.t('pos.paymentNotConfirmed', { status: request.status }),
+        );
+      }
+    } catch {
+      this.push.update((all) => ({ ...all, [index]: { ...state, busy: false } }));
+    }
+  }
   protected readonly baseValue = baseValue;
   private readonly customerLookup = viewChild<LookupComponent>('customerLookup');
 
@@ -111,7 +198,38 @@ export default class PosPage {
   protected readonly prescriptionFile = signal<File | null>(null);
   private idempotencyKey = crypto.randomUUID();
 
-  protected readonly totals = computed(() => cartTotals(this.lines(), this.discountPercent()));
+  /** Prices the server quoted for this basket and customer (lists, branch prices, promotions). */
+  protected readonly quoted = signal<Record<string, PricedLine>>({});
+  protected readonly priceOf = (line: CartLine): number =>
+    this.quoted()[line.product.productUid]?.unitPrice ?? line.product.sellingPrice;
+  protected readonly totals = computed(() =>
+    cartTotals(this.lines(), this.discountPercent(), this.priceOf),
+  );
+  private quoteSeq = 0;
+  /** Re-prices the basket whenever its products, quantities or customer change. */
+  private readonly priceWatch = effect(() => {
+    const lines = this.lines().map((l) => ({
+      productUid: l.product.productUid,
+      quantity: l.quantity,
+    }));
+    const customerUid = this.customer()?.uid ?? null;
+    const seq = ++this.quoteSeq;
+    if (!lines.length) {
+      untracked(() => this.quoted.set({}));
+      return;
+    }
+    void this.api
+      .post<PricedLine[]>('/pos/prices', { customerUid, lines }, { silent: true })
+      .then((priced) => {
+        if (seq === this.quoteSeq) {
+          this.quoted.set(Object.fromEntries(priced.map((p) => [p.productUid, p])));
+          this.syncCash();
+        }
+      })
+      .catch(() => {
+        if (seq === this.quoteSeq) this.quoted.set({});
+      });
+  });
   protected readonly paid = computed(() => paidTotal(this.payments()));
   protected readonly change = computed(() => changeDue(this.payments(), this.totals().total));
   protected readonly balance = computed(() => round2(this.totals().total - this.paid()));
@@ -325,8 +443,13 @@ export default class PosPage {
   );
   protected readonly base = this.settings.currency;
 
-  /** Switches a payment to another accepted currency at today's rate, keeping its base value. */
-  protected async setCurrency(index: number, currency: string): Promise<void> {
+  /**
+   * Switches a payment to another accepted currency at today's rate, keeping its base value. With
+   * no rate the payment stays as it was, and so does the select: a native select keeps showing the
+   * picked option unless it is put back, which once let TZS show while USD was recorded.
+   */
+  protected async setCurrency(index: number, select: HTMLSelectElement): Promise<void> {
+    const currency = select.value;
     const payment = this.payments()[index];
     const baseNow = baseValue(payment);
     if (currency === this.base()) {
@@ -348,9 +471,29 @@ export default class PosPage {
       const amount = Math.ceil((baseNow / latest.rate) * 10 ** digits) / 10 ** digits;
       this.patchPayment(index, { currency, exchangeRate: latest.rate, amount });
     } catch {
+      select.value = this.payments()[index]?.currency ?? this.base();
       this.toasts.error(this.translations.t('toast.noRate', { currency }));
     }
   }
+
+  /**
+   * Quick-cash amounts in the first payment's currency: for each common note, the smallest
+   * multiple of it that covers what is still due, so the chips fit USD, KES and TZS alike.
+   */
+  protected readonly quickAmounts = computed(() => {
+    const first = this.payments()[0];
+    const currency = first?.currency ?? this.base();
+    const rate = first?.exchangeRate ?? 1;
+    const due = Math.max(this.totals().total - paidTotal(this.payments().slice(1)), 0) / rate;
+    const notes = NOTES[currency] ?? [1, 5, 10, 20, 50, 100];
+    const amounts = new Set<number>();
+    for (const note of notes) {
+      const amount = Math.max(Math.ceil(due / note), 1) * note;
+      if (amount > due + 1e-9) amounts.add(amount);
+      if (amounts.size === 4) break;
+    }
+    return [...amounts].sort((a, b) => a - b);
+  });
 
   private patchPayment(index: number, patch: Partial<SalePayment>): void {
     this.payments.update((list) => list.map((p, i) => (i === index ? { ...p, ...patch } : p)));
@@ -413,12 +556,26 @@ export default class PosPage {
     if (!validate(this.rxForm)) {
       return;
     }
-    this.prescription.set(this.rxForm.getRawValue());
+    const rx = this.rxForm.getRawValue();
+    const controlled = this.lines().some((l) => l.product.schedule === 'CONTROLLED');
+    if (
+      controlled &&
+      ![rx.prescriberName, rx.prescriberRegistration, rx.reference, rx.patientName].every((v) =>
+        String(v ?? '').trim(),
+      )
+    ) {
+      this.toasts.error(this.translations.t('pos.controlledRxIncomplete'));
+      return;
+    }
+    this.prescription.set(rx);
     this.rxOpen.set(false);
     void this.checkout();
   }
 
   protected async checkout(): Promise<void> {
+    if (this.busy()) {
+      return; // a second click before the first one's request has come back
+    }
     const lines = this.lines();
     if (!lines.length) {
       this.toasts.error(this.translations.t('toast.addItem'));
@@ -447,6 +604,19 @@ export default class PosPage {
     }
     if (this.member()?.requiresPreauth && this.useInsurance() && !this.preauthNumber()) {
       this.toasts.error(this.translations.t('toast.preauthNeeded'));
+      return;
+    }
+    const tendered = paidTotal(payments.map((p) => ({ ...p, amount: baseValue(p) })));
+    if (
+      this.change() > 0 &&
+      tendered > Math.max(this.totals().total * 5, this.totals().total + 100) &&
+      !window.confirm(
+        this.translations.t('confirm.largeChange', {
+          tendered: formatMoney(tendered, this.base()),
+          change: formatMoney(this.change(), this.base()),
+        }),
+      )
+    ) {
       return;
     }
     const request: CheckoutRequest = {

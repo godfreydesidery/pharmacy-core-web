@@ -44,6 +44,8 @@ export const MESSAGES_EN: Readonly<Record<string, string>> = {
   'toast.pharmacySuspended': 'Pharmacy suspended',
   'toast.pharmacyReactivated': 'Pharmacy reactivated',
   'toast.tenantRegistered': '{{name}} registered',
+  'toast.settingsLoading': 'The pharmacy settings are still loading; try again in a moment.',
+  'toast.rateNeeded': 'Enter the {{currency}} exchange rate first.',
   'toast.saleCompleted': '{{number}} completed',
   'toast.returnNeedsQuantity': 'Enter a quantity to return',
   'toast.returnNeedsReason': 'Give a reason for the return',
@@ -87,5 +89,7 @@ export const MESSAGES_EN: Readonly<Record<string, string>> = {
 
   // confirmations
   'confirm.deleteWebhook': 'Delete the webhook "{{name}}"? Deliveries stop at once.',
+  'confirm.largeChange':
+    'The customer gave {{tendered}}, so the change is {{change}}. Is that right?',
   'confirm.removePasskey': 'Remove the passkey "{{name}}"?',
 };

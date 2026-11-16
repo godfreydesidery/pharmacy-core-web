@@ -76,7 +76,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 <div class="row" style="justify-content:space-between">
                   <h4>{{ area.name | label }}</h4>
                   <button class="btn ghost sm" type="button" (click)="toggleArea(area.codes)">
-                    {{ allIn(area.codes) ? 'Clear' : 'Grant all' }}
+                    {{ allIn(area.codes) ? ('ui.l.clear' | t) : ('ui.l.grantAll' | t) }}
                   </button>
                 </div>
                 <div class="perms">
@@ -102,7 +102,7 @@ import { Translations } from '../../core/i18n/translations.store';
             <app-empty
               icon="shield"
               [title]="'admin.chooseARole' | t"
-              text="Pick a role on the left to see and change its permissions."
+              [text]="'ui.empty.pickRole' | t"
             />
           </div>
         }

@@ -1,5 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ApiError } from '../../core/api/api-error';
@@ -35,6 +42,19 @@ import { Translations } from '../../core/i18n/translations.store';
           <h3>{{ 'admin.invitations' | t }}</h3>
           <p class="muted">{{ 'admin.peopleInvitedByEmailWho' | t }}</p>
         </div>
+        <div class="chips">
+          <button
+            type="button"
+            class="chip"
+            [class.active]="!showAll()"
+            (click)="showAll.set(false)"
+          >
+            {{ 'ui.invites.pending' | t }}
+          </button>
+          <button type="button" class="chip" [class.active]="showAll()" (click)="showAll.set(true)">
+            {{ 'ui.invites.all' | t }}
+          </button>
+        </div>
         <button class="btn primary" type="button" (click)="openInvite()">
           <app-icon name="mail" [size]="16" /> {{ 'admin.inviteByEmail' | t }}
         </button>
@@ -52,7 +72,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </tr>
           </thead>
           <tbody>
-            @for (invitation of invitations(); track invitation.uid) {
+            @for (invitation of shown(); track invitation.uid) {
               <tr>
                 <td>
                   <b>{{ invitation.name }}</b>
@@ -171,6 +191,11 @@ export class InvitationsPanelComponent implements OnInit {
 
   private readonly translations = inject(Translations);
   protected readonly invitations = signal<Invitation[]>([]);
+  /** Pending invitations by default; accepted, revoked and expired ones on request. */
+  protected readonly showAll = signal(false);
+  protected readonly shown = computed(() =>
+    this.showAll() ? this.invitations() : this.invitations().filter((i) => i.status === 'PENDING'),
+  );
   protected readonly roles = signal<Role[]>([]);
   protected readonly branches = signal<Branch[]>([]);
   protected readonly selected = signal(new Set<string>());
@@ -185,6 +210,11 @@ export class InvitationsPanelComponent implements OnInit {
 
   async ngOnInit(): Promise<void> {
     await this.load();
+  }
+
+  /** Re-reads the invitations, e.g. after the users page sent one. */
+  reload(): Promise<void> {
+    return this.load();
   }
 
   protected err(name: 'name' | 'email'): string | null {

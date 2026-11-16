@@ -24,11 +24,15 @@ const LOCALES: Readonly<Record<Lang, string>> = { en: 'en-TZ', sw: 'sw-TZ' };
  */
 @Injectable({ providedIn: 'root' })
 export class Translations {
+  /** The app's instance, for plain functions (such as form messages) that cannot inject. */
+  static current: Translations | null = null;
+
   readonly lang = signal<Lang>(Translations.stored());
   /** The Intl locale for numbers and dates, such as `sw-TZ`. */
   readonly locale = computed(() => LOCALES[this.lang()]);
 
   constructor() {
+    Translations.current = this;
     effect(() => {
       const lang = this.lang();
       try {

@@ -65,11 +65,7 @@ const MAX_DEPTH = 3;
                       <div>
                         <b>{{ row.category.name }}</b>
                         @if (row.children) {
-                          <small
-                            >{{ row.children }} sub-categor{{
-                              row.children === 1 ? 'y' : 'ies'
-                            }}</small
-                          >
+                          <small>{{ 'ui.t.subCategories' | t: { count: row.children } }}</small>
                         }
                       </div>
                     </div>
@@ -84,7 +80,7 @@ const MAX_DEPTH = 3;
                           class="btn sm ghost"
                           type="button"
                           (click)="edit(null, row.category.uid)"
-                          [attr.aria-label]="'Add a sub-category of ' + row.category.name"
+                          [attr.aria-label]="('ui.l.addASubCategoryOfSp' | t) + row.category.name"
                         >
                           <app-icon name="plus" [size]="14" /> {{ 'catalogue.subCategory' | t }}
                         </button>
@@ -113,7 +109,7 @@ const MAX_DEPTH = 3;
     </div>
     <app-modal
       [open]="open()"
-      [title]="current() ? 'Edit category' : 'Add category'"
+      [title]="current() ? ('ui.l.editCategory' | t) : ('ui.l.addCategory' | t)"
       (closed)="open.set(false)"
     >
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">

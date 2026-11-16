@@ -10,7 +10,13 @@ export class SettingsStore {
   private loadedFor: string | null = null;
 
   readonly settings = this.state.asReadonly();
-  readonly currency = computed(() => this.state()?.currency ?? 'TZS');
+  /**
+   * The base currency, or '' until the settings arrive. Never a guess: a fallback of TZS once made
+   * a USD pharmacy's purchase order start in TZS at rate 1.
+   */
+  readonly currency = computed(() => this.state()?.currency ?? '');
+  /** The settings have loaded, so the currency and the accepted currencies are real. */
+  readonly ready = computed(() => this.state() !== null);
 
   async load(tenantUid: string, force = false): Promise<void> {
     if (!force && this.loadedFor === tenantUid && this.state()) {

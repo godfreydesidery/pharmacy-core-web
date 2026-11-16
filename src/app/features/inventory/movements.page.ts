@@ -28,7 +28,7 @@ export const MOVEMENT_TYPES: MovementType[] = [
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="The stock ledger" />
+        <app-branch-required [what]="'ui.what.ledger' | t" />
       } @else {
         <div class="card">
           <div class="toolbar">

@@ -151,7 +151,7 @@ interface Decision {
                       [loading]="list.loading()"
                       icon="file"
                       [title]="'insurance.noClaims' | t"
-                      text="Claims appear here after an insured sale at the till."
+                      [text]="'ui.empty.claims' | t"
                     />
                   </td>
                 </tr>

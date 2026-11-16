@@ -1,7 +1,15 @@
 import { CurrencyRateComponent } from '../../core/ui/currency-rate.component';
 import { SettingsStore } from '../../core/format/settings.store';
 import { convertHalfEven } from '../../core/format/format';
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Api } from '../../core/api/api.service';
@@ -33,7 +41,7 @@ type LineGroup = FormGroup<{
             ><app-icon name="arrow-left" [size]="15" /> {{ 'purchasing.purchaseOrders' | t }}</a
           >
           <h1 style="margin-top:6px">{{ 'purchasing.newPurchaseOrder' | t }}</h1>
-          <p class="sub">For {{ session.branch()?.name ?? '—' }}</p>
+          <p class="sub">{{ 'ui.t.forBranch' | t: { branch: session.branch()?.name ?? '—' } }}</p>
         </div>
         <div class="actions">
           <a class="btn" routerLink="/purchasing/orders">{{ 'purchasing.cancel' | t }}</a>
@@ -48,7 +56,7 @@ type LineGroup = FormGroup<{
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Ordering" />
+        <app-branch-required [what]="'ui.what.ordering' | t" />
       } @else {
         <form [formGroup]="form" class="stack">
           <div class="card card-pad form-grid three">
@@ -146,7 +154,7 @@ type LineGroup = FormGroup<{
                         <app-empty
                           icon="bag"
                           [title]="'purchasing.noLinesYet' | t"
-                          text="Search for a product above to add it."
+                          [text]="'ui.empty.orderLines' | t"
                         />
                       </td>
                     </tr>
@@ -160,7 +168,9 @@ type LineGroup = FormGroup<{
                   </tr>
                   @if (currency() !== base()) {
                     <tr class="muted">
-                      <td colspan="3">In {{ base() }} at {{ rate() | num }}</td>
+                      <td colspan="3">
+                        {{ 'ui.t.inBaseAt' | t: { base: base(), rate: rate() | num } }}
+                      </td>
                       <td class="right">{{ baseTotal() | money }}</td>
                       <td></td>
                     </tr>
@@ -185,8 +195,15 @@ export default class OrderFormPage {
   private readonly version = signal(0);
   protected readonly base = inject(SettingsStore).currency;
   /** The order's currency and its rate (base units per unit), locked when the order is placed. */
-  protected readonly currency = signal(this.base());
+  protected readonly currency = signal('');
   protected readonly rate = signal(1);
+  /** Settles on the base currency once the settings have loaded (never before). */
+  private readonly defaultCurrency = effect(() => {
+    const base = this.base();
+    if (base && !untracked(this.currency)) {
+      this.currency.set(base);
+    }
+  });
 
   protected readonly form = this.fb.group({
     supplierUid: ['', Validators.required],
@@ -246,6 +263,14 @@ export default class OrderFormPage {
   }
 
   protected async save(): Promise<void> {
+    if (!this.base() || !this.currency()) {
+      this.toasts.error(this.translations.t('toast.settingsLoading'));
+      return;
+    }
+    if (this.currency() !== this.base() && !(this.rate() > 0)) {
+      this.toasts.error(this.translations.t('toast.rateNeeded', { currency: this.currency() }));
+      return;
+    }
     if (!validate(this.form)) {
       this.toasts.error(this.translations.t('toast.chooseSupplier'));
       return;
@@ -268,7 +293,7 @@ export default class OrderFormPage {
             quantity,
             unitCost,
           })),
-          currency: this.currency(),
+          currency: this.currency() || this.base(),
           exchangeRate: this.currency() === this.base() ? null : this.rate(),
         },
         { silent: true },

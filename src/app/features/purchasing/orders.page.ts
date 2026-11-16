@@ -16,7 +16,9 @@ const STATUSES: PurchaseOrderStatus[] = ['ORDERED', 'PARTIALLY_RECEIVED', 'RECEI
       <div class="page-head">
         <div>
           <h1>{{ 'purchasing.purchaseOrders' | t }}</h1>
-          <p class="sub">Orders to suppliers for {{ session.branch()?.name ?? '—' }}</p>
+          <p class="sub">
+            {{ 'ui.t.ordersSub' | t: { branch: session.branch()?.name ?? '—' } }}
+          </p>
         </div>
         <div class="actions">
           <a class="btn" routerLink="/purchasing/receipts"
@@ -30,7 +32,7 @@ const STATUSES: PurchaseOrderStatus[] = ['ORDERED', 'PARTIALLY_RECEIVED', 'RECEI
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Purchasing" />
+        <app-branch-required [what]="'ui.what.purchasing' | t" />
       } @else {
         <div class="card">
           <div class="toolbar">
@@ -76,7 +78,7 @@ const STATUSES: PurchaseOrderStatus[] = ['ORDERED', 'PARTIALLY_RECEIVED', 'RECEI
                         <span class="thumb tone-green"><app-icon name="bag" [size]="16" /></span>
                         <div>
                           <b>{{ o.number }}</b
-                          ><small>by {{ o.createdBy }}</small>
+                          ><small>{{ 'ui.t.by' | t: { name: o.createdBy } }}</small>
                         </div>
                       </div>
                     </td>
@@ -84,7 +86,12 @@ const STATUSES: PurchaseOrderStatus[] = ['ORDERED', 'PARTIALLY_RECEIVED', 'RECEI
                     <td class="muted">{{ o.createdAt | day }}</td>
                     <td class="muted">{{ o.expectedDate | day }}</td>
                     <td class="right">{{ o.lines.length }}</td>
-                    <td class="right strong">{{ o.total | money }}</td>
+                    <td class="right">
+                      <span class="strong">{{ o.total | money: o.currency }}</span>
+                      @if (o.currency && o.baseTotal !== undefined && o.total !== o.baseTotal) {
+                        <small class="muted block">{{ o.baseTotal | money }}</small>
+                      }
+                    </td>
                     <td><app-status [value]="o.status" /></td>
                   </tr>
                 } @empty {

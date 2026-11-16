@@ -7,10 +7,12 @@ import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
+import { TenantEditComponent } from './tenant-edit.component';
 
+import { TenantSubscriptionComponent } from './tenant-subscription.component';
 @Component({
   selector: 'app-tenant-detail',
-  imports: [...SHARED],
+  imports: [...SHARED, TenantEditComponent, TenantSubscriptionComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -26,6 +28,9 @@ import { Translations } from '../../core/i18n/translations.store';
             <p class="sub">{{ t.code }}{{ t.legalName ? ' · ' + t.legalName : '' }}</p>
           </div>
           <div class="actions">
+            <button class="btn" type="button" (click)="editing.set(true)">
+              <app-icon name="edit" [size]="16" /> {{ 'common.edit' | t }}
+            </button>
             <button class="btn primary" type="button" (click)="enter(t)">
               <app-icon name="transfer" [size]="16" /> {{ 'platform.workInThisPharmacy' | t }}
             </button>
@@ -40,6 +45,12 @@ import { Translations } from '../../core/i18n/translations.store';
             }
           </div>
         </div>
+        <app-tenant-edit
+          [tenant]="t"
+          [open]="editing()"
+          (closed)="editing.set(false)"
+          (saved)="tenant.set($event); editing.set(false)"
+        />
         @if (t.status === 'SUSPENDED') {
           <div class="notice tone-red mb">
             <app-icon name="alert" /> {{ 'platform.suspended' | t
@@ -79,6 +90,22 @@ import { Translations } from '../../core/i18n/translations.store';
                 <dt>{{ 'platform.tenantId' | t }}</dt>
                 <dd class="mono">{{ t.uid }}</dd>
               </div>
+              <div>
+                <dt>{{ 'admin2.contact' | t }}</dt>
+                <dd>
+                  {{ t.contactName || '—' }}
+                  @if (t.contactPhone) {
+                    · {{ t.contactPhone }}
+                  }
+                  @if (t.contactEmail) {
+                    · {{ t.contactEmail }}
+                  }
+                </dd>
+              </div>
+              <div>
+                <dt>{{ 'platform.address' | t }}</dt>
+                <dd>{{ t.address || '—' }}</dd>
+              </div>
             </dl>
           </div>
           <div class="card">
@@ -97,7 +124,10 @@ import { Translations } from '../../core/i18n/translations.store';
                           /></span>
                           <div>
                             <b>{{ b.name }}</b
-                            ><small>{{ b.code }}{{ b.headOffice ? ' · Head office' : '' }}</small>
+                            ><small
+                              >{{ b.code
+                              }}{{ b.headOffice ? ('ui.l.preHeadOffice' | t) : '' }}</small
+                            >
                           </div>
                         </div>
                       </td>
@@ -121,6 +151,9 @@ import { Translations } from '../../core/i18n/translations.store';
               </table>
             </div>
           </div>
+        </div>
+        <div class="mt">
+          <app-tenant-subscription [tenantUid]="t.uid" />
         </div>
       } @else {
         <app-empty
@@ -174,6 +207,7 @@ export default class TenantDetailPage {
   readonly uid = input.required<string>();
   protected readonly busy = signal(false);
   protected readonly suspending = signal(false);
+  protected readonly editing = signal(false);
   protected readonly tenant = loaded<Tenant>(() => ({
     path: `/platform/tenants/${this.uid()}`,
     options: { noBranch: true },

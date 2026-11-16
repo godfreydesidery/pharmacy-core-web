@@ -51,18 +51,22 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
             ><app-icon name="arrow-left" [size]="15" /> {{ 'catalogue.products' | t }}</a
           >
           <h1 style="margin-top:6px">
-            {{ editing() ? form.controls.name.value || 'Product' : 'New product' }}
+            {{
+              editing() ? form.controls.name.value || ('ui.l.product' | t) : ('ui.l.newProduct' | t)
+            }}
           </h1>
           <p class="sub">
             {{
               editing()
-                ? 'Version ' + version()
-                : 'Add a medicine, equipment or any item the pharmacy sells'
+                ? ('ui.l.versionSp' | t) + version()
+                : ('ui.l.addAMedicineEquipmentOrAny' | t)
             }}
           </p>
         </div>
         <div class="actions">
-          <a class="btn" routerLink="/catalogue/products">{{ canEdit() ? 'Cancel' : 'Back' }}</a>
+          <a class="btn" routerLink="/catalogue/products">{{
+            canEdit() ? ('ui.l.cancel' | t) : ('ui.l.back' | t)
+          }}</a>
           @if (canEdit()) {
             <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
               <app-icon name="check" [size]="16" /> {{ 'catalogue.save' | t }}
@@ -87,8 +91,8 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                 <span class="bubble tone-{{ t.tone }}"
                   ><app-icon [name]="t.icon" [size]="20"
                 /></span>
-                <b>{{ t.label }}</b>
-                <small>{{ t.hint }}</small>
+                <b>{{ 'ui.ptype.' + t.code | t: null : t.label }}</b>
+                <small>{{ 'ui.ptype.' + t.code + '.hint' | t: null : t.hint }}</small>
               </button>
             }
           </div>
@@ -162,8 +166,8 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                   @for (m of trackingModes; track m.code) {
                     <label class="pill" [class.on]="tracking() === m.code">
                       <input type="radio" formControlName="trackingMode" [value]="m.code" />
-                      <b>{{ m.label }}</b
-                      ><small>{{ m.hint }}</small>
+                      <b>{{ 'ui.tracking.' + m.code | t: null : m.label }}</b
+                      ><small>{{ 'ui.tracking.' + m.code + '.hint' | t: null : m.hint }}</small>
                     </label>
                   }
                 </div>
@@ -173,10 +177,14 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                     {{ 'catalogue.trackingLocked' | t: { count: unitsHeld() } }}</span
                   >
                 } @else if (tracking() !== defaultTrackingFor()) {
-                  <span class="hint"
-                    >{{ type() | label }} products are usually tracked by
-                    {{ trackingLabel(defaultTrackingFor()) }}.</span
-                  >
+                  <span class="hint">{{
+                    'ui.ptype.usualTracking'
+                      | t
+                        : {
+                            type: 'ui.ptype.' + type() | t,
+                            mode: trackingLabel(defaultTrackingFor()),
+                          }
+                  }}</span>
                 }
               </div>
             </div>
@@ -268,9 +276,10 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                   {{ 'catalogue.askForTheSerialNumberAt' | t }}</label
                 >
                 <div class="notice tone-purple">
-                  <app-icon name="barcode" /> Each unit is received with its serial number and sold
-                  by it, so every {{ form.controls.name.value || 'unit' }} can be traced to its sale
-                  and warranty.
+                  <app-icon name="barcode" />
+                  {{
+                    'ui.t.serialNotice' | t: { name: form.controls.name.value || ('ui.t.unit' | t) }
+                  }}
                 </div>
               }
             </fieldset>
@@ -316,7 +325,9 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
               ><input class="input" type="number" min="0" formControlName="reorderLevel" />
             </div>
           </div>
-          <div class="notice tone-blue"><app-icon name="trend" /> Margin {{ margin() }}</div>
+          <div class="notice tone-blue">
+            <app-icon name="trend" /> {{ 'ui.t.margin' | t: { margin: margin() } }}
+          </div>
           @if (editing()) {
             <label class="check"
               ><input type="checkbox" formControlName="active" />
@@ -565,7 +576,8 @@ export default class ProductFormPage implements OnInit {
   }
 
   protected trackingLabel(mode: TrackingMode): string {
-    return (TRACKING_MODES.find((m) => m.code === mode)?.label ?? mode).toLowerCase();
+    const fallback = TRACKING_MODES.find((m) => m.code === mode)?.label ?? mode;
+    return this.translations.t(`ui.tracking.${mode}`, undefined, fallback).toLowerCase();
   }
 
   protected err(name: string): string | null {

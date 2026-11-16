@@ -43,7 +43,7 @@ interface RateCard {
           @if (session.can('finance.manage')) {
             <button class="btn" type="button" [disabled]="refreshing()" (click)="refresh()">
               <app-icon name="refresh" [size]="16" />
-              {{ refreshing() ? 'Refreshing…' : 'Refresh from provider' }}
+              {{ refreshing() ? ('ui.l.refreshing' | t) : ('ui.l.refreshFromProvider' | t) }}
             </button>
             <button class="btn primary" type="button" (click)="openForm()">
               <app-icon name="plus" [size]="16" /> {{ 'finance.recordRate' | t }}
@@ -57,7 +57,7 @@ interface RateCard {
           <app-empty
             icon="globe"
             title="Only {{ base() }} is accepted"
-            text="Add foreign currencies under Administration → Settings to take payments or buy in them."
+            [text]="'ui.empty.noForeign' | t"
           />
         </div>
       } @else {
@@ -139,7 +139,7 @@ interface RateCard {
                       [loading]="list.loading()"
                       icon="trend"
                       [title]="'finance.noRatesYet' | t"
-                      text="Record today's rate for each accepted currency."
+                      [text]="'ui.empty.rates' | t"
                     />
                   </td>
                 </tr>
@@ -189,7 +189,7 @@ interface RateCard {
           {{ 'common.cancel' | t }}
         </button>
         <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
-          {{ busy() ? 'Saving…' : 'Save rate' }}
+          {{ busy() ? ('ui.l.saving' | t) : ('ui.l.saveRate' | t) }}
         </button>
       </div>
     </app-modal>

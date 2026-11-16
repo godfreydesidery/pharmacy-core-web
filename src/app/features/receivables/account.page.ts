@@ -55,7 +55,8 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
             </a>
             @if (session.can('finance.manage')) {
               <button class="btn" type="button" (click)="openHold()">
-                <app-icon name="lock" [size]="16" /> {{ a.onHold ? 'Release hold' : 'Put on hold' }}
+                <app-icon name="lock" [size]="16" />
+                {{ a.onHold ? ('ui.l.releaseHold' | t) : ('ui.l.putOnHold' | t) }}
               </button>
             }
             @if (session.can('finance.write_off')) {
@@ -78,12 +79,14 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
 
         <div class="grid kpis">
           <app-stat
-            [label]="a.balance < 0 ? 'In credit' : 'Balance owed'"
+            [label]="a.balance < 0 ? ('ui.l.inCredit' | t) : ('ui.l.balanceOwed' | t)"
             [value]="(a.balance < 0 ? -a.balance : a.balance) | money"
             icon="wallet"
             [tone]="a.balance > 0 ? 'blue' : 'green'"
             [caption]="
-              a.balance < 0 ? 'usable at the till as account credit' : 'across open invoices'
+              a.balance < 0
+                ? ('ui.l.usableAtTheTillAsAccount' | t)
+                : ('ui.l.acrossOpenInvoices' | t)
             "
           />
           <app-stat
@@ -92,7 +95,9 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
             icon="clock"
             [tone]="a.overdue > 0 ? 'red' : 'green'"
             [caption]="
-              a.oldestOpenDate ? 'oldest open ' + (a.oldestOpenDate | day) : 'nothing open'
+              a.oldestOpenDate
+                ? ('ui.l.oldestOpenSp' | t) + (a.oldestOpenDate | day)
+                : ('ui.l.nothingOpen' | t)
             "
           />
           <app-stat
@@ -100,7 +105,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
             [value]="a.available | money"
             icon="card"
             tone="purple"
-            [caption]="usedPercent() + '% of the limit used'"
+            [caption]="usedPercent() + ('ui.l.ofTheLimitUsed' | t)"
           />
           <app-stat
             [label]="'receivables.unallocatedCredit' | t"
@@ -171,7 +176,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
                           }
                           @if (e.allocations.length) {
                             <small class="muted alloc">
-                              {{ e.amount > 0 ? 'settled by' : 'settled' }}
+                              {{ e.amount > 0 ? ('ui.l.settledBy' | t) : 'settled' }}
                               @for (al of e.allocations; track al.entryUid; let last = $last) {
                                 {{ al.reference }} ({{ al.amount | money }}){{ last ? '' : ', ' }}
                               }
@@ -228,7 +233,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
                     <b>{{ m.payerName }} · {{ m.schemeName }}</b>
                     <small class="muted"
                       >{{ m.memberNumber }} {{ 'receivables.valid' | t }}
-                      {{ m.validFrom ? (m.validFrom | day) : 'any time' }} –
+                      {{ m.validFrom ? (m.validFrom | day) : ('ui.l.anyTime' | t) }} –
                       {{ m.validUntil ? (m.validUntil | day) : 'open' }}</small
                     >
                     <small class="muted"
@@ -241,7 +246,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
                             : 'none'
                       }}
                       {{ 'receivables.usedThisYear' | t }} {{ m.usedThisYear | money }}
-                      {{ m.annualLimit ? 'of ' + (m.annualLimit | money) : '' }}</small
+                      {{ m.annualLimit ? ('ui.l.ofSp' | t) + (m.annualLimit | money) : '' }}</small
                     >
                   </div>
                   <app-status [value]="m.active ? 'ACTIVE' : 'INACTIVE'" />
@@ -250,7 +255,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
                 <app-empty
                   icon="shield"
                   [title]="'receivables.notInsured' | t"
-                  text="Enrol the customer in a scheme to bill an insurer at the till."
+                  [text]="'ui.empty.insurance' | t"
                 />
               }
             </div>
@@ -378,7 +383,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
 
       <app-modal
         [open]="holding()"
-        [title]="a.onHold ? 'Release hold' : 'Put account on hold'"
+        [title]="a.onHold ? ('ui.l.releaseHold' | t) : ('ui.l.putAccountOnHold' | t)"
         (closed)="holding.set(false)"
       >
         @if (!a.onHold) {

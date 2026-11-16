@@ -68,7 +68,8 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 [class.on]="productType() === t.code"
                 (click)="productType.set(t.code)"
               >
-                <app-icon [name]="t.icon" [size]="14" /> {{ t.label }}
+                <app-icon [name]="t.icon" [size]="14" />
+                {{ 'ui.ptype.' + t.code | t: null : t.label }}
               </button>
             }
           </div>
@@ -102,7 +103,9 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 <tr class="clickable" [routerLink]="[p.uid]">
                   <td>
                     <div class="cell-main">
-                      <span class="thumb tone-{{ typeOf(p).tone }}" [title]="typeOf(p).label"
+                      <span
+                        class="thumb tone-{{ typeOf(p).tone }}"
+                        [title]="'ui.ptype.' + typeOf(p).code | t: null : typeOf(p).label"
                         ><app-icon [name]="typeOf(p).icon" [size]="16"
                       /></span>
                       <div>
@@ -125,7 +128,11 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                       {{ p.dosageForm | label }}{{ p.strength ? ' · ' + p.strength : '' }}
                     } @else {
                       {{ p.model ?? (p.unitOfMeasure | label)
-                      }}{{ p.warrantyMonths ? ' · ' + p.warrantyMonths + ' mo warranty' : '' }}
+                      }}{{
+                        p.warrantyMonths
+                          ? ' · ' + p.warrantyMonths + ('ui.l.preMoWarranty' | t)
+                          : ''
+                      }}
                     }
                   </td>
                   <td>{{ p.manufacturerName ?? '—' }}</td>
@@ -142,7 +149,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                       [loading]="list.loading()"
                       icon="pill"
                       [title]="'catalogue.noProducts' | t"
-                      text="Add the medicines, equipment and other items you sell."
+                      [text]="'ui.empty.products' | t"
                     />
                   </td>
                 </tr>

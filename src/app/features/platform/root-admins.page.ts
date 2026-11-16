@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { SessionStore } from '../../core/session/session.store';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { User } from '../../core/api/models';
@@ -35,6 +36,8 @@ import { Translations } from '../../core/i18n/translations.store';
                 <th>{{ 'platform.name' | t }}</th>
                 <th>{{ 'platform.email' | t }}</th>
                 <th>{{ 'platform.since' | t }}</th>
+                <th>{{ 'admin2.status' | t }}</th>
+                <th></th>
               </tr>
             </thead>
             <tbody>
@@ -48,10 +51,54 @@ import { Translations } from '../../core/i18n/translations.store';
                   </td>
                   <td>{{ u.email }}</td>
                   <td class="muted">{{ u.createdAt | day }}</td>
+                  <td><app-status [value]="u.active === false ? 'INACTIVE' : 'ACTIVE'" /></td>
+                  <td class="right">
+                    @if (u.uid !== me()) {
+                      <div class="row" style="justify-content:flex-end;gap:6px">
+                        <button
+                          class="btn sm"
+                          type="button"
+                          [disabled]="busy()"
+                          (click)="resetPassword(u)"
+                        >
+                          <app-icon name="lock" [size]="14" /> {{ 'admin2.sendReset' | t }}
+                        </button>
+                        @if (u.active === false) {
+                          <button
+                            class="btn sm success"
+                            type="button"
+                            [disabled]="busy()"
+                            (click)="setActive(u, true)"
+                          >
+                            {{ 'platform.reactivate' | t }}
+                          </button>
+                        } @else {
+                          <button
+                            class="btn sm"
+                            type="button"
+                            [disabled]="busy()"
+                            (click)="setActive(u, false)"
+                          >
+                            {{ 'admin2.deactivate' | t }}
+                          </button>
+                        }
+                        <button
+                          class="btn sm danger"
+                          type="button"
+                          [disabled]="busy()"
+                          (click)="remove(u)"
+                        >
+                          {{ 'admin2.remove' | t }}
+                        </button>
+                      </div>
+                    } @else {
+                      <span class="muted small">{{ 'admin2.you' | t }}</span>
+                    }
+                  </td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="3">
+                  <td colspan="5">
                     <app-empty
                       [loading]="admins.loading()"
                       icon="key"
@@ -127,6 +174,51 @@ export default class RootAdminsPage {
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(8)]],
   });
+
+  private readonly session = inject(SessionStore);
+  protected readonly me = computed(() => this.session.user()?.uid ?? null);
+
+  protected async setActive(u: User, active: boolean): Promise<void> {
+    if (!active && !confirm(this.translations.t('admin2.confirmDeactivate', { name: u.name }))) {
+      return;
+    }
+    await this.act(
+      `/platform/root-admins/${u.uid}/${active ? 'reactivate' : 'deactivate'}`,
+      'post',
+      active ? 'admin2.rootReactivated' : 'admin2.rootDeactivated',
+    );
+  }
+
+  protected async remove(u: User): Promise<void> {
+    if (!confirm(this.translations.t('admin2.confirmRemove', { name: u.name }))) {
+      return;
+    }
+    await this.act(`/platform/root-admins/${u.uid}`, 'delete', 'admin2.rootRemoved');
+  }
+
+  protected async resetPassword(u: User): Promise<void> {
+    await this.act(
+      `/platform/root-admins/${u.uid}/password-reset`,
+      'post',
+      'admin2.resetSent',
+      u.email,
+    );
+  }
+
+  private async act(path: string, method: 'post' | 'delete', message: string, email?: string) {
+    this.busy.set(true);
+    try {
+      if (method === 'post') {
+        await this.api.post(path, {}, { noBranch: true });
+      } else {
+        await this.api.delete(path, { noBranch: true });
+      }
+      this.toasts.success(this.translations.t(message, { email: email ?? '' }));
+      await this.admins.reload();
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected err(name: 'name' | 'email' | 'password'): string | null {
     return controlError(this.form.controls[name]);
