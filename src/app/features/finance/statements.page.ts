@@ -125,7 +125,7 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                     @for (l of b.assets.lines; track l.code) {
                       <tr>
                         <td class="mono">{{ l.code }}</td>
-                        <td>{{ l.name }}</td>
+                        <td>{{ l.name | account: l.code }}</td>
                         <td class="right">{{ l.balance | money }}</td>
                       </tr>
                     }
@@ -146,14 +146,14 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                     @for (l of b.liabilities.lines; track l.code) {
                       <tr>
                         <td class="mono">{{ l.code }}</td>
-                        <td>{{ l.name }}</td>
+                        <td>{{ l.name | account: l.code }}</td>
                         <td class="right">{{ l.balance | money }}</td>
                       </tr>
                     }
                     @for (l of b.equity.lines; track l.code) {
                       <tr>
                         <td class="mono">{{ l.code }}</td>
-                        <td>{{ l.name }}</td>
+                        <td>{{ l.name | account: l.code }}</td>
                         <td class="right">{{ l.balance | money }}</td>
                       </tr>
                     }
@@ -194,7 +194,7 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                       @if (l.debit || l.credit) {
                         <tr>
                           <td class="mono">{{ l.code }}</td>
-                          <td>{{ l.name }}</td>
+                          <td>{{ l.name | account: l.code }}</td>
                           <td class="right">{{ l.debit | money }}</td>
                           <td class="right">{{ l.credit | money }}</td>
                         </tr>
