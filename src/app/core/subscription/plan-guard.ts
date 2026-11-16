@@ -36,18 +36,21 @@ export function featureForUrl(
  * never gated, and an unknown subscription (not loaded) lets the page open, as the API decides.
  */
 export const planGuard: CanActivateFn = async (_route, state) => {
+  // Everything is injected before the first await: inject() only works synchronously, and calling
+  // it after the subscription loads threw, leaving a blank page instead of the redirect.
   const session = inject(SessionStore);
+  const subscription = inject(SubscriptionStore);
+  const router = inject(Router);
   const tenant = session.tenant();
   const feature = featureForUrl(state.url);
   if (!feature || !tenant || session.isRoot()) {
     return true;
   }
-  const subscription = inject(SubscriptionStore);
   await subscription.load(tenant.uid);
   if (subscription.allows(feature)) {
     return true;
   }
-  return inject(Router).createUrlTree(['/not-in-plan'], {
+  return router.createUrlTree(['/not-in-plan'], {
     queryParams: { feature, from: state.url },
   });
 };
