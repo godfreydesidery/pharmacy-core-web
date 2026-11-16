@@ -39,7 +39,7 @@ import { SessionStore } from '../../core/session/session.store';
             [hint]="t.outstanding | money"
             icon="wallet"
             tone="blue"
-            [caption]="t.accountsWithBalance + ' accounts owing'"
+            [caption]="t.accountsWithBalance + ('ui.l.preAccountsOwing' | t)"
           />
           <app-stat
             [label]="'receivables.overdue' | t"
@@ -124,7 +124,11 @@ import { SessionStore } from '../../core/session/session.store';
                       [class.owes]="a.balance > 0"
                       [class.holds]="a.balance < 0"
                     >
-                      {{ a.balance < 0 ? (-a.balance | money) + ' CR' : (a.balance | money) }}
+                      {{
+                        a.balance < 0
+                          ? (-a.balance | money) + ('ui.l.preCr' | t)
+                          : (a.balance | money)
+                      }}
                     </td>
                     <td class="right">{{ a.available | money }}</td>
                     <td class="right" [class.owes]="a.overdue > 0">{{ a.overdue | money }}</td>
@@ -148,7 +152,7 @@ import { SessionStore } from '../../core/session/session.store';
                         [loading]="accounts.loading()"
                         icon="wallet"
                         [title]="'receivables.noCustomerAccountsYet' | t"
-                        text="An account opens with a customer's first credit sale or payment on account."
+                        [text]="'ui.empty.receivables' | t"
                       />
                     </td>
                   </tr>

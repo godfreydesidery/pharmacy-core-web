@@ -10,4 +10,15 @@ export default [
     loadComponent: () => import('./root-admins.page'),
   },
   { path: 'audit', title: 'Platform audit', loadComponent: () => import('./audit.page') },
+  { path: 'plans', title: 'Plans', loadComponent: () => import('./plans.page') },
+  {
+    path: 'message-providers',
+    title: 'Message providers',
+    loadComponent: () => import('./providers.page'),
+  },
+  {
+    path: 'payment-methods',
+    title: 'Payment methods',
+    loadComponent: () => import('./payment-methods.page'),
+  },
 ] satisfies Routes;

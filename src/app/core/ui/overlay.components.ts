@@ -1,4 +1,5 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { TranslatePipe } from '../i18n/t.pipe';
 import { IconComponent } from './icon.component';
 
 /**
@@ -7,7 +8,7 @@ import { IconComponent } from './icon.component';
  */
 @Component({
   selector: 'app-modal',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'open() && closed.emit()' },
   template: `
@@ -22,7 +23,12 @@ import { IconComponent } from './icon.component';
       >
         <header>
           <h3>{{ title() }}</h3>
-          <button class="icon-btn" type="button" (click)="closed.emit()" aria-label="Close">
+          <button
+            class="icon-btn"
+            type="button"
+            (click)="closed.emit()"
+            [attr.aria-label]="'ui.close' | t"
+          >
             <app-icon name="x" />
           </button>
         </header>
@@ -107,7 +113,7 @@ export class ModalComponent {
 /** A panel that slides in from the right, for details beside a list. */
 @Component({
   selector: 'app-drawer',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { '(document:keydown.escape)': 'open() && closed.emit()' },
   template: `
@@ -121,7 +127,12 @@ export class ModalComponent {
               <p class="muted">{{ subtitle() }}</p>
             }
           </div>
-          <button class="icon-btn" type="button" (click)="closed.emit()" aria-label="Close">
+          <button
+            class="icon-btn"
+            type="button"
+            (click)="closed.emit()"
+            [attr.aria-label]="'ui.close' | t"
+          >
             <app-icon name="x" />
           </button>
         </header>

@@ -5,10 +5,12 @@
     } @else {
       <app-logo [size]="36" />
     }
-    <span class="brand-text"><b>Pharmacy</b><small>Management System</small></span>
+    <span class="brand-text"
+      ><b>Pharmacy</b><small>{{ 'ui.brand.subtitle' | t }}</small></span
+    >
   </a>
 
-  <nav class="nav" aria-label="Main">
+  <nav class="nav" [attr.aria-label]="'ui.shell.mainNav' | t">
     @if (platformNav().length) {
       <div class="section">{{ 'nav.platform' | t }}</div>
       @for (item of platformNav(); track item.id) {
@@ -184,13 +186,47 @@
     </div>
   </header>
 
-  @if (session.tenant()?.status === 'SUSPENDED') {
+  @if (session.tenant()?.status === 'SUSPENDED' && !suspendedForMe()) {
     <div class="suspended notice tone-red no-print">
       <app-icon name="alert" /> {{ 'shell.suspended' | t }}
     </div>
   }
+  @if (!suspendedForMe() && session.tenant() && subscription.status(); as sub) {
+    @if (sub.status === 'TRIAL' && subscription.trialDaysLeft() !== null) {
+      <div class="suspended notice tone-blue no-print">
+        <app-icon name="clock" />
+        {{ 'plans.banner.trial' | t: { days: subscription.trialDaysLeft(), plan: sub.planName } }}
+        @if (session.can('settings.manage')) {
+          <a routerLink="/admin/subscription">{{ 'plans.banner.see' | t }}</a>
+        }
+      </div>
+    } @else if (sub.status === 'PAST_DUE') {
+      <div class="suspended notice tone-amber no-print">
+        <app-icon name="alert" />
+        {{ 'plans.banner.pastDue' | t: { date: sub.graceEnds ?? sub.dueDate } }}
+        @if (session.can('settings.manage')) {
+          <a routerLink="/admin/subscription">{{ 'plans.banner.see' | t }}</a>
+        }
+      </div>
+    }
+  }
 
   <main class="content">
-    <router-outlet />
+    @if (blockedBySuspension()) {
+      <div class="page">
+        <div class="card card-pad empty suspended-page">
+          <app-icon name="lock" [size]="40" [stroke]="1.4" />
+          <h1>{{ 'ui.suspended.title' | t }}</h1>
+          <span>{{ 'ui.suspended.body' | t: { pharmacy: session.tenant()?.name } }}</span>
+          <span class="muted">{{ 'ui.suspended.contact' | t }}</span>
+          <div class="row">
+            <a class="btn" routerLink="/workspace">{{ 'ui.suspended.switch' | t }}</a>
+            <a class="btn" routerLink="/account">{{ 'shell.account' | t }}</a>
+          </div>
+        </div>
+      </div>
+    } @else {
+      <router-outlet />
+    }
   </main>
 </div>

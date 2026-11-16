@@ -1,3 +1,4 @@
+import { ProviderSettingsComponent } from '../../core/notifications/provider-settings.component';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -23,8 +24,9 @@ import {
 import { SHARED } from '../../core/shared';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
+import { DeliveryDetailComponent } from './delivery-detail.component';
 
-type Tab = 'templates' | 'deliveries';
+type Tab = 'templates' | 'deliveries' | 'providers';
 
 /**
  * Administration → Notifications: the wording of every message per channel and language, with a
@@ -32,7 +34,7 @@ type Tab = 'templates' | 'deliveries';
  */
 @Component({
   selector: 'app-notifications-admin',
-  imports: [...SHARED],
+  imports: [...SHARED, DeliveryDetailComponent, ProviderSettingsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -40,7 +42,7 @@ type Tab = 'templates' | 'deliveries';
         <div>
           <h1>{{ 'admin.notifications' | t }}</h1>
           <p class="sub">
-            {{ 'admin.emailSmsWhatsappAndIn' | t }}
+            {{ 'providers.pageSub' | t }}
           </p>
         </div>
       </div>
@@ -56,7 +58,14 @@ type Tab = 'templates' | 'deliveries';
         >
           <app-icon name="activity" [size]="15" /> {{ 'admin.deliveryLog' | t }}
         </button>
+        <button type="button" [class.active]="tab() === 'providers'" (click)="tab.set('providers')">
+          <app-icon name="gear" [size]="15" /> {{ 'providers.tab' | t }}
+        </button>
       </div>
+
+      @if (tab() === 'providers') {
+        <app-provider-settings scope="tenant" />
+      }
 
       @if (tab() === 'templates') {
         <div class="editor-grid">
@@ -86,7 +95,8 @@ type Tab = 'templates' | 'deliveries';
                     [class.active]="channel === selectedChannel()"
                     (click)="selectedChannel.set(channel)"
                   >
-                    <app-icon [name]="icons[channel]" [size]="14" /> {{ channelLabels[channel] }}
+                    <app-icon [name]="icons[channel]" [size]="14" />
+                    {{ 'ui.channel.' + channel | t: null : channelLabels[channel] }}
                   </button>
                 }
               </div>
@@ -108,7 +118,9 @@ type Tab = 'templates' | 'deliveries';
 
             @if (hasSubject()) {
               <div class="field">
-                <label>{{ selectedChannel() === 'IN_APP' ? 'Title' : 'Subject' }}</label>
+                <label>{{
+                  (selectedChannel() === 'IN_APP' ? 'ui.tpl.title' : 'ui.tpl.subject') | t
+                }}</label>
                 <input
                   class="input"
                   [value]="subject()"
@@ -132,6 +144,11 @@ type Tab = 'templates' | 'deliveries';
                   </button>
                 }
               </span>
+              @if (unknownParams().length) {
+                <span class="error">{{
+                  'ui.tpl.unknownPlaceholders' | t: { names: unknownParams().join(', ') }
+                }}</span>
+              }
               @if (smsLength(); as n) {
                 <span class="hint"
                   >{{ n }} {{ 'admin.characters' | t }} {{ segments() }}
@@ -187,20 +204,34 @@ type Tab = 'templates' | 'deliveries';
               }
               <small class="muted">{{ 'admin.renderedWithSampleValues' | t }}</small>
             } @else {
-              <app-empty icon="eye" [title]="'admin.preview' | t" text="Choose a template." />
+              <app-empty
+                icon="eye"
+                [title]="'admin.preview' | t"
+                [text]="'ui.empty.chooseTemplate' | t"
+              />
             }
           </div>
         </div>
       } @else {
         <div class="card">
           <div class="toolbar">
-            <select class="select" (change)="channelFilter.set($any($event.target).value)">
+            <select
+              class="select"
+              style="width:auto"
+              (change)="channelFilter.set($any($event.target).value)"
+            >
               <option value="">{{ 'admin.allChannels' | t }}</option>
               @for (channel of channels; track channel) {
-                <option [value]="channel">{{ channelLabels[channel] }}</option>
+                <option [value]="channel">
+                  {{ 'ui.channel.' + channel | t: null : channelLabels[channel] }}
+                </option>
               }
             </select>
-            <select class="select" (change)="statusFilter.set($any($event.target).value)">
+            <select
+              class="select"
+              style="width:auto"
+              (change)="statusFilter.set($any($event.target).value)"
+            >
               <option value="">{{ 'admin.allStatuses' | t }}</option>
               <option value="SENT">{{ 'admin.sent' | t }}</option>
               <option value="QUEUED">{{ 'admin.queued' | t }}</option>
@@ -227,7 +258,7 @@ type Tab = 'templates' | 'deliveries';
               </thead>
               <tbody>
                 @for (d of deliveries.items(); track d.uid) {
-                  <tr>
+                  <tr class="clickable" (click)="selectedDelivery.set(d.uid)">
                     <td>
                       <b>{{ label(d.templateKey) }}</b>
                       @if (d.lastError) {
@@ -238,9 +269,9 @@ type Tab = 'templates' | 'deliveries';
                     </td>
                     <td>
                       <app-icon [name]="icons[d.channel]" [size]="14" />
-                      {{ channelLabels[d.channel] }}
+                      {{ 'ui.channel.' + d.channel | t: null : channelLabels[d.channel] }}
                     </td>
-                    <td class="mono">{{ d.channel === 'IN_APP' ? 'Inbox' : d.to }}</td>
+                    <td class="mono">{{ d.channel === 'IN_APP' ? ('ui.inbox' | t) : d.to }}</td>
                     <td><app-status [value]="d.status" /></td>
                     <td class="muted">{{ d.provider ?? '—' }}</td>
                     <td class="right">{{ d.attempts }}</td>
@@ -270,6 +301,11 @@ type Tab = 'templates' | 'deliveries';
         </div>
       }
     </div>
+    <app-delivery-detail
+      [uid]="selectedDelivery()"
+      (closed)="selectedDelivery.set(null)"
+      (resent)="deliveries.reload()"
+    />
   `,
   styles: `
     .editor-grid {
@@ -487,12 +523,22 @@ export default class NotificationsAdminPage {
     );
   });
   protected readonly params = computed(() => Object.keys(this.preview()?.sampleParams ?? {}));
+  /** Placeholders in the subject or message that this message does not supply: they render blank. */
+  protected readonly unknownParams = computed(() => {
+    const known = new Set(this.params());
+    if (!known.size) {
+      return [];
+    }
+    const used = `${this.subject() ?? ''} ${this.body()}`.matchAll(/\{\{\s*(\w+)\s*}}/g);
+    return [...new Set([...used].map((m) => m[1]))].filter((name) => !known.has(name));
+  });
   protected readonly smsLength = computed(() =>
     this.selectedChannel() === 'SMS' ? (this.preview()?.text.length ?? 0) : 0,
   );
   protected readonly segments = computed(() => Math.max(1, Math.ceil(this.smsLength() / 153)));
 
   protected readonly channelFilter = signal('');
+  protected readonly selectedDelivery = signal<string | null>(null);
   protected readonly statusFilter = signal('');
   protected readonly deliveries = pagedList<NotificationDelivery>(() =>
     this.tab() === 'deliveries'
@@ -550,6 +596,17 @@ export default class NotificationsAdminPage {
   }
 
   protected async save(): Promise<void> {
+    const unknown = this.unknownParams();
+    if (
+      unknown.length &&
+      !confirm(
+        this.translations.t('ui.tpl.unknownPlaceholders', { names: unknown.join(', ') }) +
+          '\n\n' +
+          this.translations.t('ui.tpl.saveAnyway'),
+      )
+    ) {
+      return;
+    }
     this.busy.set(true);
     try {
       await this.api.put(

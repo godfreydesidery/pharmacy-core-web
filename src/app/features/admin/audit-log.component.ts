@@ -1,5 +1,6 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import { Translations } from '../../core/i18n/translations.store';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { AuditEntry } from '../../core/api/security.models';
 import { pagedList } from '../../core/data/data';
@@ -59,7 +60,9 @@ interface Change {
                 </td>
                 <td>
                   {{ entry.entityType ?? '—' }}
-                  @if (entry.entityUid) {
+                  @if (entry.label) {
+                    <b>{{ entry.label }}</b>
+                  } @else if (entry.entityUid) {
                     <span class="faint mono">{{ entry.entityUid.slice(-8) }}</span>
                   }
                 </td>
@@ -68,7 +71,9 @@ interface Change {
             } @empty {
               <tr>
                 <td colspan="5" class="muted center">
-                  {{ list.loading() ? 'Loading…' : 'No entries for these filters.' }}
+                  {{
+                    list.loading() ? ('ui.l.loading' | t) : ('ui.l.noEntriesForTheseFilters' | t)
+                  }}
                 </td>
               </tr>
             }
@@ -97,7 +102,11 @@ interface Change {
           <dd>{{ entry.actor }}</dd>
           <dt>{{ 'admin.record' | t }}</dt>
           <dd>
-            {{ entry.entityType ?? '—' }} <span class="mono faint">{{ entry.entityUid }}</span>
+            {{ entry.entityType ?? '—' }}
+            @if (entry.label) {
+              <b>{{ entry.label }}</b>
+            }
+            <span class="mono faint">{{ entry.entityUid }}</span>
           </dd>
           <dt>{{ 'admin.request' | t }}</dt>
           <dd class="mono faint">{{ entry.correlationId ?? '—' }}</dd>
@@ -255,8 +264,12 @@ export class AuditLogComponent {
     });
   });
 
+  private readonly translations = inject(Translations);
+
+  /** The action's translated label (security2.audit.<ACTION>), else the code made readable. */
   protected label(action: string): string {
-    return action.charAt(0) + action.slice(1).toLowerCase().replace(/_/g, ' ');
+    const fallback = action.charAt(0) + action.slice(1).toLowerCase().replace(/_/g, ' ');
+    return this.translations.t(['security2', 'audit', action].join('.'), undefined, fallback);
   }
 
   protected tone(action: string): string {

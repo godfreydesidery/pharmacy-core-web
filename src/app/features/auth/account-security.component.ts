@@ -1,5 +1,12 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  OnInit,
+  computed,
+  inject,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute } from '@angular/router';
 import QRCode from 'qrcode';
@@ -16,6 +23,7 @@ import {
 import { cancelled, createPasskey, passkeysSupported } from '../../core/security/webauthn';
 import { IconComponent } from '../../core/ui/icon.component';
 import { ToastService } from '../../core/ui/toast.service';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 
 /**
@@ -24,7 +32,7 @@ import { Translations } from '../../core/i18n/translations.store';
  */
 @Component({
   selector: 'app-account-security',
-  imports: [FormsModule, IconComponent, DatePipe],
+  imports: [FormsModule, IconComponent, DatePipe, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="security">
@@ -34,34 +42,35 @@ import { Translations } from '../../core/i18n/translations.store';
             <app-icon name="shield" [size]="20" />
           </div>
           <div class="grow">
-            <h3>Two-step verification</h3>
+            <h3>{{ 'ui.sec.twoStep' | t }}</h3>
             <p class="muted">
               @if (overview()?.twoFactorEnabled) {
-                On since {{ overview()!.twoFactorEnabledAt | date: 'mediumDate' }} ·
-                {{ overview()!.recoveryCodesLeft }} recovery codes left
+                {{
+                  'ui.sec.onSince'
+                    | t
+                      : {
+                          date: overview()!.twoFactorEnabledAt | date: 'mediumDate',
+                          count: overview()!.recoveryCodesLeft,
+                        }
+                }}
               } @else {
-                A code from an authenticator app (Google Authenticator, Microsoft Authenticator,
-                1Password…) after your password.
+                {{ 'ui.sec.twoStepHint' | t }}
               }
             </p>
           </div>
           <span class="pill" [class.ok]="overview()?.twoFactorEnabled">
-            {{ overview()?.twoFactorEnabled ? 'On' : 'Off' }}
+            {{ (overview()?.twoFactorEnabled ? 'ui.sec.on' : 'ui.sec.off') | t }}
           </span>
         </div>
         @if (overview()?.twoFactorRequired && !overview()?.twoFactorEnabled) {
-          <div class="notice tone-amber">
-            <app-icon name="alert" /> The platform requires two-step verification for root
-            administrators. Set it up to continue.
-          </div>
+          <div class="notice tone-amber"><app-icon name="alert" /> {{ 'ui.sec.required' | t }}</div>
         }
 
         @if (codes().length) {
           <div class="codes-box">
-            <b>Your recovery codes</b>
+            <b>{{ 'ui.sec.codesTitle' | t }}</b>
             <p class="muted">
-              Each works once if you lose your phone. Store them somewhere safe: they are not shown
-              again.
+              {{ 'ui.sec.codesHint' | t }}
             </p>
             <div class="codes">
               @for (code of codes(); track code) {
@@ -70,27 +79,27 @@ import { Translations } from '../../core/i18n/translations.store';
             </div>
             <div class="row">
               <button class="btn sm" type="button" (click)="copyCodes()">
-                <app-icon name="copy" [size]="14" /> Copy
+                <app-icon name="copy" [size]="14" /> {{ 'ui.sec.copy' | t }}
               </button>
               <button class="btn sm" type="button" (click)="downloadCodes()">
-                <app-icon name="download" [size]="14" /> Download
+                <app-icon name="download" [size]="14" /> {{ 'ui.sec.download' | t }}
               </button>
               <button class="btn sm primary" type="button" (click)="codes.set([])">
-                I have saved them
+                {{ 'ui.sec.saved' | t }}
               </button>
             </div>
           </div>
         } @else if (setup(); as pending) {
           <div class="setup">
             @if (qr()) {
-              <img [src]="qr()" alt="QR code for your authenticator app" width="176" height="176" />
+              <img [src]="qr()" [alt]="'ui.sec.qrAlt' | t" width="176" height="176" />
             }
             <div class="stack grow">
               <p>
-                1. Scan the code with your authenticator app, or enter this key:
+                {{ 'ui.sec.step1' | t }}
                 <code class="secret">{{ group(pending.secret) }}</code>
               </p>
-              <p>2. Enter the 6-digit code it shows.</p>
+              <p>{{ 'ui.sec.step2' | t }}</p>
               <div class="row">
                 <input
                   class="input otp"
@@ -101,9 +110,11 @@ import { Translations } from '../../core/i18n/translations.store';
                   [(ngModel)]="code"
                 />
                 <button class="btn primary" type="button" [disabled]="busy()" (click)="enable()">
-                  <app-icon name="check" [size]="16" /> Turn on
+                  <app-icon name="check" [size]="16" /> {{ 'ui.sec.turnOn' | t }}
                 </button>
-                <button class="btn" type="button" (click)="setup.set(null)">Cancel</button>
+                <button class="btn" type="button" (click)="setup.set(null)">
+                  {{ 'common.cancel' | t }}
+                </button>
               </div>
             </div>
           </div>
@@ -113,20 +124,20 @@ import { Translations } from '../../core/i18n/translations.store';
               class="input otp"
               maxlength="9"
               autocomplete="one-time-code"
-              placeholder="Code or recovery code"
+              [placeholder]="'ui.sec.codeOrRecovery' | t"
               [(ngModel)]="code"
             />
             <button class="btn" type="button" [disabled]="busy()" (click)="regenerate()">
-              <app-icon name="refresh" [size]="15" /> New recovery codes
+              <app-icon name="refresh" [size]="15" /> {{ 'ui.sec.newCodes' | t }}
             </button>
             <button class="btn danger" type="button" [disabled]="busy()" (click)="disable()">
-              Turn off
+              {{ 'ui.sec.turnOff' | t }}
             </button>
           </div>
         } @else {
           <div class="row">
             <button class="btn primary" type="button" [disabled]="busy()" (click)="begin()">
-              <app-icon name="shield" [size]="16" /> Set up two-step verification
+              <app-icon name="shield" [size]="16" /> {{ 'ui.sec.setUp' | t }}
             </button>
           </div>
         }
@@ -136,14 +147,14 @@ import { Translations } from '../../core/i18n/translations.store';
         <div class="head">
           <div class="mark on"><app-icon name="key" [size]="20" /></div>
           <div class="grow">
-            <h3>Passkeys</h3>
+            <h3>{{ 'ui.sec.passkeys' | t }}</h3>
             <p class="muted">
-              Sign in with your fingerprint, face or screen lock, without typing a password.
+              {{ 'ui.sec.passkeysHint' | t }}
             </p>
           </div>
         </div>
         @if (!supported) {
-          <p class="muted">This browser does not support passkeys.</p>
+          <p class="muted">{{ 'ui.sec.passkeysUnsupported' | t }}</p>
         } @else {
           @for (passkey of passkeys(); track passkey.uid) {
             <div class="item">
@@ -151,32 +162,32 @@ import { Translations } from '../../core/i18n/translations.store';
               <div class="grow">
                 <b>{{ passkey.name }}</b>
                 <small class="muted">
-                  Added {{ passkey.createdAt | date: 'mediumDate' }}
+                  {{ 'ui.sec.added' | t: { date: passkey.createdAt | date: 'mediumDate' } }}
                   @if (passkey.lastUsedAt) {
-                    · last used {{ passkey.lastUsedAt | date: 'medium' }}
+                    · {{ 'ui.sec.lastUsed' | t: { date: passkey.lastUsedAt | date: 'medium' } }}
                   }
                 </small>
               </div>
               <button
                 class="icon-btn"
                 type="button"
-                aria-label="Remove passkey"
+                [attr.aria-label]="'ui.sec.removePasskey' | t"
                 (click)="removePasskey(passkey)"
               >
                 <app-icon name="trash" [size]="16" />
               </button>
             </div>
           } @empty {
-            <p class="muted">No passkeys yet.</p>
+            <p class="muted">{{ 'ui.sec.noPasskeys' | t }}</p>
           }
           <div class="row">
             <input
               class="input"
-              placeholder="Name, such as Work laptop"
+              [placeholder]="'ui.sec.passkeyName' | t"
               [(ngModel)]="passkeyName"
             />
             <button class="btn primary" type="button" [disabled]="busy()" (click)="addPasskey()">
-              <app-icon name="plus" [size]="16" /> Add a passkey
+              <app-icon name="plus" [size]="16" /> {{ 'ui.sec.addPasskey' | t }}
             </button>
           </div>
         }
@@ -186,9 +197,15 @@ import { Translations } from '../../core/i18n/translations.store';
         <div class="head">
           <div class="mark on"><app-icon name="activity" [size]="20" /></div>
           <div class="grow">
-            <h3>Where you are signed in</h3>
-            <p class="muted">Sign out of any device you do not recognise.</p>
+            <h3>{{ 'ui.sec.whereSignedIn' | t }}</h3>
+            <p class="muted">{{ 'ui.sec.whereHint' | t }}</p>
           </div>
+          @if (otherSessions() > 0) {
+            <button class="btn sm" type="button" [disabled]="busy()" (click)="revokeOthers()">
+              <app-icon name="logout" [size]="14" />
+              {{ 'security2.signOutOthers' | t: { count: otherSessions() } }}
+            </button>
+          }
         </div>
         @for (item of sessions(); track item.uid) {
           <div class="item">
@@ -197,19 +214,21 @@ import { Translations } from '../../core/i18n/translations.store';
               <b>
                 {{ device(item.userAgent) }}
                 @if (item.current) {
-                  <span class="pill ok">This device</span>
+                  <span class="pill ok">{{ 'ui.sec.thisDevice' | t }}</span>
                 }
               </b>
               <small class="muted">
-                {{ item.ip ?? 'unknown address' }} · {{ method(item.method) }} · since
-                {{ item.createdAt | date: 'medium' }}
+                {{ item.ip ?? ('ui.sec.unknownAddress' | t) }} · {{ method(item.method) }} ·
+                {{ 'ui.sec.since' | t: { date: item.createdAt | date: 'medium' } }}
                 @if (item.lastSeenAt) {
-                  · active {{ item.lastSeenAt | date: 'shortTime' }}
+                  · {{ 'ui.sec.active' | t: { time: item.lastSeenAt | date: 'shortTime' } }}
                 }
               </small>
             </div>
             @if (!item.current) {
-              <button class="btn sm" type="button" (click)="revoke(item)">Sign out</button>
+              <button class="btn sm" type="button" (click)="revoke(item)">
+                {{ 'ui.sec.signOut' | t }}
+              </button>
             }
           </div>
         }
@@ -336,6 +355,9 @@ export class AccountSecurityComponent implements OnInit {
   protected readonly codes = signal<string[]>([]);
   protected readonly passkeys = signal<Passkey[]>([]);
   protected readonly sessions = signal<SessionInfo[]>([]);
+  protected readonly otherSessions = computed(
+    () => this.sessions().filter((s) => !s.current).length,
+  );
   protected readonly busy = signal(false);
   protected code = '';
   protected passkeyName = '';
@@ -441,6 +463,21 @@ export class AccountSecurityComponent implements OnInit {
     });
   }
 
+  /** Signs out of every device but this one. */
+  protected async revokeOthers(): Promise<void> {
+    await this.run(async () => {
+      const result = await this.api.post<{ revoked: number }>(
+        '/auth/sessions/revoke-others',
+        {},
+        { silent: true },
+      );
+      this.toasts.success(
+        this.translations.t('security2.othersSignedOut', { count: result?.revoked ?? 0 }),
+      );
+      await this.loadSessions();
+    });
+  }
+
   protected copyCodes(): void {
     void navigator.clipboard?.writeText(this.codes().join('\n'));
     this.toasts.success(this.translations.t('toast.recoveryCodesCopied'));
@@ -467,7 +504,11 @@ export class AccountSecurityComponent implements OnInit {
 
   protected device(agent: string | null): string {
     if (!agent) {
-      return 'Unknown device';
+      return this.translations.t('ui.sec.unknownDevice');
+    }
+    if (!/mozilla\//i.test(agent)) {
+      // Not a browser: an app, script or integration (e.g. "okhttp/4.12", "curl/8.4").
+      return this.translations.t('ui.sec.apiClient', { name: agent.split(/[\s(]/)[0] });
     }
     const browser = /edg\//i.test(agent)
       ? 'Edge'
@@ -477,7 +518,7 @@ export class AccountSecurityComponent implements OnInit {
           ? 'Firefox'
           : /safari\//i.test(agent)
             ? 'Safari'
-            : 'Browser';
+            : this.translations.t('ui.sec.browser');
     const system = /windows/i.test(agent)
       ? 'Windows'
       : /android/i.test(agent)
@@ -488,19 +529,12 @@ export class AccountSecurityComponent implements OnInit {
             ? 'macOS'
             : /linux/i.test(agent)
               ? 'Linux'
-              : 'unknown system';
-    return `${browser} on ${system}`;
+              : this.translations.t('ui.sec.unknownSystem');
+    return this.translations.t('ui.sec.browserOn', { browser, system });
   }
 
   protected method(method: string): string {
-    return (
-      {
-        PASSWORD: 'password',
-        TWO_FACTOR: 'password + code',
-        PASSKEY: 'passkey',
-        INVITATION: 'invitation',
-      }[method] ?? method.toLowerCase()
-    );
+    return this.translations.t(`ui.sec.method.${method}`, undefined, method.toLowerCase());
   }
 
   private async loadOverview(): Promise<void> {

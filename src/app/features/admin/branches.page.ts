@@ -4,6 +4,7 @@ import { Api } from '../../core/api/api.service';
 import { Branch } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
+import { SessionStore } from '../../core/session/session.store';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
@@ -37,7 +38,7 @@ import { Translations } from '../../core/i18n/translations.store';
               <div class="grow">
                 <b>{{ b.name }}</b>
                 <div class="muted" style="font-size:12px">
-                  {{ b.code }}{{ b.headOffice ? ' · Head office' : '' }}
+                  {{ b.code }}{{ b.headOffice ? ('ui.l.preHeadOffice' | t) : '' }}
                 </div>
               </div>
               <app-status [value]="b.active ? 'ACTIVE' : 'INACTIVE'" />
@@ -71,7 +72,7 @@ import { Translations } from '../../core/i18n/translations.store';
     </div>
     <app-modal
       [open]="open()"
-      [title]="current() ? 'Edit ' + current()!.name : 'Add branch'"
+      [title]="current() ? ('ui.l.editSp' | t) + current()!.name : ('ui.l.addBranch' | t)"
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
@@ -120,6 +121,7 @@ import { Translations } from '../../core/i18n/translations.store';
 })
 export default class BranchesPage {
   private readonly api = inject(Api);
+  private readonly session = inject(SessionStore);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   protected readonly list = loaded<Branch[]>(() => ({
@@ -155,6 +157,20 @@ export default class BranchesPage {
     this.open.set(true);
   }
 
+  /** Someone who works in every branch sees a new or renamed branch in the switcher at once. */
+  private async refreshSwitcher(): Promise<void> {
+    if (!this.session.workspace()?.allBranches) {
+      return;
+    }
+    const branches = await this.api.get<Branch[]>('/branches', undefined, {
+      noBranch: true,
+      silent: true,
+    });
+    this.session.setBranches(
+      branches.filter((b) => b.active).map(({ uid, code, name }) => ({ uid, code, name })),
+    );
+  }
+
   protected async save(): Promise<void> {
     if (!validate(this.form)) {
       return;
@@ -179,9 +195,9 @@ export default class BranchesPage {
       } else {
         await this.api.post('/branches', body, { silent: true, noBranch: true });
       }
-      this.toasts.success(this.translations.t('toast.branchSaved'));
+      this.toasts.success(this.translations.t('ui.toast.branchSaved'));
       this.open.set(false);
-      await this.list.reload();
+      await Promise.all([this.list.reload(), this.refreshSwitcher()]);
     } catch (failure) {
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);

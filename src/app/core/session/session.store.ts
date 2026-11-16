@@ -141,6 +141,18 @@ export class SessionStore {
     });
   }
 
+  /** Replaces the branches the switcher offers, such as after a branch is added or renamed. */
+  setBranches(branches: BranchRef[]): void {
+    this.state.update((current) => {
+      if (!current?.workspace) {
+        return current;
+      }
+      const chosen = current.workspace.branch;
+      const branch = chosen ? (branches.find((b) => b.uid === chosen.uid) ?? chosen) : null;
+      return { ...current, workspace: { ...current.workspace, branches, branch } };
+    });
+  }
+
   switchBranch(branch: BranchRef | null): void {
     this.state.update((current) =>
       current?.workspace ? { ...current, workspace: { ...current.workspace, branch } } : current,

@@ -10,31 +10,37 @@ import {
   Channel,
   NotificationPreference,
 } from './notification.models';
+import { TranslatePipe } from '../i18n/t.pipe';
 import { Translations } from '../i18n/translations.store';
 
 /** The signed-in user's channels per notification category, saved as each switch changes. */
 @Component({
   selector: 'app-notification-preferences',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="card card-pad stack prefs">
       <div>
-        <h3>Notifications</h3>
-        <p class="muted">Choose how {{ session.tenant()?.name ?? 'this pharmacy' }} reaches you.</p>
+        <h3>{{ 'ui.prefs.title' | t }}</h3>
+        <p class="muted">
+          {{
+            'ui.prefs.subtitle'
+              | t: { pharmacy: session.tenant()?.name ?? ('ui.prefs.thisPharmacy' | t) }
+          }}
+        </p>
       </div>
       @if (!session.tenant()) {
         <div class="notice tone-blue">
-          <app-icon name="bell" /> Choose a pharmacy to set its notification preferences.
+          <app-icon name="bell" /> {{ 'ui.prefs.choosePharmacy' | t }}
         </div>
       } @else {
         <div class="table-wrap">
           <table class="table compact">
             <thead>
               <tr>
-                <th>Category</th>
+                <th>{{ 'ui.prefs.category' | t }}</th>
                 @for (channel of channels; track channel) {
-                  <th class="center">{{ labels[channel] }}</th>
+                  <th class="center">{{ 'ui.channel.' + channel | t: null : labels[channel] }}</th>
                 }
               </tr>
             </thead>
@@ -42,8 +48,13 @@ import { Translations } from '../i18n/translations.store';
               @for (pref of preferences(); track pref.category) {
                 <tr>
                   <td style="white-space:normal">
-                    <b>{{ category(pref.category).label }}</b>
-                    <small class="muted block">{{ category(pref.category).hint }}</small>
+                    <b>{{
+                      'ui.prefs.cat.' + pref.category | t: null : category(pref.category).label
+                    }}</b>
+                    <small class="muted block">{{
+                      'ui.prefs.cat.' + pref.category + '.hint'
+                        | t: null : category(pref.category).hint
+                    }}</small>
                   </td>
                   @for (channel of channels; track channel) {
                     <td class="center">
@@ -54,7 +65,14 @@ import { Translations } from '../i18n/translations.store';
                           [disabled]="pref.category === 'access' || saving()"
                           (change)="toggle(pref, channel, $any($event.target).checked)"
                           [attr.aria-label]="
-                            category(pref.category).label + ' by ' + labels[channel]
+                            'ui.prefs.by'
+                              | t
+                                : {
+                                    category:
+                                      'ui.prefs.cat.' + pref.category
+                                      | t: null : category(pref.category).label,
+                                    channel: 'ui.channel.' + channel | t: null : labels[channel],
+                                  }
                           "
                         />
                         <span></span>
@@ -67,7 +85,7 @@ import { Translations } from '../i18n/translations.store';
           </table>
         </div>
         <p class="hint">
-          SMS and WhatsApp reach you only when your pharmacy has connected an SMS provider.
+          {{ 'ui.prefs.smsHint' | t }}
         </p>
       }
     </section>

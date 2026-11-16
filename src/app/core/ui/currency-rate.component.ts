@@ -11,6 +11,7 @@ import {
 } from '@angular/core';
 import { Api } from '../api/api.service';
 import { LatestRate } from '../api/models';
+import { TranslatePipe } from '../i18n/t.pipe';
 import { SettingsStore } from '../format/settings.store';
 
 import { IconComponent } from './icon.component';
@@ -22,7 +23,7 @@ import { IconComponent } from './icon.component';
  */
 @Component({
   selector: 'app-currency-rate',
-  imports: [IconComponent],
+  imports: [IconComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="fx" [class.compact]="compact()">
@@ -32,7 +33,7 @@ import { IconComponent } from './icon.component';
         [value]="currency()"
         [disabled]="locked() || lockCurrency()"
         (change)="choose($any($event.target).value)"
-        aria-label="Currency"
+        [attr.aria-label]="'ui.currency' | t"
       >
         @for (c of accepted(); track c) {
           <option [value]="c" [selected]="c === currency()">{{ c }}</option>
@@ -50,19 +51,23 @@ import { IconComponent } from './icon.component';
             [value]="rate()"
             [readOnly]="locked()"
             (input)="rate.set(+$any($event.target).value)"
-            aria-label="Exchange rate"
+            [attr.aria-label]="'ui.exchangeRate' | t"
           />
           <span class="muted">{{ base() }}</span>
         </div>
-        @if (missing()) {
+        @if (missing() && !(rate() > 0)) {
           <span class="note red"
-            ><app-icon name="alert" [size]="13" /> No {{ currency() }} rate — record one under
-            Finance → Exchange rates.</span
+            ><app-icon name="alert" [size]="13" />
+            {{ 'ui.fx.missing' | t: { currency: currency() } }}</span
+          >
+        } @else if (missing()) {
+          <span class="note amber"
+            ><app-icon name="edit" [size]="13" /> {{ 'ui.fx.byHand' | t }}</span
           >
         } @else if (stale()) {
           <span class="note amber"
-            ><app-icon name="clock" [size]="13" /> Rate from {{ effectiveOn() }} is over 7 days
-            old.</span
+            ><app-icon name="clock" [size]="13" />
+            {{ 'ui.fx.stale' | t: { date: effectiveOn() } }}</span
           >
         }
       }
@@ -133,8 +138,9 @@ export class CurrencyRateComponent {
 
   constructor() {
     effect(() => {
-      if (!this.currency()) {
-        untracked(() => this.currency.set(this.base()));
+      const base = this.base();
+      if (!this.currency() && base) {
+        untracked(() => this.currency.set(base));
       }
     });
   }

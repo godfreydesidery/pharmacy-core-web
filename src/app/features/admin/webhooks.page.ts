@@ -87,7 +87,7 @@ import { Translations } from '../../core/i18n/translations.store';
                       [loading]="hooks.loading()"
                       icon="link"
                       [title]="'admin.noWebhooks' | t"
-                      text="Connect an external system to receive events."
+                      [text]="'ui.empty.webhooks' | t"
                     />
                   </td>
                 </tr>
@@ -100,7 +100,7 @@ import { Translations } from '../../core/i18n/translations.store';
 
     <app-modal
       [open]="open()"
-      [title]="current() ? 'Edit webhook' : 'Add webhook'"
+      [title]="current() ? ('ui.l.editWebhook' | t) : ('ui.l.addWebhook' | t)"
       (closed)="open.set(false)"
     >
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">
@@ -167,7 +167,7 @@ import { Translations } from '../../core/i18n/translations.store';
 
     <app-drawer
       [open]="!!deliveriesOf()"
-      [title]="'Deliveries · ' + (deliveriesOf()?.name ?? '')"
+      [title]="('ui.l.deliveriesSp' | t) + (deliveriesOf()?.name ?? '')"
       (closed)="deliveriesOf.set(null)"
     >
       <div class="stack">
@@ -180,7 +180,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </div>
             <div class="muted" style="font-size:12px;margin-top:6px">
               HTTP {{ d.responseStatus ?? '—' }} · {{ d.attempts }} {{ 'admin.attemptS' | t
-              }}{{ d.deliveredAt ? ' · delivered ' + (d.deliveredAt | when) : '' }}
+              }}{{ d.deliveredAt ? ('ui.l.preDeliveredSp' | t) + (d.deliveredAt | when) : '' }}
             </div>
             @if (d.lastError) {
               <div class="text-red" style="font-size:12px;margin-top:4px">{{ d.lastError }}</div>

@@ -38,7 +38,9 @@ const DEV_ACCOUNTS = [
       <section class="art">
         <div class="brand">
           <app-logo [size]="40" [light]="true" />
-          <div><b>Pharmacy</b><small>Management System</small></div>
+          <div>
+            <b>Pharmacy</b><small>{{ 'ui.brand.subtitle' | t }}</small>
+          </div>
         </div>
         <div>
           <h2>{{ 'auth.tagline' | t }}</h2>

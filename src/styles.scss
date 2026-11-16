@@ -129,6 +129,11 @@ textarea {
 .muted {
   color: var(--muted);
 }
+/* A secondary line under a cell's main value (e.g. a code under a name). */
+small.block,
+span.block {
+  display: block;
+}
 .faint {
   color: var(--faint);
 }
@@ -495,6 +500,11 @@ textarea.input {
 }
 
 /* ---------- grids ---------- */
+/* Grid items may shrink below their content (a wide table scrolls inside its card instead of
+   pushing the page wider than a phone). */
+.grid > * {
+  min-width: 0;
+}
 .grid {
   display: grid;
   gap: 16px;
@@ -753,7 +763,11 @@ textarea.input {
   gap: 4px;
   border-bottom: 1px solid var(--border);
   padding: 0 16px;
+  /* Scroll sideways on narrow screens only; the tab underline's -1px margin must not add a
+     vertical scrollbar. */
   overflow-x: auto;
+  overflow-y: hidden;
+  scrollbar-width: thin;
 }
 .tabs a,
 .tabs button {
@@ -902,7 +916,7 @@ textarea.input {
   .grid.two,
   .grid.three,
   .grid.dash {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
   .form-grid,
   .form-grid.three {
@@ -912,6 +926,9 @@ textarea.input {
 @media (max-width: 640px) {
   .page {
     padding: 16px;
+  }
+  .grid.kpis {
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
   }
   .search {
     min-width: 0;

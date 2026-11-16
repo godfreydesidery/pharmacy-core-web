@@ -12,6 +12,7 @@ import { filter, map } from 'rxjs';
 import { Api } from '../api/api.service';
 import { TenantLogoStore } from '../files/tenant-logo.store';
 import { SettingsStore } from '../format/settings.store';
+import { SubscriptionStore } from '../subscription/subscription.store';
 import { LanguageSwitchComponent } from '../i18n/language-switch.component';
 import { BellComponent } from '../notifications/bell.component';
 import { TranslatePipe } from '../i18n/t.pipe';
@@ -48,6 +49,7 @@ export class ShellComponent {
   protected readonly theme = inject(ThemeService);
   protected readonly logo = inject(TenantLogoStore);
   private readonly settings = inject(SettingsStore);
+  protected readonly subscription = inject(SubscriptionStore);
   private readonly router = inject(Router);
   private readonly api = inject(Api);
 
@@ -71,17 +73,35 @@ export class ShellComponent {
   );
 
   protected readonly platformNav = computed(() => (this.session.isRoot() ? PLATFORM_NAV : []));
+  /** A suspended pharmacy, for anyone but a root administrator: only the account page stays open. */
+  protected readonly suspendedForMe = computed(
+    () => this.session.tenant()?.status === 'SUSPENDED' && !this.session.isRoot(),
+  );
+  protected readonly blockedBySuspension = computed(
+    () => this.suspendedForMe() && !this.url().startsWith('/account'),
+  );
+
   protected readonly tenantNav = computed<NavItem[]>(() => {
-    if (!this.session.tenant()) {
+    if (!this.session.tenant() || this.suspendedForMe()) {
       return [];
     }
-    return TENANT_NAV.map((item) =>
-      item.children
-        ? { ...item, children: item.children.filter((c) => this.session.can(c.permission)) }
-        : item,
-    ).filter((item) =>
-      item.children ? item.children.length > 0 : this.session.can(item.permission),
-    );
+    // The subscription plan hides modules it lacks (never from a root administrator).
+    const allows = (feature?: NavItem['feature']) =>
+      this.session.isRoot() || this.subscription.allows(feature);
+    return TENANT_NAV.filter((item) => allows(item.feature))
+      .map((item) =>
+        item.children
+          ? {
+              ...item,
+              children: item.children.filter(
+                (c) => this.session.can(c.permission) && allows(c.feature),
+              ),
+            }
+          : item,
+      )
+      .filter((item) =>
+        item.children ? item.children.length > 0 : this.session.can(item.permission),
+      );
   });
 
   protected readonly initials = computed(() =>
@@ -96,12 +116,16 @@ export class ShellComponent {
   constructor() {
     effect(() => {
       const tenant = this.session.tenant();
-      if (tenant) {
-        void this.settings.load(tenant.uid);
+      // A suspended pharmacy refuses every read but the root administrator's.
+      const readable = tenant && !this.suspendedForMe() ? tenant : null;
+      if (readable) {
+        void this.settings.load(readable.uid);
+        void this.subscription.load(readable.uid);
       } else {
         this.settings.clear();
+        this.subscription.clear();
       }
-      void this.logo.load(tenant?.uid ?? null);
+      void this.logo.load(readable?.uid ?? null);
     });
     effect(() => {
       const url = this.url();

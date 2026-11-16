@@ -75,7 +75,7 @@ import { Translations } from '../../core/i18n/translations.store';
     </div>
     <app-modal
       [open]="open()"
-      [title]="current() ? 'Edit manufacturer' : 'Add manufacturer'"
+      [title]="current() ? ('ui.l.editManufacturer' | t) : ('ui.l.addManufacturer' | t)"
       (closed)="open.set(false)"
     >
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">

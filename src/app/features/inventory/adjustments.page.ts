@@ -41,7 +41,7 @@ const REASONS: AdjustmentReason[] = [
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Adjusting stock" />
+        <app-branch-required [what]="'ui.what.adjusting' | t" />
       } @else {
         <div class="card">
           <div class="table-wrap">
@@ -123,11 +123,12 @@ const REASONS: AdjustmentReason[] = [
           <label>{{ 'inventory.batch' | t }}</label>
           <select class="select" formControlName="batchUid">
             <option value="" disabled>
-              {{ batches().length ? 'Choose a batch' : 'Pick a product first' }}
+              {{ batches().length ? ('ui.l.chooseABatch' | t) : ('ui.l.pickAProductFirst' | t) }}
             </option>
             @for (b of batches(); track b.uid) {
               <option [value]="b.uid">
-                {{ b.batchNumber }}{{ b.expiryDate ? ' · exp ' + (b.expiryDate | day) : '' }} ·
+                {{ b.batchNumber
+                }}{{ b.expiryDate ? ('ui.l.preExpSp' | t) + (b.expiryDate | day) : '' }} ·
                 {{ b.quantity }} on hand
               </option>
             }

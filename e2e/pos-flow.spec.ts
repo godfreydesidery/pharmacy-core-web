@@ -21,7 +21,7 @@ test('cashier sells Paracetamol for exact cash and finds it in the sales history
 
   await page.goto('/pos');
   await page.waitForLoadState('networkidle');
-  const search = page.locator('input[placeholder]').first();
+  const search = page.locator('.catalogue .search input');
   await search.fill('Paracetamol');
   const product = page.locator('.product', { hasText: 'Paracetamol' }).first();
   await expect(product).toBeVisible();

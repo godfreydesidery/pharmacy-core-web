@@ -26,7 +26,8 @@ import { Translations } from '../../core/i18n/translations.store';
               {{ o.number }} <app-status [value]="o.status" />
             </h1>
             <p class="sub">
-              {{ o.supplierName }} · placed {{ o.createdAt | when }} by {{ o.createdBy }}
+              {{ o.supplierName }} ·
+              {{ 'ui.t.placedBy' | t: { when: o.createdAt | when, by: o.createdBy } }}
             </p>
           </div>
           <div class="actions">
@@ -54,8 +55,8 @@ import { Translations } from '../../core/i18n/translations.store';
             tone="green"
             [caption]="
               o.currency === base()
-                ? o.lines.length + ' lines'
-                : (o.baseTotal | money) + ' at ' + (o.exchangeRate | num)
+                ? o.lines.length + ('ui.l.preLines' | t)
+                : (o.baseTotal | money) + ('ui.l.preAtSp' | t) + (o.exchangeRate | num)
             "
           />
           <app-stat
@@ -108,8 +109,10 @@ import { Translations } from '../../core/i18n/translations.store';
                 @if (o.currency !== base()) {
                   <tr class="muted">
                     <td colspan="5">
-                      In {{ base() }} at the locked rate {{ o.exchangeRate | num }} per
-                      {{ o.currency }}
+                      {{
+                        'ui.t.lockedRate'
+                          | t: { base: base(), rate: o.exchangeRate | num, currency: o.currency }
+                      }}
                     </td>
                     <td class="right">{{ o.baseTotal | money }}</td>
                   </tr>
@@ -118,7 +121,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </table>
           </div>
           @if (o.note) {
-            <div class="card-pad muted">Note: {{ o.note }}</div>
+            <div class="card-pad muted">{{ 'ui.t.note' | t: { note: o.note } }}</div>
           }
         </div>
         <app-attachments

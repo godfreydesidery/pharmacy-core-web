@@ -4,11 +4,13 @@ import { convertHalfEven } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
-  OnInit,
   computed,
+  effect,
   inject,
   input,
+  OnInit,
   signal,
+  untracked,
   viewChild,
 } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
@@ -57,8 +59,8 @@ type ReceiptLine = FormGroup<{
           >
           <h1 style="margin-top:6px">{{ 'purchasing.receiveGoods' | t }}</h1>
           <p class="sub">
-            {{ order() ? 'Against ' + order()!.number + ' · ' : '' }}into
-            {{ session.branch()?.name ?? '—' }}. Stock goes up as soon as you save.
+            {{ order() ? ('ui.l.againstSp' | t) + order()!.number + ' · ' : '' }}
+            {{ 'ui.t.receiveInto' | t: { branch: session.branch()?.name ?? '—' } }}
           </p>
         </div>
         <div class="actions">
@@ -74,7 +76,7 @@ type ReceiptLine = FormGroup<{
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Receiving goods" />
+        <app-branch-required [what]="'ui.what.receiving' | t" />
       } @else {
         <form [formGroup]="form" class="stack">
           <div class="card card-pad form-grid three">
@@ -98,6 +100,9 @@ type ReceiptLine = FormGroup<{
             <div class="field">
               <label>{{ 'purchasing.supplierInvoiceNo' | t }}</label
               ><input class="input" formControlName="supplierInvoiceNumber" />
+              @if (err('supplierInvoiceNumber'); as m) {
+                <span class="error">{{ m }}</span>
+              }
             </div>
             <div class="field">
               <label>{{ 'purchasing.note' | t }}</label
@@ -112,10 +117,10 @@ type ReceiptLine = FormGroup<{
               />
               @if (order(); as o) {
                 @if (o.currency !== base()) {
-                  <span class="hint muted"
-                    >The order locked {{ o.exchangeRate | num }} {{ base() }} per {{ o.currency }};
-                    change it only if the supplier invoiced at another rate.</span
-                  >
+                  <span class="hint muted">{{
+                    'ui.t.orderLocked'
+                      | t: { rate: o.exchangeRate | num, base: base(), currency: o.currency }
+                  }}</span>
                 }
               }
             </div>
@@ -235,7 +240,9 @@ type ReceiptLine = FormGroup<{
                                 line.controls.serials.touched && line.controls.serials.invalid
                               "
                             ></textarea>
-                            <span class="badge purple">{{ serialCount(line) }} unit(s)</span>
+                            <span class="badge purple">{{
+                              'ui.t.units' | t: { count: serialCount(line) }
+                            }}</span>
                           </div>
                         </td>
                       </tr>
@@ -246,7 +253,7 @@ type ReceiptLine = FormGroup<{
                         <app-empty
                           icon="download"
                           [title]="'purchasing.noItems' | t"
-                          text="Add the products in the delivery."
+                          [text]="'ui.empty.receiptLines' | t"
                         />
                       </td>
                     </tr>
@@ -260,7 +267,9 @@ type ReceiptLine = FormGroup<{
                   </tr>
                   @if (currency() !== base()) {
                     <tr class="muted">
-                      <td colspan="5">Stock cost in {{ base() }} at {{ rate() | num }}</td>
+                      <td colspan="5">
+                        {{ 'ui.t.stockCostAt' | t: { base: base(), rate: rate() | num } }}
+                      </td>
                       <td class="right">{{ baseTotal() | money }}</td>
                       <td></td>
                     </tr>
@@ -304,8 +313,15 @@ export default class ReceiptFormPage implements OnInit {
   private readonly version = signal(0);
   protected readonly base = inject(SettingsStore).currency;
   /** The receipt's currency (the order's, when against one) and its rate in base units. */
-  protected readonly currency = signal(this.base());
+  protected readonly currency = signal('');
   protected readonly rate = signal(1);
+  /** Settles on the base currency once the settings have loaded (never before). */
+  private readonly defaultCurrency = effect(() => {
+    const base = this.base();
+    if (base && !untracked(this.currency)) {
+      this.currency.set(base);
+    }
+  });
   private readonly supplierLookup = viewChild<LookupComponent>('supplierLookup');
 
   protected readonly form = this.fb.group({
@@ -426,6 +442,14 @@ export default class ReceiptFormPage implements OnInit {
   }
 
   protected async save(): Promise<void> {
+    if (!this.base() || !this.currency()) {
+      this.toasts.error(this.translations.t('toast.settingsLoading'));
+      return;
+    }
+    if (this.currency() !== this.base() && !(this.rate() > 0)) {
+      this.toasts.error(this.translations.t('toast.rateNeeded', { currency: this.currency() }));
+      return;
+    }
     if (!validate(this.form)) {
       this.toasts.error(this.translations.t('toast.completeLines'));
       return;
@@ -454,7 +478,7 @@ export default class ReceiptFormPage implements OnInit {
               serialNumbers: tracking === 'SERIAL' ? parseSerials(serials) : null,
             }),
           ),
-          currency: this.currency(),
+          currency: this.currency() || this.base(),
           exchangeRate: this.currency() === this.base() ? null : this.rate(),
         },
         { silent: true },

@@ -16,8 +16,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         <div>
           <h1>{{ 'inventory.expiry' | t }}</h1>
           <p class="sub">
-            Batches expiring soon at {{ session.branch()?.name ?? '—' }}. Expired batches can never
-            be sold.
+            {{ 'ui.t.expirySub' | t: { branch: session.branch()?.name ?? '—' } }}
           </p>
         </div>
         <div class="actions">
@@ -34,7 +33,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Expiry tracking" />
+        <app-branch-required [what]="'ui.what.expiry' | t" />
       } @else {
         <div class="card">
           <div class="table-wrap">
@@ -67,7 +66,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                       [class.text-red]="b.daysLeft <= 30"
                       [class.text-amber]="b.daysLeft > 30 && b.daysLeft <= 90"
                     >
-                      {{ b.daysLeft < 0 ? -b.daysLeft + ' ago' : b.daysLeft }}
+                      {{ b.daysLeft < 0 ? -b.daysLeft + ('ui.l.preAgo' | t) : b.daysLeft }}
                     </td>
                     <td class="right">{{ b.quantity | num }}</td>
                     <td class="right">{{ b.costValue | money }}</td>
@@ -76,10 +75,10 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                         [value]="b.daysLeft < 0 ? 'EXPIRED' : 'PENDING'"
                         [label]="
                           b.daysLeft < 0
-                            ? 'Expired'
+                            ? ('ui.l.expired' | t)
                             : b.daysLeft <= 30
-                              ? 'Critical'
-                              : 'Expiring soon'
+                              ? ('ui.l.critical' | t)
+                              : ('ui.l.expiringSoon' | t)
                         "
                         [tone]="b.daysLeft <= 30 ? 'red' : 'amber'"
                       />
@@ -92,7 +91,11 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                         [loading]="list.loading()"
                         icon="check"
                         [title]="'inventory.nothingExpiring' | t"
-                        [text]="'No batch on hand expires within ' + withinDays() + ' days.'"
+                        [text]="
+                          ('ui.l.noBatchOnHandExpiresWithinSp' | t) +
+                          withinDays() +
+                          ('ui.l.preDays' | t)
+                        "
                       />
                     </td>
                   </tr>

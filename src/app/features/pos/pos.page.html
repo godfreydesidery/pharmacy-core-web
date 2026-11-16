@@ -3,8 +3,7 @@
     <div>
       <h1>{{ 'pos.pointOfSale' | t }}</h1>
       <p class="sub">
-        {{ session.branch()?.name ?? 'No branch chosen' }} · earliest-expiring batches are sold
-        first
+        {{ session.branch()?.name ?? ('ui.l.noBranchChosen' | t) }} · {{ 'ui.t.fefo' | t }}
       </p>
     </div>
     <div class="actions">
@@ -17,8 +16,9 @@
   </div>
 
   @if (!session.branch()) {
-    <app-branch-required what="Selling" />
+    <app-branch-required [what]="'ui.what.selling' | t" />
   } @else {
+    <app-shift-bar />
     <div class="pos no-print">
       <section class="card catalogue">
         <div class="toolbar" style="border: 0">
@@ -83,7 +83,7 @@
                 <span
                   class="badge dot"
                   [class]="p.quantityOnHand <= 0 ? 'badge dot red' : 'badge dot green'"
-                  >{{ p.quantityOnHand <= 0 ? 'Out' : p.quantityOnHand + ' left' }}</span
+                  >{{ p.quantityOnHand <= 0 ? ('ui.l.out' | t) : p.quantityOnHand + ' left' }}</span
                 >
               </div>
               <b>{{ p.name }}</b>
@@ -99,14 +99,14 @@
                 [loading]="products.loading()"
                 icon="pill"
                 [title]="'pos.noProducts' | t"
-                text="Nothing matches, or no stock has been received here yet."
+                [text]="'ui.empty.posProducts' | t"
               />
             </div>
           }
         </div>
       </section>
 
-      <aside class="card cart">
+      <aside class="card cart" #cartPanel>
         <div class="card-head" style="padding-bottom: 12px; border-bottom: 1px solid var(--border)">
           <h3>
             {{ 'pos.currentSale' | t }} <span class="badge blue">{{ totals().items }}</span>
@@ -137,17 +137,21 @@
                   >
                     {{
                       a.onHold
-                        ? 'Account on hold'
+                        ? ('ui.l.accountOnHold' | t)
                         : a.balance > 0
-                          ? 'Owes ' + (a.balance | money)
-                          : 'No balance'
+                          ? ('ui.l.owesSp' | t) + (a.balance | money)
+                          : ('ui.l.noBalance' | t)
                     }}
                   </span>
                   @if (a.unallocatedCredit > 0) {
-                    <span class="badge green">Credit {{ a.unallocatedCredit | money }}</span>
+                    <span class="badge green">{{
+                      'ui.t.credit' | t: { amount: a.unallocatedCredit | money }
+                    }}</span>
                   }
                   @if (session.can('sales.credit') && !a.onHold && a.creditLimit > 0) {
-                    <span class="muted">Available {{ a.available | money }}</span>
+                    <span class="muted">{{
+                      'ui.t.available' | t: { amount: a.available | money }
+                    }}</span>
                   }
                 }
                 <button
@@ -202,7 +206,7 @@
                       class="input sm"
                       style="flex: 1"
                       placeholder="Pre-authorisation no.{{
-                        m.requiresPreauth ? ' (required)' : ''
+                        m.requiresPreauth ? ('ui.l.preRequired' | t) : ''
                       }}"
                       [value]="preauthNumber()"
                       (input)="preauthNumber.set($any($event.target).value)"
@@ -226,7 +230,17 @@
             <div class="line">
               <div class="grow">
                 <b>{{ line.product.name }}</b>
-                <small>{{ line.product.sellingPrice | money }} × {{ line.quantity }}</small>
+                <small
+                  >{{ priceOf(line) | money }} × {{ line.quantity }}
+                  @if (quoted()[line.product.productUid]; as q) {
+                    @if (q.source !== 'RETAIL') {
+                      <span class="badge green" [title]="q.retailPrice | money"
+                        >{{ 'pricing.source.' + q.source | t
+                        }}{{ q.label ? ': ' + q.label : '' }}</span
+                      >
+                    }
+                  }
+                </small>
                 @if (line.serials?.length) {
                   <span class="serials">
                     @for (serial of line.serials; track serial) {
@@ -257,13 +271,13 @@
                   <app-icon name="plus" [size]="14" />
                 </button>
               </div>
-              <b class="amount">{{ line.product.sellingPrice * line.quantity | money }}</b>
+              <b class="amount">{{ priceOf(line) * line.quantity | money }}</b>
             </div>
           } @empty {
             <app-empty
               icon="cart"
               [title]="'pos.cartIsEmpty' | t"
-              text="Tap a product or scan a barcode."
+              [text]="'ui.empty.posCart' | t"
             />
           }
         </div>
@@ -308,18 +322,41 @@
             <div class="payment">
               <select
                 class="select sm"
-                [value]="payment.method"
-                (change)="setMethod(i, $any($event.target).value)"
+                [value]="payment.channel ?? payment.method"
+                (change)="choose(i, $any($event.target).value)"
               >
-                @for (m of methods; track m.method) {
-                  <option [value]="m.method">{{ m.label }}</option>
+                @if (tillMethods.value(); as till) {
+                  @for (m of till; track m.code) {
+                    <option
+                      [value]="m.code"
+                      [selected]="
+                        m.code === payment.channel ||
+                        (!payment.channel && m.code === payment.method)
+                      "
+                    >
+                      {{ m.label }}
+                    </option>
+                  }
+                } @else {
+                  @for (m of methods; track m.method) {
+                    @if (!internalMethods.includes(m)) {
+                      <option [value]="m.method" [selected]="m.method === payment.method">
+                        {{ 'ui.pay.' + m.method | t: null : m.label }}
+                      </option>
+                    }
+                  }
+                }
+                @for (m of internalMethods; track m.method) {
+                  <option [value]="m.method" [selected]="m.method === payment.method">
+                    {{ 'ui.pay.' + m.method | t: null : m.label }}
+                  </option>
                 }
               </select>
               @if (accepted().length > 1) {
                 <select
                   class="select sm currency"
                   [value]="payment.currency ?? base()"
-                  (change)="setCurrency(i, $any($event.target).value)"
+                  (change)="setCurrency(i, $any($event.target))"
                   [attr.aria-label]="'pos.paymentCurrency' | t"
                 >
                   @for (c of accepted(); track c) {
@@ -341,7 +378,14 @@
               @if (payment.method !== 'CASH') {
                 <input
                   class="input sm"
-                  [placeholder]="'pos.reference' | t"
+                  [placeholder]="
+                    (payment.method === 'VOUCHER'
+                      ? 'pos.voucherCode'
+                      : tillMethodOf(payment)?.requiresReference
+                        ? 'pos.referenceRequired'
+                        : 'pos.reference'
+                    ) | t
+                  "
                   [value]="payment.reference ?? ''"
                   (input)="setReference(i, $any($event.target).value)"
                 />
@@ -357,18 +401,47 @@
                 </button>
               }
             </div>
+            @if (tillMethodOf(payment)?.push) {
+              <div class="row wrap push" style="gap: 6px">
+                <input
+                  class="input sm"
+                  type="tel"
+                  [placeholder]="'pos.customerPhone' | t"
+                  [value]="push()[i]?.phone ?? ''"
+                  (input)="setPhone(i, $any($event.target).value)"
+                />
+                <button
+                  type="button"
+                  class="btn sm"
+                  [disabled]="push()[i]?.busy"
+                  (click)="sendToPhone(i)"
+                >
+                  <app-icon name="phone" [size]="14" />
+                  {{ (push()[i]?.busy ? 'pos.waitingForCustomer' : 'pos.sendToPhone') | t }}
+                </button>
+                @if (push()[i]?.request; as r) {
+                  <span
+                    class="badge"
+                    [class.green]="r.status === 'CONFIRMED'"
+                    [class.red]="r.status === 'FAILED' || r.status === 'EXPIRED'"
+                    >{{ 'payments.status.' + r.status | t }}</span
+                  >
+                }
+              </div>
+            }
             @if (payment.currency && payment.currency !== base()) {
               <div class="fx-note muted">
-                {{ payment.amount | money: payment.currency }} at {{ payment.exchangeRate | num }} =
+                {{ payment.amount | money: payment.currency }} {{ 'ui.t.at' | t }}
+                {{ payment.exchangeRate | num }} =
                 <b>{{ baseValue(payment) | money }}</b>
               </div>
             }
           }
           <div class="row wrap" style="gap: 6px">
             <button type="button" class="chip" (click)="exact()">{{ 'pos.exact' | t }}</button>
-            @for (amount of [1000, 2000, 5000, 10000]; track amount) {
+            @for (amount of quickAmounts(); track amount) {
               <button type="button" class="chip" (click)="quickCash(amount)">
-                {{ amount | num }}
+                {{ amount | money: payments()[0]?.currency ?? undefined }}
               </button>
             }
             <button type="button" class="chip" (click)="addPayment()">{{ 'pos.split' | t }}</button>
@@ -390,9 +463,13 @@
                   (change)="balanceToAccount.set(!balanceToAccount())"
                   [disabled]="!!account()?.onHold"
                 />
-                Put {{ balance() | money }} on {{ customer()!.name }}'s account
+                {{
+                  'ui.t.putOnAccount' | t: { amount: balance() | money, customer: customer()!.name }
+                }}
                 @if (account(); as a) {
-                  <small class="muted">(available {{ a.available | money }})</small>
+                  <small class="muted"
+                    >({{ 'ui.t.availableLower' | t: { amount: a.available | money } }})</small
+                  >
                 }
               </label>
             }
@@ -403,8 +480,10 @@
                 [checked]="excessToAccount()"
                 (change)="excessToAccount.set(!excessToAccount())"
               />
-              Keep the {{ nonCashExcess() | money }} overpaid on {{ customer()!.name }}'s account as
-              credit
+              {{
+                'ui.pay.keepOnAccount'
+                  | t: { amount: nonCashExcess() | money, customer: customer()!.name }
+              }}
             </label>
           } @else if (change() > 0) {
             <div class="row between text-green">
@@ -417,8 +496,10 @@
               <app-icon name="stethoscope" [size]="16" />
               {{
                 prescription()
-                  ? 'Prescription ' + prescription()!.reference + ' attached'
-                  : 'Prescription required — tap to capture'
+                  ? ('ui.l.prescriptionSp' | t) +
+                    prescription()!.reference +
+                    ('ui.l.preAttached' | t)
+                  : ('ui.l.prescriptionRequiredTapToCapture' | t)
               }}
             </button>
           }
@@ -431,11 +512,27 @@
             [disabled]="busy() || !lines().length"
             (click)="checkout()"
           >
-            <app-icon name="check" [size]="18" /> {{ busy() ? 'Completing…' : 'Complete sale' }}
+            <app-icon name="check" [size]="18" />
+            {{ busy() ? ('ui.l.completing' | t) : ('ui.l.completeSale' | t) }}
           </button>
         </div>
       </aside>
     </div>
+    @if (lines().length) {
+      <!-- Phones and tablets: the cart sits below the products, so keep its total in reach. -->
+      <button
+        type="button"
+        class="cart-bar no-print"
+        (click)="cartPanel.scrollIntoView({ behavior: 'smooth', block: 'start' })"
+      >
+        <app-icon name="cart" [size]="18" />
+        <span>{{ 'ui.pos.cartBar' | t: { count: totals().items } }}</span>
+        <b class="grow">{{ totals().total | money }}</b>
+        <span class="pay"
+          >{{ 'ui.pos.pay' | t }} <app-icon name="chevron-right" [size]="16"
+        /></span>
+      </button>
+    }
   }
 </div>
 

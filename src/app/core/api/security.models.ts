@@ -90,6 +90,15 @@ export interface AuditEntry {
   before: Record<string, unknown> | null;
   after: Record<string, unknown> | null;
   correlationId: string | null;
+  /** A readable name for the record (number, name, email or code) captured when written. */
+  label?: string | null;
+}
+
+/** A member locked out after repeated failed sign-ins (GET /users/locked). */
+export interface LockedMember {
+  membershipUid: Uid;
+  userUid: Uid;
+  lockedUntil: IsoDateTime;
 }
 
 export function isChallenge(value: unknown): value is SignInChallenge {

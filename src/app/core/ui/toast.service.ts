@@ -8,6 +8,8 @@ export interface Toast {
   message: string;
 }
 
+const MAX_TOASTS = 3;
+
 /** Short-lived notifications in the corner of the screen. */
 @Injectable({ providedIn: 'root' })
 export class ToastService {
@@ -20,7 +22,7 @@ export class ToastService {
   }
 
   error(message: string): void {
-    this.show('error', message, 6000);
+    this.show('error', message, 5000);
   }
 
   info(message: string): void {
@@ -31,9 +33,13 @@ export class ToastService {
     this.items.update((list) => list.filter((toast) => toast.id !== id));
   }
 
-  private show(kind: ToastKind, message: string, ttl = 3500): void {
+  /** At most three at once; the same message again replaces the earlier one instead of stacking. */
+  private show(kind: ToastKind, message: string, ttl = 2800): void {
     const id = this.nextId++;
-    this.items.update((list) => [...list.slice(-4), { id, kind, message }]);
+    this.items.update((list) => [
+      ...list.filter((toast) => toast.message !== message).slice(-(MAX_TOASTS - 1)),
+      { id, kind, message },
+    ]);
     setTimeout(() => this.dismiss(id), ttl);
   }
 }

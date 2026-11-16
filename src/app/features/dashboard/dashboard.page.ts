@@ -1,5 +1,6 @@
+import { SetupChecklistComponent } from './setup-checklist.component';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
-import { Dashboard } from '../../core/api/models';
+import { Dashboard, Page, Transfer } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
 import { formatDate, formatMoney, formatMoneyCompact, humanize } from '../../core/format/format';
 import { SettingsStore } from '../../core/format/settings.store';
@@ -19,7 +20,7 @@ const METHOD_COLORS: Record<string, string> = {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [...SHARED, TranslatePipe],
+  imports: [...SHARED, TranslatePipe, SetupChecklistComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -47,6 +48,21 @@ const METHOD_COLORS: Record<string, string> = {
           }
         </div>
       </div>
+
+      <app-setup-checklist />
+
+      @if (pendingTransfers(); as n) {
+        <a
+          class="notice tone-amber mb"
+          style="display:flex;align-items:center;gap:8px"
+          routerLink="/inventory/transfers"
+        >
+          <app-icon name="transfer" [size]="16" />
+          {{ 'ui.transfers.incomingWaiting' | t: { count: n } }}
+          <span class="grow"></span>
+          <b>{{ 'ui.transfers.open' | t }}</b>
+        </a>
+      }
 
       @if (data.value(); as d) {
         <div class="grid kpis mb">
@@ -308,6 +324,19 @@ const METHOD_COLORS: Record<string, string> = {
 })
 export default class DashboardPage {
   protected readonly session = inject(SessionStore);
+  /** Transfers on their way to this branch, so the receiving branch knows to confirm them. */
+  private readonly incoming = loaded<Page<Transfer>>(() =>
+    this.session.branch() && this.session.can('inventory.view')
+      ? {
+          path: '/transfers',
+          query: { direction: 'INCOMING', limit: 100 },
+          options: { silent: true },
+        }
+      : null,
+  );
+  protected readonly pendingTransfers = computed(
+    () => (this.incoming.value()?.items ?? []).filter((t) => t.status === 'IN_TRANSIT').length,
+  );
   private readonly settings = inject(SettingsStore);
   private readonly translations = inject(Translations);
   protected readonly days = signal(30);

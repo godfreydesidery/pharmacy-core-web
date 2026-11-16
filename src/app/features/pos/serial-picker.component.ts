@@ -24,7 +24,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
   template: `
     <app-modal
       [open]="!!product()"
-      [title]="'Serial numbers · ' + (product()?.name ?? '')"
+      [title]="('ui.l.serialNumbersSp' | t) + (product()?.name ?? '')"
       (closed)="closed.emit()"
     >
       <div class="stack">
@@ -39,7 +39,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         </label>
         @if (unknown()) {
           <div class="notice tone-red">
-            <app-icon name="x" /> {{ unknown() }} is not in stock at this branch.
+            <app-icon name="x" /> {{ 'ui.t.notInStock' | t: { serial: unknown() } }}
           </div>
         }
         <div class="units">
@@ -51,7 +51,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 (change)="toggle(u.serialNumber)"
               />
               <span class="mono">{{ u.serialNumber }}</span>
-              <small>Batch {{ u.batchNumber }}</small>
+              <small>{{ 'ui.t.batch' | t: { batch: u.batchNumber } }}</small>
             </label>
           } @empty {
             <app-empty
@@ -63,7 +63,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         </div>
       </div>
       <ng-container footer>
-        <span class="muted grow">{{ chosen().size }} selected</span>
+        <span class="muted grow">{{ 'ui.t.selected' | t: { count: chosen().size } }}</span>
         <button class="btn" type="button" (click)="closed.emit()">{{ 'pos.cancel' | t }}</button>
         <button
           class="btn primary"
@@ -71,7 +71,8 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
           [disabled]="!chosen().size"
           (click)="picked.emit(selection())"
         >
-          <app-icon name="check" [size]="16" /> Add {{ chosen().size || '' }} to sale
+          <app-icon name="check" [size]="16" />
+          {{ 'ui.t.addToSale' | t: { count: chosen().size || '' } }}
         </button>
       </ng-container>
     </app-modal>

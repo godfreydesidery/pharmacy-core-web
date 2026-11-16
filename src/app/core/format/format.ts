@@ -24,7 +24,11 @@ export function formatMoney(
   if (amount === null || amount === undefined || Number.isNaN(amount)) {
     return '—';
   }
-  const code = currency || 'USD';
+  if (!currency) {
+    // The currency is not known yet (settings still loading): never guess one.
+    return formatNumberFixed(amount, locale);
+  }
+  const code = currency;
   const key = `${locale}|${code}`;
   let format = moneyFormats.get(key);
   if (!format) {
@@ -211,4 +215,9 @@ export function convertHalfEven(amount: number, rate: number, currency: string):
     rounded = Math.round(scaled);
   }
   return rounded / factor;
+}
+
+/** An amount with two decimals and no currency, for the moment before the currency is known. */
+function formatNumberFixed(amount: number, locale: string): string {
+  return amount.toLocaleString(locale, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 }

@@ -44,6 +44,8 @@ export const MESSAGES_SW: Readonly<Record<string, string>> = {
   'toast.pharmacySuspended': 'Duka la dawa limesimamishwa',
   'toast.pharmacyReactivated': 'Duka la dawa limewashwa tena',
   'toast.tenantRegistered': '{{name}} limesajiliwa',
+  'toast.settingsLoading': 'Mipangilio ya duka bado inapakia; jaribu tena baada ya muda mfupi.',
+  'toast.rateNeeded': 'Weka kwanza kiwango cha ubadilishaji cha {{currency}}.',
   'toast.saleCompleted': '{{number}} imekamilika',
   'toast.returnNeedsQuantity': 'Weka idadi ya kurejesha',
   'toast.returnNeedsReason': 'Taja sababu ya kurejesha',
@@ -89,5 +91,6 @@ export const MESSAGES_SW: Readonly<Record<string, string>> = {
 
   // confirmations
   'confirm.deleteWebhook': 'Futa webhook "{{name}}"? Utumaji utasimama mara moja.',
+  'confirm.largeChange': 'Mteja ametoa {{tendered}}, kwa hiyo chenji ni {{change}}. Je, ni sahihi?',
   'confirm.removePasskey': 'Ondoa passkey "{{name}}"?',
 };

@@ -30,7 +30,7 @@ import { SessionStore } from '../../core/session/session.store';
             <div class="right">
               <b>{{ s.account.customerName }}</b>
               <p class="muted">
-                {{ (s.from | day) || 'From the start' }} – {{ (s.to | day) || 'today' }}
+                {{ (s.from | day) || ('ui.l.fromTheStart' | t) }} – {{ (s.to | day) || 'today' }}
               </p>
               <p class="muted">{{ 'receivables.printed' | t }} {{ printedOn | day }}</p>
             </div>
@@ -72,7 +72,9 @@ import { SessionStore } from '../../core/session/session.store';
             </tbody>
             <tfoot>
               <tr>
-                <td colspan="5">{{ closing() >= 0 ? 'Amount due' : 'Credit held' }}</td>
+                <td colspan="5">
+                  {{ closing() >= 0 ? ('ui.l.amountDue' | t) : ('ui.l.creditHeld' | t) }}
+                </td>
                 <td class="right">{{ (closing() < 0 ? -closing() : closing()) | money }}</td>
               </tr>
             </tfoot>

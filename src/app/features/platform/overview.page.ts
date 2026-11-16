@@ -1,6 +1,8 @@
-import { ChangeDetectionStrategy, Component, computed } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { loaded, pagedList } from '../../core/data/data';
 import { PlatformOverview, Tenant } from '../../core/api/models';
+import { SubscriptionOverview } from '../../core/api/subscription.models';
+import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
 import { DonutSegment } from '../../core/ui/charts';
 
@@ -59,6 +61,40 @@ import { DonutSegment } from '../../core/ui/charts';
             [caption]="'platform.withSignIn' | t"
           />
         </div>
+        @if (subscriptions.value(); as so) {
+          <div class="grid kpis mb">
+            <app-stat
+              [label]="'plans.mrr' | t"
+              [value]="so.monthlyRecurringRevenue | compactMoney: so.currency"
+              [hint]="so.monthlyRecurringRevenue | money: so.currency"
+              icon="wallet"
+              tone="green"
+              [caption]="'plans.mrrCaption' | t"
+            />
+            <app-stat
+              [label]="'plans.trials' | t"
+              [value]="so.trials"
+              icon="clock"
+              tone="blue"
+              [caption]="'plans.onTrial' | t"
+            />
+            <app-stat
+              [label]="'plans.pastDue' | t"
+              [value]="so.pastDue"
+              icon="alert"
+              tone="orange"
+              [caption]="'plans.inGrace' | t"
+            />
+            <app-stat
+              [label]="'plans.outstanding' | t"
+              [value]="so.outstanding | compactMoney: so.currency"
+              [hint]="so.outstanding | money: so.currency"
+              icon="receipt"
+              tone="purple"
+              [caption]="'plans.openInvoices' | t"
+            />
+          </div>
+        }
         <div class="grid two">
           <div class="card">
             <div class="card-head">
@@ -121,6 +157,11 @@ import { DonutSegment } from '../../core/ui/charts';
   `,
 })
 export default class OverviewPage {
+  private readonly translations = inject(Translations);
+  protected readonly subscriptions = loaded<SubscriptionOverview>(() => ({
+    path: '/platform/subscriptions/overview',
+    options: { noBranch: true },
+  }));
   protected readonly overview = loaded<PlatformOverview>(() => ({
     path: '/platform/overview',
     options: { noBranch: true },
@@ -133,8 +174,12 @@ export default class OverviewPage {
     const o = this.overview.value();
     return o
       ? [
-          { label: 'Active', value: o.activeTenants, color: '#16a34a' },
-          { label: 'Suspended', value: o.suspendedTenants, color: '#ef4444' },
+          { label: this.translations.t('enum.ACTIVE'), value: o.activeTenants, color: '#16a34a' },
+          {
+            label: this.translations.t('enum.SUSPENDED'),
+            value: o.suspendedTenants,
+            color: '#ef4444',
+          },
         ]
       : [];
   });

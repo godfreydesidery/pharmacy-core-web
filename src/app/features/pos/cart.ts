@@ -20,14 +20,21 @@ export interface CartTotals {
 export const round2 = (value: number): number => Math.round((value + Number.EPSILON) * 100) / 100;
 
 /** Gross per line, the sale-wide discount on each line, then tax on what remains (tax exclusive). */
-export function cartTotals(lines: readonly CartLine[], discountPercent: number): CartTotals {
+/** A line's unit price: the catalogue price unless pricing (lists, promotions) says otherwise. */
+export type PriceOf = (line: CartLine) => number;
+
+export function cartTotals(
+  lines: readonly CartLine[],
+  discountPercent: number,
+  priceOf: PriceOf = (line) => line.product.sellingPrice,
+): CartTotals {
   const rate = Math.min(Math.max(discountPercent || 0, 0), 100);
   let subtotal = 0;
   let discount = 0;
   let tax = 0;
   let items = 0;
   for (const line of lines) {
-    const gross = round2(line.product.sellingPrice * line.quantity);
+    const gross = round2(priceOf(line) * line.quantity);
     const lineDiscount = round2((gross * rate) / 100);
     const lineTax = round2(((gross - lineDiscount) * (line.product.taxRatePercent || 0)) / 100);
     subtotal += gross;

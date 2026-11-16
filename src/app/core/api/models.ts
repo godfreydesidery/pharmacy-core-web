@@ -64,6 +64,10 @@ export interface Tenant {
   statusReason: string | null;
   branchCount: number;
   createdAt: IsoDateTime;
+  contactName?: string | null;
+  contactEmail?: string | null;
+  contactPhone?: string | null;
+  address?: string | null;
 }
 
 export interface RegisterTenant {
@@ -91,6 +95,9 @@ export interface User {
   email: string;
   rootAdmin: boolean;
   createdAt?: IsoDateTime;
+  active?: boolean;
+  phone?: string | null;
+  lastSignInAt?: IsoDateTime | null;
 }
 
 /* ---------- tenant administration ---------- */
@@ -134,6 +141,7 @@ export interface Member {
   active: boolean;
   lastSignInAt: IsoDateTime | null;
   createdAt: IsoDateTime;
+  phone?: string | null;
 }
 
 export interface Role {
@@ -241,7 +249,8 @@ export interface Product extends ProductInput {
 }
 
 /* ---------- partners ---------- */
-export type CustomerType = 'RETAIL' | 'WHOLESALE' | 'INSURANCE';
+export type CustomerType =
+  'RETAIL' | 'WHOLESALE' | 'INSURANCE' | 'CORPORATE' | 'STAFF' | 'NGO' | 'GOVERNMENT';
 export type PaymentTerms = 'COD' | 'NET_15' | 'NET_30' | 'NET_45' | 'NET_60';
 
 export interface CustomerInput {
@@ -273,6 +282,8 @@ export interface SupplierInput {
   paymentTerms: PaymentTerms;
   address: string | null;
   active: boolean;
+  /** Days from order to delivery; reorder suggestions cover them. */
+  leadTimeDays?: number;
 }
 
 export interface Supplier extends SupplierInput {
@@ -341,6 +352,8 @@ export interface Batch {
   unitCost: number;
   daysLeft: number | null;
   expired: boolean;
+  /** Recalled: on hand but not sold or moved until released. */
+  quarantined?: boolean;
 }
 
 export interface ExpiringBatch {
@@ -355,7 +368,16 @@ export interface ExpiringBatch {
 }
 
 export type MovementType =
-  'OPENING' | 'RECEIPT' | 'SALE' | 'SALE_RETURN' | 'ADJUSTMENT' | 'TRANSFER_OUT' | 'TRANSFER_IN';
+  | 'OPENING'
+  | 'RECEIPT'
+  | 'SALE'
+  | 'SALE_RETURN'
+  | 'ADJUSTMENT'
+  | 'TRANSFER_OUT'
+  | 'TRANSFER_IN'
+  | 'TRANSFORM_OUT'
+  | 'TRANSFORM_IN'
+  | 'SUPPLIER_RETURN';
 
 export interface Movement {
   uid: Uid;
@@ -468,7 +490,15 @@ export interface GoodsReceipt {
 
 /* ---------- sales ---------- */
 export type PaymentMethod =
-  'CASH' | 'CARD' | 'MOBILE_MONEY' | 'INSURANCE' | 'CREDIT' | 'ACCOUNT_CREDIT';
+  | 'CASH'
+  | 'CARD'
+  | 'MOBILE_MONEY'
+  | 'INSURANCE'
+  | 'CREDIT'
+  | 'ACCOUNT_CREDIT'
+  | 'BANK_TRANSFER'
+  | 'CHEQUE'
+  | 'VOUCHER';
 export type SaleStatus = 'COMPLETED' | 'PARTIALLY_RETURNED' | 'RETURNED';
 
 export interface SellableProduct {
@@ -526,6 +556,8 @@ export interface SalePayment {
   exchangeRate?: number | null;
   /** The payment's value in the base currency (in responses). */
   baseAmount?: number;
+  /** The registered method used (MPESA, BANK_TRANSFER, …), for reconciliation. */
+  channel?: string | null;
 }
 
 export interface SaleLine {
@@ -813,4 +845,112 @@ export interface WebhookDelivery {
   lastError: string | null;
   createdAt: IsoDateTime;
   deliveredAt: IsoDateTime | null;
+}
+
+/* ---------- pricing ---------- */
+export type PriceSource = 'RETAIL' | 'BRANCH' | 'LIST' | 'PROMOTION';
+
+/** A basket line priced for the customer at the branch, as checkout will charge it. */
+export interface PricedLine {
+  productUid: Uid;
+  quantity: number;
+  unitPrice: number;
+  retailPrice: number;
+  source: PriceSource;
+  label: string | null;
+  belowCost: boolean;
+}
+
+export interface PriceListItem {
+  productUid: Uid;
+  productName: string | null;
+  minQuantity: number;
+  price: number;
+}
+
+export interface PriceList {
+  uid: Uid;
+  name: string;
+  customerType: CustomerType | null;
+  customerUid: Uid | null;
+  customerName: string | null;
+  adjustmentPercent: number;
+  validFrom: string | null;
+  validTo: string | null;
+  active: boolean;
+  items: PriceListItem[];
+}
+
+export interface BranchPrice {
+  productUid: Uid;
+  productName: string | null;
+  branchUid: Uid;
+  price: number;
+}
+
+export interface Promotion {
+  uid: Uid;
+  name: string;
+  percentOff: number;
+  productUid: Uid | null;
+  productName: string | null;
+  categoryUid: Uid | null;
+  categoryName: string | null;
+  branchUid: Uid | null;
+  validFrom: string;
+  validTo: string;
+  active: boolean;
+}
+
+/* ---------- payment methods ---------- */
+export type PaymentKind = 'CASH' | 'MOBILE_MONEY' | 'BANK_TRANSFER' | 'CARD' | 'CHEQUE' | 'VOUCHER';
+
+/** A method the till offers: how it is booked (kind) and whether it can push to a phone. */
+export interface TillMethod {
+  code: string;
+  name: string;
+  label: string;
+  kind: PaymentKind;
+  adapter: string;
+  requiresReference: boolean;
+  push: boolean;
+  accountReference: string | null;
+  enabled: boolean;
+}
+
+export interface PaymentMethodType {
+  uid: Uid;
+  code: string;
+  name: string;
+  kind: PaymentKind;
+  adapter: string;
+  requiresReference: boolean;
+  enabled: boolean;
+  sortOrder: number;
+  pushAvailable: boolean;
+}
+
+export interface PaymentRequest {
+  uid: Uid;
+  methodCode: string;
+  amount: number;
+  currency: string;
+  phone: string | null;
+  status: 'PENDING' | 'CONFIRMED' | 'FAILED' | 'EXPIRED' | 'USED';
+  providerReference: string | null;
+  failureReason: string | null;
+  expiresAt: string;
+}
+
+export interface Voucher {
+  uid: Uid;
+  code: string;
+  initialValue: number;
+  balance: number;
+  expiresOn: string | null;
+  holderName: string | null;
+  paidBy: string;
+  status: 'ACTIVE' | 'SPENT' | 'VOID';
+  createdAt: string;
+  createdBy: string;
 }

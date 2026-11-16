@@ -86,7 +86,7 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
                       [loading]="list.loading()"
                       icon="building"
                       [title]="'platform.noPharmacies' | t"
-                      text="Register the first pharmacy business."
+                      [text]="'ui.empty.tenants' | t"
                     />
                   </td>
                 </tr>

@@ -28,7 +28,8 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               {{ s.number }} <app-status [value]="s.status" />
             </h1>
             <p class="sub">
-              {{ s.createdAt | when }} · {{ s.branchName }} · cashier {{ s.cashierName }}
+              {{ s.createdAt | when }} · {{ s.branchName }} ·
+              {{ 'ui.t.cashierLower' | t: { name: s.cashierName } }}
             </p>
           </div>
           <div class="actions">
@@ -57,7 +58,9 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
             [hint]="s.paidTotal | money"
             icon="wallet"
             tone="green"
-            [caption]="s.changeDue ? 'change ' + (s.changeDue | money) : 'no change due'"
+            [caption]="
+              s.changeDue ? ('ui.l.changeSp' | t) + (s.changeDue | money) : ('ui.l.noChangeDue' | t)
+            "
           />
           <app-stat
             [label]="'sales.discount' | t"
@@ -111,14 +114,20 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                                     ? 'badge mono gray'
                                     : 'badge mono purple'
                                 "
-                                [title]="l.returnedSerialNumbers.includes(sn) ? 'Returned' : 'Sold'"
+                                [title]="
+                                  l.returnedSerialNumbers.includes(sn)
+                                    ? ('ui.l.returned' | t)
+                                    : ('ui.l.sold' | t)
+                                "
                                 >{{ sn }}</span
                               >
                             }
                           </div>
                         }
                         @if (l.warrantyEndsOn) {
-                          <div class="faint small">Warranty until {{ l.warrantyEndsOn | day }}</div>
+                          <div class="faint small">
+                            {{ 'ui.t.warrantyUntil' | t: { date: l.warrantyEndsOn | day } }}
+                          </div>
                         }
                       </td>
                       <td class="mono">{{ l.batchNumber === '-' ? '—' : l.batchNumber }}</td>
@@ -149,7 +158,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               <dl class="dl" style="grid-template-columns:1fr">
                 <div>
                   <dt>{{ 'sales.customer' | t }}</dt>
-                  <dd>{{ s.customerName ?? 'Walk-in customer' }}</dd>
+                  <dd>{{ s.customerName ?? ('ui.l.walkInCustomer' | t) }}</dd>
                 </div>
                 @for (p of s.payments; track $index) {
                   <div>

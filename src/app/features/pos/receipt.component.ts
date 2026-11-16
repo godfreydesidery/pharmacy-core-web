@@ -28,8 +28,8 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         ><span>{{ sale().createdAt | when }}</span>
       </div>
       <div class="small muted">
-        Customer: {{ sale().customerName ?? 'Walk-in customer' }} · Cashier:
-        {{ sale().cashierName }}
+        {{ 'ui.t.customer' | t: { name: sale().customerName ?? ('ui.l.walkInCustomer' | t) } }} ·
+        {{ 'ui.t.cashier' | t: { name: sale().cashierName } }}
       </div>
       <table>
         <thead>
@@ -53,7 +53,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                     Batch {{ line.batchNumber }}
                   }
                   @if (line.warrantyEndsOn) {
-                    <div>Warranty until {{ line.warrantyEndsOn | day }}</div>
+                    <div>{{ 'ui.t.warrantyUntil' | t: { date: line.warrantyEndsOn | day } }}</div>
                   }
                 </div>
               </td>
@@ -102,7 +102,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         }
       </div>
       <p class="center muted small footer">
-        {{ settings.settings()?.receiptFooter ?? 'Thank you. Get well soon.' }}
+        {{ settings.settings()?.receiptFooter ?? ('ui.l.thankYouGetWellSoon' | t) }}
       </p>
     </div>
   `,

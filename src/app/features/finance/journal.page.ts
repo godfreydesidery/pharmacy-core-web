@@ -75,7 +75,7 @@ import { SHARED } from '../../core/shared';
               [loading]="list.loading()"
               icon="book"
               [title]="'finance.noJournalEntries' | t"
-              text="Sales, receipts and expenses post here automatically."
+              [text]="'ui.empty.journal' | t"
             />
           </div>
         }

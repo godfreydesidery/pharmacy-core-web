@@ -61,7 +61,7 @@ const PRODUCT_TYPES = [
                   <small
                     >{{ p.code }} {{ 'insurance.paysIn' | t }} {{ p.paymentTermsDays }}
                     {{ 'insurance.days' | t
-                    }}{{ p.requiresPreauth ? ' · pre-authorisation required' : '' }}</small
+                    }}{{ p.requiresPreauth ? ('ui.l.prePreAuthorisationRequired' | t) : '' }}</small
                   >
                 </div>
               </div>
@@ -109,7 +109,7 @@ const PRODUCT_TYPES = [
               [loading]="payers.loading()"
               icon="shield"
               [title]="'insurance.noPayersYet' | t"
-              text="Add NHIF or a private insurer to bill claims at the till."
+              [text]="'ui.empty.payers' | t"
             />
           </div>
         }
@@ -118,7 +118,7 @@ const PRODUCT_TYPES = [
 
     <app-modal
       [open]="payerOpen()"
-      [title]="payer() ? 'Edit ' + payer()!.name : 'Add payer'"
+      [title]="payer() ? ('ui.l.editSp' | t) + payer()!.name : ('ui.l.addPayer' | t)"
       (closed)="payerOpen.set(false)"
     >
       <form class="form-grid" [formGroup]="payerForm">
@@ -173,7 +173,7 @@ const PRODUCT_TYPES = [
 
     <app-modal
       [open]="schemeOpen()"
-      [title]="scheme() ? 'Edit ' + scheme()!.name : 'Add scheme'"
+      [title]="scheme() ? ('ui.l.editSp' | t) + scheme()!.name : ('ui.l.addScheme' | t)"
       (closed)="schemeOpen.set(false)"
     >
       <form class="form-grid" [formGroup]="schemeForm">
@@ -206,7 +206,9 @@ const PRODUCT_TYPES = [
         </div>
         <div class="field">
           <label>{{
-            schemeForm.controls.copayType.value === 'PERCENT' ? 'Co-pay %' : 'Co-pay amount'
+            schemeForm.controls.copayType.value === 'PERCENT'
+              ? ('ui.l.coPay' | t)
+              : ('ui.l.coPayAmount' | t)
           }}</label>
           <input
             class="input"

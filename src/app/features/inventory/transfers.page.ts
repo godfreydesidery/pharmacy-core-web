@@ -1,7 +1,14 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  effect,
+  inject,
+  signal,
+} from '@angular/core';
 import { Api } from '../../core/api/api.service';
-import { Product, Transfer } from '../../core/api/models';
-import { pagedList } from '../../core/data/data';
+import { Page, Product, Transfer } from '../../core/api/models';
+import { loaded, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { LookupComponent } from '../../core/ui/lookup.component';
@@ -37,14 +44,14 @@ interface DraftLine {
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Transferring stock" />
+        <app-branch-required [what]="'ui.what.transferring' | t" />
       } @else {
         <div class="card">
           <div class="tabs">
             <button
               type="button"
               [class.active]="direction() === 'OUTGOING'"
-              (click)="direction.set('OUTGOING')"
+              (click)="chosen = true; direction.set('OUTGOING')"
             >
               {{ 'inventory.outgoing' | t }}
             </button>
@@ -54,6 +61,9 @@ interface DraftLine {
               (click)="direction.set('INCOMING')"
             >
               {{ 'inventory.incoming' | t }}
+              @if (pendingIncoming(); as n) {
+                <span class="badge amber" style="margin-left:6px">{{ n }}</span>
+              }
             </button>
           </div>
           <div class="table-wrap">
@@ -236,6 +246,25 @@ export default class TransfersPage {
   protected readonly list = pagedList<Transfer>(() =>
     this.session.branch() ? { path: '/transfers', query: { direction: this.direction() } } : null,
   );
+  /** Incoming transfers still in transit to this branch: counted on the tab, opened by default. */
+  private readonly incoming = loaded<Page<Transfer>>(() =>
+    this.session.branch()
+      ? { path: '/transfers', query: { direction: 'INCOMING', limit: 100 } }
+      : null,
+  );
+  protected readonly pendingIncoming = computed(
+    () => (this.incoming.value()?.items ?? []).filter((t) => t.status === 'IN_TRANSIT').length,
+  );
+  protected chosen = false;
+  constructor() {
+    effect(() => {
+      if (!this.chosen && this.pendingIncoming() > 0) {
+        this.chosen = true;
+        this.direction.set('INCOMING');
+      }
+    });
+  }
+
   protected readonly otherBranches = computed(() =>
     this.session.branches().filter((b) => b.uid !== this.session.branch()?.uid),
   );
@@ -311,7 +340,7 @@ export default class TransfersPage {
       this.toasts.success(
         this.translations.t('toast.transferReceived', { number: transfer.number }),
       );
-      await this.list.reload();
+      await Promise.all([this.list.reload(), this.incoming.reload()]);
     } finally {
       this.busy.set(false);
     }

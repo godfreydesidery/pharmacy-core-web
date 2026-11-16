@@ -11,6 +11,7 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
+import { OverdrawWarningComponent } from './overdraw-warning.component';
 
 const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
 
@@ -20,7 +21,7 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
  */
 @Component({
   selector: 'app-supplier-payments',
-  imports: [...SHARED, LookupComponent],
+  imports: [...SHARED, LookupComponent, OverdrawWarningComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -70,7 +71,8 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
                         [class.text-red]="p.fxDifference > 0"
                         [class.text-green]="p.fxDifference < 0"
                       >
-                        {{ p.fxDifference > 0 ? 'Loss' : 'Gain' }} {{ abs(p.fxDifference) | money }}
+                        {{ p.fxDifference > 0 ? ('ui.l.loss' | t) : ('ui.l.gain' | t) }}
+                        {{ abs(p.fxDifference) | money }}
                       </span>
                     }
                   </td>
@@ -158,6 +160,11 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
             }
           </select>
         </div>
+        <app-overdraw-warning
+          class="full"
+          [amount]="settled()"
+          [method]="form.controls.paymentMethod.value"
+        />
         <div class="field">
           <label>{{ 'finance.paidOn' | t }}</label>
           <input class="input" type="date" formControlName="paidOn" [max]="today" />
@@ -195,7 +202,7 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
           {{ 'common.cancel' | t }}
         </button>
         <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
-          {{ busy() ? 'Saving…' : 'Record payment' }}
+          {{ busy() ? ('ui.l.saving' | t) : ('ui.l.recordPayment' | t) }}
         </button>
       </div>
     </app-modal>

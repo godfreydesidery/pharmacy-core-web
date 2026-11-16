@@ -14,12 +14,18 @@ export default [
     title: 'Purchase order',
     loadComponent: () => import('./order-detail.page'),
   },
+  { path: 'reorder', title: 'Reorder suggestions', loadComponent: () => import('./reorder.page') },
   { path: 'receipts', title: 'Goods receipts', loadComponent: () => import('./receipts.page') },
   {
     path: 'receipts/new',
     title: 'Receive goods',
     data: { permission: 'purchasing.receive' },
     loadComponent: () => import('./receipt-form.page'),
+  },
+  {
+    path: 'supplier-returns',
+    title: 'Supplier returns',
+    loadComponent: () => import('./supplier-returns.page'),
   },
   {
     path: 'receipts/:uid',

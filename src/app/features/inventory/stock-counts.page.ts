@@ -1,0 +1,243 @@
+import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { Api } from '../../core/api/api.service';
+import { loaded } from '../../core/data/data';
+import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { Translations } from '../../core/i18n/translations.store';
+import { SessionStore } from '../../core/session/session.store';
+import { SHARED } from '../../core/shared';
+import { ToastService } from '../../core/ui/toast.service';
+
+interface CountLine {
+  uid: string;
+  productUid: string;
+  productName: string;
+  batchNumber: string;
+  expiryDate: string | null;
+  expected: number;
+  counted: number | null;
+  variance: number | null;
+  varianceValue: number | null;
+}
+
+interface StockCount {
+  uid: string;
+  number: string;
+  status: 'OPEN' | 'POSTED';
+  note: string | null;
+  lines: number;
+  counted: number;
+  varianceValue: number;
+  createdAt: string;
+  createdBy: string;
+  postedAt: string | null;
+  items: CountLine[];
+}
+
+/** Inventory → Stock-takes: count sheets of the branch's stock, and posting the differences. */
+@Component({
+  selector: 'app-stock-counts',
+  imports: [TranslatePipe, ...SHARED],
+  changeDetection: ChangeDetectionStrategy.OnPush,
+  template: `
+    <div class="page">
+      <div class="page-head no-print">
+        <div>
+          <h1>{{ 'count.title' | t }}</h1>
+          <p class="sub">{{ 'count.sub' | t }}</p>
+        </div>
+        <div class="actions">
+          @if (current()) {
+            <button class="btn" type="button" (click)="current.set(null)">
+              {{ 'count.back' | t }}
+            </button>
+            <button class="btn" type="button" (click)="print()">
+              <app-icon name="printer" [size]="16" /> {{ 'count.printSheet' | t }}
+            </button>
+          } @else if (session.branch()) {
+            <button class="btn primary" type="button" [disabled]="busy()" (click)="start()">
+              <app-icon name="plus" [size]="16" /> {{ 'count.start' | t }}
+            </button>
+          }
+        </div>
+      </div>
+      @if (!session.branch()) {
+        <app-branch-required [what]="'count.title' | t" />
+      } @else if (current(); as c) {
+        <div class="card">
+          <div class="card-pad row between">
+            <div>
+              <h3>{{ c.number }}</h3>
+              <span class="muted"
+                >{{ c.createdAt | when }} ·
+                {{ 'count.progress' | t: { counted: c.counted, lines: c.lines } }}</span
+              >
+            </div>
+            <div class="right">
+              <span class="muted">{{ 'count.varianceValue' | t }}</span>
+              <h3 [class.text-red]="c.varianceValue < 0">{{ c.varianceValue | money }}</h3>
+            </div>
+          </div>
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th>{{ 'count.product' | t }}</th>
+                  <th>{{ 'count.batch' | t }}</th>
+                  <th class="right">{{ 'count.expected' | t }}</th>
+                  <th class="right">{{ 'count.counted' | t }}</th>
+                  <th class="right">{{ 'count.difference' | t }}</th>
+                  <th class="right">{{ 'count.value' | t }}</th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (l of c.items; track l.uid) {
+                  <tr>
+                    <td>{{ l.productName }}</td>
+                    <td class="mono">
+                      {{ l.batchNumber }}
+                      @if (l.expiryDate) {
+                        <small class="muted" style="display: block">{{ l.expiryDate }}</small>
+                      }
+                    </td>
+                    <td class="right">{{ l.expected }}</td>
+                    <td class="right">
+                      @if (c.status === 'OPEN') {
+                        <input
+                          class="input sm"
+                          type="number"
+                          min="0"
+                          style="width: 90px"
+                          [value]="entries()[l.uid] ?? l.counted ?? ''"
+                          (input)="setCount(l.uid, $any($event.target).value)"
+                        />
+                      } @else {
+                        {{ l.counted ?? '—' }}
+                      }
+                    </td>
+                    <td class="right" [class.text-red]="(l.variance ?? 0) < 0">
+                      {{ l.variance ?? '' }}
+                    </td>
+                    <td class="right">
+                      {{ l.varianceValue === null ? '' : (l.varianceValue | money) }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          @if (c.status === 'OPEN') {
+            <div class="card-pad row no-print" style="justify-content: flex-end; gap: 8px">
+              <button class="btn" type="button" [disabled]="busy()" (click)="save()">
+                {{ 'count.save' | t }}
+              </button>
+              <button class="btn primary" type="button" [disabled]="busy()" (click)="post()">
+                {{ 'count.post' | t }}
+              </button>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="card">
+          <table class="table">
+            <thead>
+              <tr>
+                <th>{{ 'count.number' | t }}</th>
+                <th>{{ 'count.started' | t }}</th>
+                <th class="right">{{ 'count.lines' | t }}</th>
+                <th class="right">{{ 'count.varianceValue' | t }}</th>
+                <th>{{ 'count.status' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (c of counts.value() ?? []; track c.uid) {
+                <tr class="clickable" (click)="openCount(c.uid)">
+                  <td class="mono strong">{{ c.number }}</td>
+                  <td class="muted">{{ c.createdAt | when }}</td>
+                  <td class="right">{{ c.counted }} / {{ c.lines }}</td>
+                  <td class="right">{{ c.varianceValue | money }}</td>
+                  <td>{{ 'count.status.' + c.status | t }}</td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="5" class="empty">{{ 'count.none' | t }}</td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      }
+    </div>
+  `,
+})
+export default class StockCountsPage {
+  protected readonly session = inject(SessionStore);
+  private readonly api = inject(Api);
+  private readonly toasts = inject(ToastService);
+  private readonly translations = inject(Translations);
+  protected readonly busy = signal(false);
+  protected readonly current = signal<StockCount | null>(null);
+  protected readonly entries = signal<Record<string, number | null>>({});
+  protected readonly counts = loaded<StockCount[]>(() =>
+    this.session.branch() && !this.current() ? { path: '/stock-counts' } : null,
+  );
+
+  protected async start(): Promise<void> {
+    this.busy.set(true);
+    try {
+      this.current.set(await this.api.post<StockCount>('/stock-counts', {}));
+      this.entries.set({});
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async openCount(uid: string): Promise<void> {
+    this.current.set(await this.api.get<StockCount>(`/stock-counts/${uid}`));
+    this.entries.set({});
+  }
+
+  protected setCount(lineUid: string, value: string): void {
+    this.entries.update((e) => ({ ...e, [lineUid]: value === '' ? null : Number(value) }));
+  }
+
+  protected async save(): Promise<boolean> {
+    const c = this.current();
+    if (!c) {
+      return false;
+    }
+    this.busy.set(true);
+    try {
+      const body = Object.entries(this.entries()).map(([lineUid, counted]) => ({
+        lineUid,
+        counted,
+      }));
+      this.current.set(await this.api.put<StockCount>(`/stock-counts/${c.uid}/counts`, body));
+      this.entries.set({});
+      this.toasts.success(this.translations.t('count.saved'));
+      return true;
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async post(): Promise<void> {
+    const c = this.current();
+    if (!c || !window.confirm(this.translations.t('count.confirmPost'))) {
+      return;
+    }
+    if (Object.keys(this.entries()).length && !(await this.save())) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      this.current.set(await this.api.post<StockCount>(`/stock-counts/${c.uid}/post`, {}));
+      this.toasts.success(this.translations.t('count.posted'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected print(): void {
+    window.print();
+  }
+}

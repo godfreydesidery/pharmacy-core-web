@@ -66,12 +66,15 @@ export class ApiError extends Error {
  * the product, amount or field; English users keep it. In another language the refusal's
  * `errors.<reason>` line replaces it, and a reason with no line keeps the server's detail.
  */
+/** Reasons whose server wording is technical, so even English shows the dictionary text. */
+const FRIENDLY_IN_EVERY_LANGUAGE = new Set(['invalid_uid']);
+
 export function localizeError(
   error: ApiError,
   lang: Lang,
   t: (key: string, params?: Params, fallback?: string) => string,
 ): ApiError {
-  if (lang === 'en') {
+  if (lang === 'en' && !FRIENDLY_IN_EVERY_LANGUAGE.has(error.reason)) {
     return error;
   }
   const message = t(`errors.${error.reason}`, undefined, error.message);

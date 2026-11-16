@@ -1,7 +1,15 @@
-import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { Branch, Member, Role } from '../../core/api/models';
+import { LockedMember } from '../../core/api/security.models';
 import { debounced, loaded, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
@@ -17,15 +25,15 @@ import { Translations } from '../../core/i18n/translations.store';
     <div class="page">
       <div class="page-head">
         <div>
-          <h1>Users</h1>
-          <p class="sub">
-            People who work in this pharmacy, their role and the branches they may use.
-          </p>
+          <h1>{{ 'ui.users.title' | t }}</h1>
+          <p class="sub">{{ 'ui.users.subtitle' | t }}</p>
         </div>
         <div class="actions">
-          <a class="btn" routerLink="/admin/roles"><app-icon name="shield" [size]="16" /> Roles</a>
+          <a class="btn" routerLink="/admin/roles"
+            ><app-icon name="shield" [size]="16" /> {{ 'ui.users.roles' | t }}</a
+          >
           <button class="btn primary" type="button" (click)="edit(null)">
-            <app-icon name="plus" [size]="16" /> Add user
+            <app-icon name="plus" [size]="16" /> {{ 'ui.users.add' | t }}
           </button>
         </div>
       </div>
@@ -33,7 +41,7 @@ import { Translations } from '../../core/i18n/translations.store';
         <div class="toolbar">
           <label class="search"
             ><app-icon name="search" [size]="16" /><input
-              placeholder="Name or email…"
+              [placeholder]="'ui.users.search' | t"
               (input)="q.set($any($event.target).value)"
           /></label>
         </div>
@@ -41,11 +49,11 @@ import { Translations } from '../../core/i18n/translations.store';
           <table class="table">
             <thead>
               <tr>
-                <th>User</th>
-                <th>Role</th>
-                <th>Branches</th>
-                <th>Last sign-in</th>
-                <th>Status</th>
+                <th>{{ 'ui.users.user' | t }}</th>
+                <th>{{ 'ui.users.role' | t }}</th>
+                <th>{{ 'ui.users.branches' | t }}</th>
+                <th>{{ 'ui.users.lastSignIn' | t }}</th>
+                <th>{{ 'ui.users.status' | t }}</th>
                 <th></th>
               </tr>
             </thead>
@@ -64,19 +72,39 @@ import { Translations } from '../../core/i18n/translations.store';
                   <td>
                     <span class="badge blue">{{ m.roleName }}</span>
                   </td>
-                  <td>{{ m.allBranches ? 'All branches' : branchNames(m.branchUids) }}</td>
+                  <td>
+                    {{ m.allBranches ? ('common.allBranches' | t) : branchNames(m.branchUids) }}
+                  </td>
                   <td class="muted">{{ m.lastSignInAt | when }}</td>
-                  <td><app-status [value]="m.active ? 'ACTIVE' : 'INACTIVE'" /></td>
+                  <td>
+                    <app-status [value]="m.active ? 'ACTIVE' : 'INACTIVE'" />
+                    @if (lockedUntil(m.membershipUid); as until) {
+                      <span
+                        class="badge red locked"
+                        [title]="'security2.lockedUntil' | t: { time: (until | when) }"
+                        ><app-icon name="lock" [size]="12" /> {{ 'security2.locked' | t }}</span
+                      >
+                    }
+                  </td>
                   <td class="right">
+                    @if (lockedUntil(m.membershipUid)) {
+                      <button class="btn sm" type="button" [disabled]="busy()" (click)="unlock(m)">
+                        <app-icon name="lock" [size]="14" /> {{ 'security2.unlock' | t }}
+                      </button>
+                    }
                     <button class="btn sm" type="button" (click)="edit(m)">
-                      <app-icon name="edit" [size]="14" /> Edit
+                      <app-icon name="edit" [size]="14" /> {{ 'common.edit' | t }}
                     </button>
                   </td>
                 </tr>
               } @empty {
                 <tr>
                   <td colspan="6">
-                    <app-empty [loading]="list.loading()" icon="users" title="No users" />
+                    <app-empty
+                      [loading]="list.loading()"
+                      icon="users"
+                      [title]="'ui.empty.noUsers' | t"
+                    />
                   </td>
                 </tr>
               }
@@ -95,43 +123,53 @@ import { Translations } from '../../core/i18n/translations.store';
     </div>
     <app-modal
       [open]="open()"
-      [title]="current() ? 'Edit ' + current()!.name : 'Add user'"
+      [title]="
+        current() ? ('ui.users.editTitle' | t: { name: current()!.name }) : ('ui.users.add' | t)
+      "
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
         @if (!current()) {
           <div class="field">
-            <label>Name</label><input class="input" formControlName="name" />
+            <label>{{ 'ui.users.name' | t }}</label
+            ><input class="input" formControlName="name" />
             @if (err('name'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
           <div class="field">
-            <label>Email</label><input class="input" type="email" formControlName="email" />
+            <label>{{ 'ui.users.email' | t }}</label
+            ><input class="input" type="email" formControlName="email" />
             @if (err('email'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
+          <div class="field">
+            <label>{{ 'admin2.phone' | t }}</label
+            ><input class="input" type="tel" formControlName="phone" placeholder="+255754000111" />
+            <span class="hint">{{ 'admin2.phoneAdminHint' | t }}</span>
+            @if (err('phone'); as m) {
+              <span class="error">{{ m }}</span>
+            }
+          </div>
           <div class="field full">
-            <label>Password</label
+            <label>{{ 'ui.users.password' | t }}</label
             ><input
               class="input"
               type="password"
               formControlName="password"
               autocomplete="new-password"
             />
-            <span class="hint"
-              >Ignored if this email already has an account; it keeps its password.</span
-            >
+            <span class="hint">{{ 'ui.users.passwordHint' | t }}</span>
             @if (err('password'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
         }
         <div class="field full">
-          <label>Role</label>
+          <label>{{ 'ui.users.role' | t }}</label>
           <select class="select" formControlName="roleUid">
-            <option value="" disabled>Choose a role</option>
+            <option value="" disabled>{{ 'ui.users.chooseRole' | t }}</option>
             @for (r of roles.value() ?? []; track r.uid) {
               <option [value]="r.uid">{{ r.name }}</option>
             }
@@ -141,11 +179,12 @@ import { Translations } from '../../core/i18n/translations.store';
           }
         </div>
         <label class="check full"
-          ><input type="checkbox" formControlName="allBranches" /> Can work in every branch</label
+          ><input type="checkbox" formControlName="allBranches" />
+          {{ 'ui.users.everyBranch' | t }}</label
         >
         @if (!form.controls.allBranches.value) {
           <div class="field full">
-            <label>Branches</label>
+            <label>{{ 'ui.users.branches' | t }}</label>
             <div class="chips">
               @for (b of branches.value() ?? []; track b.uid) {
                 <button
@@ -162,14 +201,17 @@ import { Translations } from '../../core/i18n/translations.store';
         }
         @if (current()) {
           <label class="check full"
-            ><input type="checkbox" formControlName="active" /> Active — can sign in to this
-            pharmacy</label
+            ><input type="checkbox" formControlName="active" /> {{ 'ui.users.active' | t }}</label
           >
         }
       </form>
       <ng-container footer>
-        <button class="btn" type="button" (click)="open.set(false)">Cancel</button>
-        <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">Save</button>
+        <button class="btn" type="button" (click)="open.set(false)">
+          {{ 'common.cancel' | t }}
+        </button>
+        <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
+          {{ 'common.save' | t }}
+        </button>
       </ng-container>
     </app-modal>
   `,
@@ -207,6 +249,15 @@ export default class UsersPage {
     path: '/branches',
     options: { noBranch: true },
   }));
+  /** Members locked out after failed sign-ins, by membership uid. */
+  protected readonly locked = loaded<LockedMember[]>(() => ({
+    path: '/users/locked',
+    options: { noBranch: true, silent: true },
+  }));
+  private readonly lockedIndex = computed(
+    () => new Map((this.locked.value() ?? []).map((l) => [l.membershipUid, l.lockedUntil])),
+  );
+  private readonly invitationsPanel = viewChild(InvitationsPanelComponent);
   private readonly branchIndex = computed(
     () => new Map((this.branches.value() ?? []).map((b) => [b.uid, b.name])),
   );
@@ -217,6 +268,7 @@ export default class UsersPage {
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
+    phone: [''],
     password: ['', [Validators.required, Validators.minLength(8)]],
     roleUid: ['', Validators.required],
     allBranches: [true],
@@ -233,7 +285,10 @@ export default class UsersPage {
   }
 
   protected branchNames(uids: string[]): string {
-    return uids.map((uid) => this.branchIndex().get(uid) ?? '?').join(', ') || 'None';
+    return (
+      uids.map((uid) => this.branchIndex().get(uid) ?? '?').join(', ') ||
+      this.translations.t('common.none')
+    );
   }
 
   protected err(name: string): string | null {
@@ -245,6 +300,7 @@ export default class UsersPage {
     this.form.reset({
       name: member?.name ?? '',
       email: member?.email ?? '',
+      phone: member?.phone ?? '',
       password: '',
       roleUid: member?.roleUid ?? '',
       allBranches: member?.allBranches ?? true,
@@ -256,6 +312,12 @@ export default class UsersPage {
       } else {
         this.form.controls[name].enable();
       }
+    }
+    // A person who has a phone edits it on their own account.
+    if (member?.phone) {
+      this.form.controls.phone.disable();
+    } else {
+      this.form.controls.phone.enable();
     }
     this.selectedBranches.set(member?.branchUids ?? []);
     this.open.set(true);
@@ -277,6 +339,7 @@ export default class UsersPage {
       return;
     }
     const access = {
+      phone: v.phone.trim() || null,
       roleUid: v.roleUid,
       allBranches: v.allBranches,
       branchUids: v.allBranches ? [] : this.selectedBranches(),
@@ -291,11 +354,18 @@ export default class UsersPage {
           { silent: true, noBranch: true },
         );
       } else {
-        await this.api.post(
+        const added = await this.api.post<{ invited?: boolean }>(
           '/users',
           { name: v.name, email: v.email, password: v.password, ...access },
           { silent: true, noBranch: true },
         );
+        if (added?.invited) {
+          // The email already has an account: they join only by accepting the invitation.
+          this.toasts.success(this.translations.t('security2.invitationSentInstead'));
+          this.open.set(false);
+          await this.invitationsPanel()?.reload();
+          return;
+        }
       }
       this.toasts.success(this.translations.t('toast.userSaved'));
       this.open.set(false);
@@ -304,6 +374,22 @@ export default class UsersPage {
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);
       }
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** When the member's account unlocks by itself, or null when it is not locked. */
+  protected lockedUntil(membershipUid: string): string | null {
+    return this.lockedIndex().get(membershipUid) ?? null;
+  }
+
+  protected async unlock(member: Member): Promise<void> {
+    this.busy.set(true);
+    try {
+      await this.api.post(`/users/${member.membershipUid}/unlock`, {}, { noBranch: true });
+      this.toasts.success(this.translations.t('security2.unlocked', { name: member.name }));
+      await this.locked.reload();
     } finally {
       this.busy.set(false);
     }

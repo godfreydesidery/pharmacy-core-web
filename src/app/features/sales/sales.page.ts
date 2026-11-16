@@ -15,7 +15,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
       <div class="page-head">
         <div>
           <h1>{{ 'sales.salesHistory' | t }}</h1>
-          <p class="sub">{{ session.branch()?.name ?? 'Choose a branch' }}</p>
+          <p class="sub">{{ session.branch()?.name ?? ('ui.l.chooseABranch' | t) }}</p>
         </div>
         <div class="actions">
           <a class="btn" routerLink="/sales/returns"
@@ -29,7 +29,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Sales history" />
+        <app-branch-required [what]="'ui.what.salesHistory' | t" />
       } @else {
         <div class="card">
           <div class="toolbar">
@@ -90,7 +90,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                         ><b>{{ s.number }}</b>
                       </div>
                     </td>
-                    <td>{{ s.customerName ?? 'Walk-in' }}</td>
+                    <td>{{ s.customerName ?? ('ui.l.walkIn' | t) }}</td>
                     <td class="muted">{{ s.createdAt | when }}</td>
                     <td>{{ s.cashierName }}</td>
                     <td>{{ methods(s) }}</td>
@@ -105,7 +105,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                         [loading]="list.loading()"
                         icon="receipt"
                         [title]="'sales.noSales' | t"
-                        text="Sales made at the POS appear here."
+                        [text]="'ui.empty.sales' | t"
                       />
                     </td>
                   </tr>

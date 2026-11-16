@@ -70,8 +70,10 @@ import { SHARED } from '../../core/shared';
           <app-empty
             [loading]="list.loading()"
             icon="bell"
-            [title]="unreadOnly() ? 'No unread notifications' : 'No notifications yet'"
-            text="Stock alerts, expiry digests and daily summaries appear here."
+            [title]="
+              unreadOnly() ? ('ui.l.noUnreadNotifications' | t) : ('ui.l.noNotificationsYet' | t)
+            "
+            [text]="'ui.empty.inbox' | t"
           />
         }
         @if (list.hasMore()) {

@@ -10,7 +10,15 @@ import { ToastService } from '../../core/ui/toast.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 
-const TYPES: CustomerType[] = ['RETAIL', 'WHOLESALE', 'INSURANCE'];
+const TYPES: CustomerType[] = [
+  'RETAIL',
+  'WHOLESALE',
+  'INSURANCE',
+  'CORPORATE',
+  'STAFF',
+  'NGO',
+  'GOVERNMENT',
+];
 
 @Component({
   selector: 'app-customers',
@@ -147,7 +155,7 @@ const TYPES: CustomerType[] = ['RETAIL', 'WHOLESALE', 'INSURANCE'];
     </div>
     <app-modal
       [open]="open()"
-      [title]="current() ? 'Edit ' + current()!.name : 'Add customer'"
+      [title]="current() ? ('ui.l.editSp' | t) + current()!.name : ('ui.l.addCustomer' | t)"
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">

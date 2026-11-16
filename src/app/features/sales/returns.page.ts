@@ -23,7 +23,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Returns" />
+        <app-branch-required [what]="'ui.what.returns' | t" />
       } @else {
         <div class="card">
           <div class="table-wrap">

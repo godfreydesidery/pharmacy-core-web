@@ -3,6 +3,7 @@ import { Routes } from '@angular/router';
 export default [
   { path: '', pathMatch: 'full', redirectTo: 'products' },
   { path: 'products', title: 'Products', loadComponent: () => import('./products.page') },
+  { path: 'pricing', title: 'Pricing', loadComponent: () => import('./pricing.page') },
   {
     path: 'products/new',
     title: 'New product',

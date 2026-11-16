@@ -15,7 +15,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         <div>
           <h1>{{ 'purchasing.goodsReceipts' | t }}</h1>
           <p class="sub">
-            Deliveries received at {{ session.branch()?.name ?? '—' }}, with batch and expiry.
+            {{ 'ui.t.receiptsSub' | t: { branch: session.branch()?.name ?? '—' } }}
           </p>
         </div>
         <div class="actions">
@@ -30,7 +30,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         </div>
       </div>
       @if (!session.branch()) {
-        <app-branch-required what="Receiving goods" />
+        <app-branch-required [what]="'ui.what.receiving' | t" />
       } @else {
         <div class="card">
           <div class="table-wrap">
@@ -56,7 +56,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                         /></span>
                         <div>
                           <b>{{ r.number }}</b
-                          ><small>by {{ r.createdBy }}</small>
+                          ><small>{{ 'ui.t.by' | t: { name: r.createdBy } }}</small>
                         </div>
                       </div>
                     </td>
@@ -65,7 +65,12 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                     <td>{{ r.purchaseOrderNumber ?? '—' }}</td>
                     <td class="muted">{{ r.createdAt | when }}</td>
                     <td class="right">{{ r.lines.length }}</td>
-                    <td class="right strong">{{ r.total | money }}</td>
+                    <td class="right">
+                      <span class="strong">{{ r.total | money: r.currency }}</span>
+                      @if (r.currency && r.baseTotal !== undefined && r.total !== r.baseTotal) {
+                        <small class="muted block">{{ r.baseTotal | money }}</small>
+                      }
+                    </td>
                   </tr>
                 } @empty {
                   <tr>
