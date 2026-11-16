@@ -48,11 +48,19 @@ export function cartTotals(
   return { items, subtotal, discount, tax, total: round2(subtotal - discount + tax) };
 }
 
-/** Adds one unit of a product, never beyond what is on hand. */
+/**
+ * Units the till can sell: loose units on hand plus those it can get by opening linked packs (the
+ * API opens a pack automatically when the loose units run out).
+ */
+export function available(product: SellableProduct): number {
+  return Math.max(product.quantityOnHand, 0) + Math.max(product.openableUnits ?? 0, 0);
+}
+
+/** Adds one unit of a product, never beyond what is available. */
 export function addToCart(lines: readonly CartLine[], product: SellableProduct): CartLine[] {
   const existing = lines.find((line) => line.product.productUid === product.productUid);
   if (!existing) {
-    return product.quantityOnHand > 0 ? [...lines, { product, quantity: 1 }] : [...lines];
+    return available(product) > 0 ? [...lines, { product, quantity: 1 }] : [...lines];
   }
   return setQuantity(lines, product.productUid, existing.quantity + 1);
 }
@@ -80,7 +88,7 @@ export function withSerials(
   return next;
 }
 
-/** Sets a line's quantity, clamped to what is on hand; zero or less removes it. */
+/** Sets a line's quantity, clamped to what is available; zero or less removes it. */
 export function setQuantity(
   lines: readonly CartLine[],
   productUid: string,
@@ -89,7 +97,7 @@ export function setQuantity(
   return lines
     .map((line) =>
       line.product.productUid === productUid
-        ? { ...line, quantity: Math.min(Math.floor(quantity), line.product.quantityOnHand) }
+        ? { ...line, quantity: Math.min(Math.floor(quantity), available(line.product)) }
         : line,
     )
     .filter((line) => line.quantity > 0);

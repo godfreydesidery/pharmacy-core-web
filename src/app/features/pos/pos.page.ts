@@ -33,6 +33,7 @@ import { ToastService } from '../../core/ui/toast.service';
 import {
   CartLine,
   addToCart,
+  available,
   cartTotals,
   changeDue,
   needsCustomer,
@@ -315,8 +316,11 @@ export default class PosPage {
       [],
   );
 
+  /** Units the till can sell of a product: loose ones plus those in linked packs. */
+  protected readonly available = available;
+
   protected add(product: SellableProduct): void {
-    if (product.quantityOnHand <= 0) {
+    if (available(product) <= 0) {
       this.toasts.error(this.translations.t('toast.outOfStock', { name: product.name }));
       return;
     }
@@ -327,10 +331,10 @@ export default class PosPage {
     const before =
       this.lines().find((l) => l.product.productUid === product.productUid)?.quantity ?? 0;
     this.lines.set(addToCart(this.lines(), product));
-    if (before >= product.quantityOnHand) {
+    if (before >= available(product)) {
       this.toasts.info(
         this.translations.t('toast.onlyOnHand', {
-          count: product.quantityOnHand,
+          count: available(product),
           name: product.name,
         }),
       );

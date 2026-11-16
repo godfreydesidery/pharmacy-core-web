@@ -515,6 +515,8 @@ export interface SellableProduct {
   sellingPrice: number;
   taxRatePercent: number;
   quantityOnHand: number;
+  /** Units the till can get by opening linked packs here (break bulk); absent means none. */
+  openableUnits?: number;
   productType: ProductType;
   trackingMode: TrackingMode;
   unitOfMeasure: UnitOfMeasure;

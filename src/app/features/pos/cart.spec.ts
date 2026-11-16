@@ -1,6 +1,7 @@
 import { SellableProduct, TillMethod } from '../../core/api/models';
 import {
   addToCart,
+  available,
   cartTotals,
   changeDue,
   needsCustomer,
@@ -112,6 +113,16 @@ describe('cart', () => {
     expect(needsPrescription([{ product: product(), quantity: 1 }])).toBe(false);
     expect(needsCustomer(['CASH', 'CREDIT'])).toBe(true);
     expect(needsCustomer(['CASH', 'CARD'])).toBe(false);
+  });
+
+  it('sells loose units and units from linked packs, never more', () => {
+    const strip = product({ quantityOnHand: 0, openableUnits: 50 });
+    expect(available(strip)).toBe(50);
+    const lines = addToCart([], strip);
+    expect(lines).toEqual([{ product: strip, quantity: 1 }]);
+    expect(setQuantity(lines, 'p1', 80)[0].quantity).toBe(50);
+    expect(addToCart([], product({ quantityOnHand: 0 }))).toEqual([]);
+    expect(available(product({ quantityOnHand: 3, openableUnits: 10 }))).toBe(13);
   });
 
   it('opens a split row on a real method of the pharmacy, kind and channel together', () => {
