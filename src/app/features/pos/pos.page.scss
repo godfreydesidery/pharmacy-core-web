@@ -56,6 +56,15 @@
   font-size: 13px;
   line-height: 1.3;
 }
+.product .shelf {
+  font-size: 11.5px;
+  font-weight: 500;
+  margin-left: 4px;
+}
+.product .price-source {
+  align-self: flex-start;
+  font-size: 10.5px;
+}
 .product small {
   color: var(--faint);
   font-size: 11.5px;

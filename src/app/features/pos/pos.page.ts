@@ -253,6 +253,35 @@ export default class PosPage {
         if (seq === this.quoteSeq) this.quoted.set({});
       });
   });
+  /**
+   * One unit's price of each product on screen for this customer at this branch (lists, branch
+   * prices, promotions), so a card shows what the cart will charge. Re-quoted when the products
+   * shown, the customer or the branch change; a failed quote just leaves the shelf price.
+   */
+  protected readonly cardPrices = signal<Record<string, PricedLine>>({});
+  private cardSeq = 0;
+  private readonly cardPriceWatch = effect(() => {
+    const items = this.products.value()?.items ?? [];
+    const customerUid = this.customer()?.uid ?? null;
+    this.session.branch();
+    const seq = ++this.cardSeq;
+    if (!items.length) {
+      untracked(() => this.cardPrices.set({}));
+      return;
+    }
+    const lines = items.map((p) => ({ productUid: p.productUid, quantity: 1 }));
+    void this.api
+      .post<PricedLine[]>('/pos/prices', { customerUid, lines }, { silent: true })
+      .then((priced) => {
+        if (seq === this.cardSeq) {
+          this.cardPrices.set(Object.fromEntries(priced.map((p) => [p.productUid, p])));
+        }
+      })
+      .catch(() => {
+        if (seq === this.cardSeq) this.cardPrices.set({});
+      });
+  });
+
   protected readonly paid = computed(() => paidTotal(this.payments()));
   protected readonly change = computed(() => changeDue(this.payments(), this.totals().total));
   protected readonly balance = computed(() => round2(this.totals().total - this.paid()));

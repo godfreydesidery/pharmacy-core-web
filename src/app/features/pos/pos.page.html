@@ -94,7 +94,22 @@
                 >{{ p.genericName ?? '' }}{{ p.strength ? ' · ' + p.strength : ''
                 }}{{ p.dosageForm ? ' · ' + (p.dosageForm | label) : '' }}</small
               >
-              <span class="price">{{ p.sellingPrice | money }}</span>
+              @if (cardPrices()[p.productUid]; as cp) {
+                <span class="price">
+                  {{ cp.unitPrice | money }}
+                  @if (cp.unitPrice !== p.sellingPrice) {
+                    <s class="muted shelf">{{ p.sellingPrice | money }}</s>
+                  }
+                </span>
+                @if (cp.source !== 'RETAIL') {
+                  <span class="badge green price-source"
+                    >{{ 'pricing.source.' + cp.source | t
+                    }}{{ cp.label ? ': ' + cp.label : '' }}</span
+                  >
+                }
+              } @else {
+                <span class="price">{{ p.sellingPrice | money }}</span>
+              }
             </button>
           } @empty {
             <div style="grid-column: 1/-1">
