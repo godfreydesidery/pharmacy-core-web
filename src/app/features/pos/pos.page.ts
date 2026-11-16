@@ -642,7 +642,9 @@ export default class PosPage {
     const account = this.account();
     if (short > 0 && this.balanceToAccount() && account && short > account.available) {
       this.toasts.error(
-        this.translations.t('toast.creditAvailable', { amount: account.available }),
+        this.translations.t('toast.creditAvailable', {
+          amount: formatMoney(account.available, this.base()),
+        }),
       );
       return;
     }
