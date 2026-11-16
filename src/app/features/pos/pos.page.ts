@@ -27,12 +27,13 @@ import { debounced, loaded } from '../../core/data/data';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
-import { validate } from '../../core/ui/forms';
+import { controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { ToastService } from '../../core/ui/toast.service';
 import {
   CartLine,
   addToCart,
+  available,
   cartTotals,
   changeDue,
   needsCustomer,
@@ -41,6 +42,7 @@ import {
   baseValue,
   round2,
   setQuantity,
+  splitPayment,
   withSerials,
 } from './cart';
 import { SerialPickerComponent } from './serial-picker.component';
@@ -52,6 +54,7 @@ import { UploadComponent } from '../../core/files/upload.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { AccountView, CoverageQuote, MemberView } from '../../core/api/credit.models';
 import { Translations } from '../../core/i18n/translations.store';
+import { SubscriptionStore } from '../../core/subscription/subscription.store';
 
 const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
   { method: 'CASH', label: 'Cash', icon: 'cash' },
@@ -90,6 +93,7 @@ const NOTES: Readonly<Record<string, number[]>> = {
 export default class PosPage {
   protected readonly session = inject(SessionStore);
   protected readonly settings = inject(SettingsStore);
+  private readonly subscription = inject(SubscriptionStore);
   private readonly api = inject(Api);
   private readonly files = inject(FilesService);
   private readonly toasts = inject(ToastService);
@@ -111,6 +115,27 @@ export default class PosPage {
   /** The registered method of a payment row, if it was picked from the registry. */
   protected tillMethodOf(payment: SalePayment): TillMethod | undefined {
     return (this.tillMethods.value() ?? []).find((m) => m.code === payment.channel);
+  }
+
+  /**
+   * The option a payment row's select shows: its channel, else the registry method matching how it
+   * is booked (a plain cash row shows the pharmacy's cash method), else the internal method.
+   */
+  protected selectedCode(payment: SalePayment): string {
+    if (payment.channel) {
+      return payment.channel;
+    }
+    const till = this.tillMethods.value() ?? [];
+    return (
+      till.find((m) => m.code === payment.method)?.code ??
+      till.find((m) => m.kind === payment.method)?.code ??
+      payment.method
+    );
+  }
+
+  /** The pharmacy's cash method code, for rows the till turns into cash. */
+  private cashChannel(): string | null {
+    return (this.tillMethods.value() ?? []).find((m) => m.kind === 'CASH')?.code ?? null;
   }
 
   /** Picks a registry method (sets how it is booked and its channel) or an internal one. */
@@ -171,6 +196,7 @@ export default class PosPage {
   }
   protected readonly baseValue = baseValue;
   private readonly customerLookup = viewChild<LookupComponent>('customerLookup');
+  private readonly shiftBar = viewChild(ShiftBarComponent);
 
   protected readonly q = signal('');
   private readonly query = debounced(this.q, 200);
@@ -230,6 +256,35 @@ export default class PosPage {
         if (seq === this.quoteSeq) this.quoted.set({});
       });
   });
+  /**
+   * One unit's price of each product on screen for this customer at this branch (lists, branch
+   * prices, promotions), so a card shows what the cart will charge. Re-quoted when the products
+   * shown, the customer or the branch change; a failed quote just leaves the shelf price.
+   */
+  protected readonly cardPrices = signal<Record<string, PricedLine>>({});
+  private cardSeq = 0;
+  private readonly cardPriceWatch = effect(() => {
+    const items = this.products.value()?.items ?? [];
+    const customerUid = this.customer()?.uid ?? null;
+    this.session.branch();
+    const seq = ++this.cardSeq;
+    if (!items.length) {
+      untracked(() => this.cardPrices.set({}));
+      return;
+    }
+    const lines = items.map((p) => ({ productUid: p.productUid, quantity: 1 }));
+    void this.api
+      .post<PricedLine[]>('/pos/prices', { customerUid, lines }, { silent: true })
+      .then((priced) => {
+        if (seq === this.cardSeq) {
+          this.cardPrices.set(Object.fromEntries(priced.map((p) => [p.productUid, p])));
+        }
+      })
+      .catch(() => {
+        if (seq === this.cardSeq) this.cardPrices.set({});
+      });
+  });
+
   protected readonly paid = computed(() => paidTotal(this.payments()));
   protected readonly change = computed(() => changeDue(this.payments(), this.totals().total));
   protected readonly balance = computed(() => round2(this.totals().total - this.paid()));
@@ -281,6 +336,18 @@ export default class PosPage {
     patientName: ['', Validators.required],
   });
 
+  /** The message under a prescription field once it was touched or the form was submitted. */
+  protected rxErr(
+    name: 'prescriberName' | 'prescriberRegistration' | 'reference' | 'patientName',
+  ): string | null {
+    return controlError(this.rxForm.controls[name]);
+  }
+
+  /** A controlled drug is in the cart: every prescription detail goes into the register. */
+  protected readonly controlledInCart = computed(() =>
+    this.lines().some((l) => l.product.schedule === 'CONTROLLED'),
+  );
+
   protected readonly customerName = (c: Customer) => c.name;
   protected readonly customerDetail = (c: Customer) =>
     [c.code, c.phone, c.type].filter(Boolean).join(' · ');
@@ -293,8 +360,11 @@ export default class PosPage {
       [],
   );
 
+  /** Units the till can sell of a product: loose ones plus those in linked packs. */
+  protected readonly available = available;
+
   protected add(product: SellableProduct): void {
-    if (product.quantityOnHand <= 0) {
+    if (available(product) <= 0) {
       this.toasts.error(this.translations.t('toast.outOfStock', { name: product.name }));
       return;
     }
@@ -305,10 +375,10 @@ export default class PosPage {
     const before =
       this.lines().find((l) => l.product.productUid === product.productUid)?.quantity ?? 0;
     this.lines.set(addToCart(this.lines(), product));
-    if (before >= product.quantityOnHand) {
+    if (before >= available(product)) {
       this.toasts.info(
         this.translations.t('toast.onlyOnHand', {
-          count: product.quantityOnHand,
+          count: available(product),
           name: product.name,
         }),
       );
@@ -437,10 +507,17 @@ export default class PosPage {
     );
   }
 
-  /** The currencies a payment may be in: the base first. */
-  protected readonly accepted = computed(
-    () => this.settings.settings()?.acceptedCurrencies ?? [this.settings.currency()],
-  );
+  /**
+   * The currencies a payment may be in: the base first. On a plan without multiple currencies only
+   * the base is offered, even while the settings still list others (the API refuses foreign
+   * tenders there, and offering them led to a sale that could not complete).
+   */
+  protected readonly accepted = computed(() => {
+    const all = this.settings.settings()?.acceptedCurrencies ?? [this.settings.currency()];
+    return this.subscription.allows('MULTI_CURRENCY') || this.session.isRoot()
+      ? all
+      : all.filter((c) => c === this.settings.currency());
+  });
   protected readonly base = this.settings.currency;
 
   /**
@@ -507,10 +584,7 @@ export default class PosPage {
 
   protected addPayment(): void {
     const remaining = Math.max(this.balance(), 0);
-    this.payments.update((list) => [
-      ...list,
-      { method: 'MOBILE_MONEY', amount: remaining, reference: null },
-    ]);
+    this.payments.update((list) => [...list, splitPayment(this.tillMethods.value(), remaining)]);
   }
 
   protected removePayment(index: number): void {
@@ -519,7 +593,11 @@ export default class PosPage {
 
   protected quickCash(amount: number): void {
     this.payments.update((list) =>
-      list.map((p, i) => (i === 0 ? { ...p, method: 'CASH', amount } : p)),
+      list.map((p, i) =>
+        i === 0
+          ? { ...p, method: 'CASH', channel: this.cashChannel(), reference: null, amount }
+          : p,
+      ),
     );
   }
 
@@ -554,6 +632,11 @@ export default class PosPage {
 
   protected savePrescription(): void {
     if (!validate(this.rxForm)) {
+      this.toasts.error(
+        this.translations.t(
+          this.controlledInCart() ? 'pos.controlledRxIncomplete' : 'till.rxIncomplete',
+        ),
+      );
       return;
     }
     const rx = this.rxForm.getRawValue();
@@ -598,7 +681,9 @@ export default class PosPage {
     const account = this.account();
     if (short > 0 && this.balanceToAccount() && account && short > account.available) {
       this.toasts.error(
-        this.translations.t('toast.creditAvailable', { amount: account.available }),
+        this.translations.t('toast.creditAvailable', {
+          amount: formatMoney(account.available, this.base()),
+        }),
       );
       return;
     }
@@ -646,6 +731,7 @@ export default class PosPage {
       this.toasts.success(this.translations.t('toast.saleCompleted', { number: sale.number }));
       this.clear();
       void this.products.reload();
+      this.shiftBar()?.refresh();
     } finally {
       this.busy.set(false);
     }

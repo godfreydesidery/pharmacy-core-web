@@ -21,6 +21,22 @@ describe('dictionaries', () => {
   it('Swahili defines no key English lacks', () => {
     expect(Object.keys(SW).filter((key) => !(key in EN))).toEqual([]);
   });
+
+  it('writes every placeholder as {{name}}, which is the only form translate() fills', () => {
+    const single = /(?<!\{)\{[a-zA-Z]+\}(?!\})/;
+    const offending = [...Object.entries(EN), ...Object.entries(SW)]
+      .filter(([, text]) => single.test(text))
+      .map(([key]) => key);
+    expect(offending).toEqual([]);
+  });
+
+  it('uses the same placeholders in English and Swahili', () => {
+    const names = (text: string) => [...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort();
+    const mismatched = Object.keys(SW).filter(
+      (key) => key in EN && names(SW[key]).join() !== names(EN[key]).join(),
+    );
+    expect(mismatched).toEqual([]);
+  });
 });
 
 describe('Translations', () => {

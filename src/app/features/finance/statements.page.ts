@@ -125,7 +125,7 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                     @for (l of b.assets.lines; track l.code) {
                       <tr>
                         <td class="mono">{{ l.code }}</td>
-                        <td>{{ l.name }}</td>
+                        <td>{{ l.name | account: l.code }}</td>
                         <td class="right">{{ l.balance | money }}</td>
                       </tr>
                     }
@@ -146,14 +146,14 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                     @for (l of b.liabilities.lines; track l.code) {
                       <tr>
                         <td class="mono">{{ l.code }}</td>
-                        <td>{{ l.name }}</td>
+                        <td>{{ l.name | account: l.code }}</td>
                         <td class="right">{{ l.balance | money }}</td>
                       </tr>
                     }
                     @for (l of b.equity.lines; track l.code) {
                       <tr>
                         <td class="mono">{{ l.code }}</td>
-                        <td>{{ l.name }}</td>
+                        <td>{{ l.name | account: l.code }}</td>
                         <td class="right">{{ l.balance | money }}</td>
                       </tr>
                     }
@@ -194,7 +194,7 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                       @if (l.debit || l.credit) {
                         <tr>
                           <td class="mono">{{ l.code }}</td>
-                          <td>{{ l.name }}</td>
+                          <td>{{ l.name | account: l.code }}</td>
                           <td class="right">{{ l.debit | money }}</td>
                           <td class="right">{{ l.credit | money }}</td>
                         </tr>
@@ -271,7 +271,6 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                     <th>{{ 'statements.cashier' | t }}</th>
                     <th class="right">{{ 'statements.sales' | t }}</th>
                     <th class="right">{{ 'statements.total' | t }}</th>
-                    <th>{{ 'statements.tenders' | t }}</th>
                     <th class="right">{{ 'statements.refunded' | t }}</th>
                     <th class="right">{{ 'statements.cashToHandOver' | t }}</th>
                   </tr>
@@ -279,24 +278,23 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                 <tbody>
                   @for (c of cashiers.value() ?? []; track c.cashier) {
                     <tr>
-                      <td>
+                      <td class="cashier">
                         <b>{{ c.cashier }}</b>
+                        <!-- Tenders wrap under the name, so the hand-over column stays in view. -->
+                        <div class="tenders" [attr.aria-label]="'statements.tenders' | t">
+                          @for (t of tenderList(c); track t[0]) {
+                            <span class="chip sm">{{ t[0] | label }}: {{ t[1] | money }}</span>
+                          }
+                        </div>
                       </td>
                       <td class="right">{{ c.sales }}</td>
                       <td class="right">{{ c.total | money }}</td>
-                      <td>
-                        @for (t of tenderList(c); track t[0]) {
-                          <span class="chip sm"
-                            >{{ 'enum.' + t[0] | t: null : t[0] }}: {{ t[1] | money }}</span
-                          >
-                        }
-                      </td>
                       <td class="right">{{ c.refunded | money }}</td>
-                      <td class="right strong">{{ c.cashToHandOver | money }}</td>
+                      <td class="right strong hand-over">{{ c.cashToHandOver | money }}</td>
                     </tr>
                   } @empty {
                     <tr>
-                      <td colspan="6" class="empty">{{ 'statements.noSales' | t }}</td>
+                      <td colspan="5" class="empty">{{ 'statements.noSales' | t }}</td>
                     </tr>
                   }
                 </tbody>
@@ -306,6 +304,21 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
         }
       }
     </div>
+  `,
+  styles: `
+    td.cashier {
+      white-space: normal;
+      min-width: 220px;
+    }
+    .tenders {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      margin-top: 6px;
+    }
+    td.hand-over {
+      font-size: 15px;
+    }
   `,
 })
 export default class StatementsPage {

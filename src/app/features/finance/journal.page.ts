@@ -59,7 +59,8 @@ import { SHARED } from '../../core/shared';
                   @for (l of e.lines; track $index) {
                     <tr>
                       <td>
-                        <span class="mono muted">{{ l.accountCode }}</span> {{ l.accountName }}
+                        <span class="mono muted">{{ l.accountCode }}</span>
+                        {{ l.accountName | account: l.accountCode }}
                       </td>
                       <td class="right">{{ l.debit ? (l.debit | money) : '' }}</td>
                       <td class="right">{{ l.credit ? (l.credit | money) : '' }}</td>

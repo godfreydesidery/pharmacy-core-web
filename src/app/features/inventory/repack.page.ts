@@ -462,6 +462,10 @@ export default class RepackPage {
   protected readonly formulaProduct = signal<string | null>(null);
   protected readonly formulaProductName = signal('');
   protected readonly formula = signal<FormulaItem[]>([]);
+  /** The output's recipe (per one unit made): ingredient rows scale with the quantity made. */
+  private readonly recipe = signal<{ productUid: string; productName: string; perUnit: number }[]>(
+    [],
+  );
 
   protected readonly history = pagedList<TransformationView>(() =>
     this.tab() === 'history' && this.session.branch() ? { path: '/stock/transformations' } : null,
@@ -475,13 +479,44 @@ export default class RepackPage {
 
   protected setKind(kind: Kind): void {
     this.kind.set(kind);
+    this.recipe.set([]);
     this.inputs.set([{ productUid: null, productName: '', quantity: 1 }]);
+  }
+
+  /** Ingredient rows for making `quantity` by the recipe, rounded up. */
+  private applyRecipe(quantity: number): void {
+    const recipe = this.recipe();
+    if (recipe.length) {
+      const n = quantity > 0 ? quantity : 1;
+      this.inputs.set(
+        recipe.map((r) => ({
+          productUid: r.productUid,
+          productName: r.productName,
+          quantity: Math.ceil(r.perUnit * n),
+        })),
+      );
+    }
   }
 
   protected async pickOutput(p: Product | null): Promise<void> {
     this.output.update((o) => ({ ...o, productUid: p?.uid ?? null, productName: p?.name ?? '' }));
+    this.recipe.set([]);
     if (!p) {
       return;
+    }
+    if (this.kind() === 'REPACK') {
+      // Own packs made from loose units: the pack link gives units per pack.
+      const link = (this.links.value() ?? []).find((l) => l.packProductUid === p.uid);
+      if (link) {
+        this.recipe.set([
+          {
+            productUid: link.unitProductUid,
+            productName: link.unitProductName,
+            perUnit: link.unitsPerPack,
+          },
+        ]);
+        this.applyRecipe(this.output().quantity);
+      }
     }
     if (this.kind() === 'BREAK_BULK') {
       const link = (this.links.value() ?? []).find((l) => l.unitProductUid === p.uid);
@@ -497,20 +532,21 @@ export default class RepackPage {
         noBranch: true,
       });
       if (items.length) {
-        const n = this.output().quantity || 1;
-        this.inputs.set(
+        this.recipe.set(
           items.map((i) => ({
             productUid: i.ingredientUid,
             productName: i.ingredientName,
-            quantity: Math.ceil(i.quantity * n),
+            perUnit: i.quantity,
           })),
         );
+        this.applyRecipe(this.output().quantity);
       }
     }
   }
 
   protected setOutputQuantity(quantity: number): void {
     this.output.update((o) => ({ ...o, quantity }));
+    this.applyRecipe(quantity);
   }
 
   protected pickInput(i: number, p: Product | null): void {

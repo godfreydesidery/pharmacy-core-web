@@ -212,7 +212,7 @@ type Tab = 'templates' | 'deliveries' | 'providers';
             }
           </div>
         </div>
-      } @else {
+      } @else if (tab() === 'deliveries') {
         <div class="card">
           <div class="toolbar">
             <select
@@ -579,8 +579,9 @@ export default class NotificationsAdminPage {
     });
   }
 
+  /** A template's name in the current language; the English list is the fallback. */
   protected label(key: string): string {
-    return TEMPLATE_LABELS[key] ?? key;
+    return this.translations.t(`tpl.${key}`, undefined, TEMPLATE_LABELS[key] ?? key);
   }
 
   protected customised(key: string): boolean {

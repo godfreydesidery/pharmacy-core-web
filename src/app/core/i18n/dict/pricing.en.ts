@@ -33,6 +33,8 @@ export const PRICING_EN: Readonly<Record<string, string>> = {
   'pricing.valid': 'Valid',
   'pricing.validFrom': 'Valid from',
   'pricing.validTo': 'Valid to',
+  'pricing.noEnd': 'no end date',
+  'pricing.noEndHint': 'Leave empty to run until you switch it off.',
   'pricing.active': 'Active',
   'pricing.inactive': 'Inactive',
   'pricing.edit': 'Edit',

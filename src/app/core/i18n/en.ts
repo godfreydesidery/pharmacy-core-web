@@ -217,6 +217,8 @@ export const EN: Readonly<Record<string, string>> = {
   'security.accepting': 'Accepting…',
   'security.inviteClosed': 'This invitation is {{status}}. Ask for a new one.',
   'security.retryIn': 'Try again in {{seconds}} seconds.',
+  'security.retryInMinute': 'Try again in 1 minute.',
+  'security.retryInMinutes': 'Try again in {{minutes}} minutes.',
   // per-area dictionaries (dict/)
   ...EN_AREAS,
 };

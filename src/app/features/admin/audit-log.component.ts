@@ -33,7 +33,7 @@ interface Change {
         <select class="input" (change)="entityType.set($any($event.target).value)">
           <option value="">{{ 'admin.allRecords' | t }}</option>
           @for (type of types; track type) {
-            <option [value]="type">{{ type }}</option>
+            <option [value]="type">{{ 'auditType.' + type | t: null : type }}</option>
           }
         </select>
         <input class="input" type="date" (change)="from.set($any($event.target).value)" />
@@ -59,7 +59,11 @@ interface Change {
                   <span class="action" [class]="tone(entry.action)">{{ label(entry.action) }}</span>
                 </td>
                 <td>
-                  {{ entry.entityType ?? '—' }}
+                  {{
+                    entry.entityType
+                      ? ('auditType.' + entry.entityType | t: null : entry.entityType)
+                      : '—'
+                  }}
                   @if (entry.label) {
                     <b>{{ entry.label }}</b>
                   } @else if (entry.entityUid) {
@@ -102,7 +106,11 @@ interface Change {
           <dd>{{ entry.actor }}</dd>
           <dt>{{ 'admin.record' | t }}</dt>
           <dd>
-            {{ entry.entityType ?? '—' }}
+            {{
+              entry.entityType
+                ? ('auditType.' + entry.entityType | t: null : entry.entityType)
+                : '—'
+            }}
             @if (entry.label) {
               <b>{{ entry.label }}</b>
             }

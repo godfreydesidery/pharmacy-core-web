@@ -36,6 +36,8 @@ interface Destruction {
   totalCost: number;
   createdAt: string;
   createdBy: string;
+  /** The recorder's name (older records: their reference). */
+  createdByName?: string;
   lines: DestructionLine[];
 }
 
@@ -103,7 +105,7 @@ interface DraftLine {
             </div>
             <div>
               <dt>{{ 'dest.recordedBy' | t }}</dt>
-              <dd>{{ d.createdBy }} · {{ d.createdAt | when }}</dd>
+              <dd>{{ d.createdByName ?? d.createdBy }} · {{ d.createdAt | when }}</dd>
             </div>
             @if (d.note) {
               <div>

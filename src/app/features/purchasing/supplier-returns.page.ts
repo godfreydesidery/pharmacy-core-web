@@ -32,6 +32,8 @@ interface SupplierReturn {
   total: number;
   createdAt: string;
   createdBy: string;
+  /** The recorder's name (older records: their reference). */
+  createdByName?: string;
   lines: ReturnLine[];
 }
 
@@ -100,7 +102,7 @@ interface DraftLine {
             </div>
             <div>
               <dt>{{ 'sret.by' | t }}</dt>
-              <dd>{{ r.createdBy }}</dd>
+              <dd>{{ r.createdByName ?? r.createdBy }}</dd>
             </div>
             @if (r.note) {
               <div>

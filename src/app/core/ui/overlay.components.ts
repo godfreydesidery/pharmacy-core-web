@@ -119,7 +119,13 @@ export class ModalComponent {
   template: `
     @if (open()) {
       <div class="backdrop" (click)="closed.emit()"></div>
-      <aside class="drawer" role="dialog" aria-modal="true" [attr.aria-label]="title()">
+      <aside
+        class="drawer"
+        [class.wide]="wide()"
+        role="dialog"
+        aria-modal="true"
+        [attr.aria-label]="title()"
+      >
         <header>
           <div>
             <h3>{{ title() }}</h3>
@@ -161,6 +167,9 @@ export class ModalComponent {
       flex-direction: column;
       animation: slide 0.2s ease;
     }
+    .drawer.wide {
+      width: min(720px, 100vw);
+    }
     header {
       display: flex;
       justify-content: space-between;
@@ -193,5 +202,7 @@ export class DrawerComponent {
   readonly open = input(false);
   readonly title = input('');
   readonly subtitle = input('');
+  /** Room for a table of four or more columns (statements). */
+  readonly wide = input(false);
   readonly closed = output<void>();
 }

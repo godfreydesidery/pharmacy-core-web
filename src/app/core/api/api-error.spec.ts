@@ -5,6 +5,8 @@ import { ApiError, localizeError } from './api-error';
 
 const swahili = (key: string, params?: Params, fallback?: string) =>
   translate(SW, key, params, fallback);
+const english = (key: string, params?: Params, fallback?: string) =>
+  translate(EN, key, params, fallback);
 
 describe('localizeError', () => {
   const short = new ApiError(422, 'payment_short', 'The payments cover 9,000.00 of 10,000.00.');
@@ -21,6 +23,12 @@ describe('localizeError', () => {
     expect(localized.field).toBe('password');
     expect(localized.correlationId).toBe('c-1');
     expect(localizeError(short, 'sw', swahili).message).toBe('Malipo hayatoshi kufikia jumla.');
+  });
+
+  it('explains a recalled batch with the dictionary line even in English', () => {
+    const recalled = new ApiError(422, 'batch_quarantined', 'Batch BX-1 is quarantined.');
+    expect(localizeError(recalled, 'en', english).message).toBe(EN['errors.batch_quarantined']);
+    expect(localizeError(recalled, 'sw', swahili).message).toBe(SW['errors.batch_quarantined']);
   });
 
   it('falls back to the server detail for a reason with no line', () => {

@@ -51,7 +51,7 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
   'plans.plan': 'Kifurushi',
   'plans.period': 'Kipindi',
   'plans.trialEnds': 'Majaribio yanaisha',
-  'plans.trialEndsOn': 'Majaribio yako ya bure yanaisha tarehe {date}.',
+  'plans.trialEndsOn': 'Majaribio yako ya bure yanaisha tarehe {{date}}.',
   'plans.graceEnds': 'Muda wa nyongeza unaisha',
   'plans.changePlan': 'Badilisha kifurushi',
   'plans.extendTrial': 'Ongeza majaribio (siku)',
@@ -72,9 +72,9 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
   'plans.current': 'Cha sasa',
   'plans.upgradeHint':
     'Huduma zisizo kwenye kifurushi chako hazionekani kwenye menyu. Mwombe msimamizi wa mfumo akubadilishie kifurushi.',
-  'plans.banner.trial': 'Majaribio ya bure ya {plan}: zimebaki siku {days}.',
+  'plans.banner.trial': 'Majaribio ya bure ya {{plan}}: zimebaki siku {{days}}.',
   'plans.banner.pastDue':
-    'Usajili wako haujalipwa. Lipa kabla ya tarehe {date} ili uendelee kutumia mfumo.',
+    'Usajili wako haujalipwa. Lipa kabla ya tarehe {{date}} ili uendelee kutumia mfumo.',
   'plans.banner.see': 'Angalia usajili',
   'plans.mrr': 'Mapato ya mwezi',
   'plans.mrrCaption': 'Ya kila mwezi, usajili hai',
@@ -94,4 +94,14 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
   'errors.invalid_currency': 'Sarafu si sahihi.',
   'errors.invalid_days': 'Weka idadi ya siku kati ya 1 na 365.',
   'errors.invalid_price': 'Bei haiwezi kuwa hasi.',
+  'gate.title': 'Haipo kwenye mpango wako',
+  'gate.body': '{{feature}} haijajumuishwa kwenye mpango wa {{plan}}.',
+  'gate.howAdmin':
+    'Panda mpango ili uitumie: Utawala → Usajili inaonyesha mipango na jinsi ya kulipa.',
+  'gate.howStaff': 'Mwombe msimamizi wa famasia yako apandishe mpango.',
+  'gate.seePlans': 'Tazama mipango na upande',
+  'plans.downgrade.confirm':
+    '{{plan}} iko chini ya matumizi ya sasa ya famasia hii:\n{{lines}}\n\nKumbukumbu zilizopo zinabaki, lakini haiwezi kuongeza zaidi ya viwango vipya, na moduli zilizotajwa zinafungwa. Badilisha mpango?',
+  'plans.downgrade.limit': '{{limit}}: {{used}} zinatumika, {{allowed}} zinaruhusiwa',
+  'plans.downgrade.feature': '{{feature}} haijajumuishwa',
 };

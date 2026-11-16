@@ -14,6 +14,7 @@ import { IconComponent } from '../../core/ui/icon.component';
 import { LanguageSwitchComponent } from '../../core/i18n/language-switch.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
+import { retryText } from './retry';
 
 const DEV_ACCOUNTS = [
   { label: 'Root administrator', email: 'root@pharmacy.local', password: 'Root#2026' },
@@ -377,10 +378,10 @@ export default class SignInPage {
     );
   }
 
-  /** Adds the wait to a 423 or 429, such as "Try again in 840 seconds." */
+  /** Adds the wait to a 423 or 429, such as "Try again in 14 minutes." */
   private message(error: ApiError): string {
     return error.retryAfterSeconds
-      ? `${error.message} ${this.translations.t('security.retryIn', { seconds: error.retryAfterSeconds })}`
+      ? `${error.message} ${retryText(error.retryAfterSeconds, (k, p) => this.translations.t(k, p))}`
       : error.message;
   }
 }

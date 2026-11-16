@@ -1,0 +1,27 @@
+/** Purchasing → Supplier balances and statements. */
+export const PAYABLES_EN: Readonly<Record<string, string>> = {
+  'nav.purchasing.supplier-balances': 'Supplier balances',
+  'payables.title': 'Supplier balances',
+  'payables.sub':
+    'What the pharmacy owes each supplier: goods received, less payments and returns. Open a supplier for the statement.',
+  'payables.export': 'Export CSV',
+  'payables.totalOwed': 'Total owed to suppliers',
+  'payables.suppliersOwed': 'Suppliers owed',
+  'payables.search': 'Search suppliers…',
+  'payables.owingOnly': 'Hide settled suppliers',
+  'payables.supplier': 'Supplier',
+  'payables.lastActivity': 'Last activity',
+  'payables.balance': 'Balance',
+  'payables.none': 'No supplier balances.',
+  'payables.statement': 'Statement',
+  'payables.date': 'Date',
+  'payables.document': 'Document',
+  'payables.debit': 'Paid / returned',
+  'payables.credit': 'Received',
+  'payables.noLines': 'No activity yet.',
+  'payables.closing': 'Balance owed',
+  'payables.type.OPENING': 'Opening balance',
+  'payables.type.RECEIPT': 'Goods received',
+  'payables.type.PAYMENT': 'Payment',
+  'payables.type.RETURN': 'Return to supplier',
+};

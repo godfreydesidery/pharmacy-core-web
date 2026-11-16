@@ -154,6 +154,7 @@ export default class VouchersPage {
       return;
     }
     await this.api.post(`/vouchers/${v.uid}/void`, {});
+    this.toasts.success(this.translations.t('till.voucherVoided', { code: v.code }));
     void this.vouchers.reload();
   }
 }

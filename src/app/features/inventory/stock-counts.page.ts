@@ -7,7 +7,7 @@ import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
 import { ToastService } from '../../core/ui/toast.service';
 
-interface CountLine {
+export interface CountLine {
   uid: string;
   productUid: string;
   productName: string;
@@ -19,7 +19,7 @@ interface CountLine {
   varianceValue: number | null;
 }
 
-interface StockCount {
+export interface StockCount {
   uid: string;
   number: string;
   status: 'OPEN' | 'POSTED';
@@ -31,6 +31,20 @@ interface StockCount {
   createdBy: string;
   postedAt: string | null;
   items: CountLine[];
+}
+
+/**
+ * The sheet's rows in a fixed order (product, then expiry, then batch) whatever order the API
+ * returns, so a counter never loses their place after saving.
+ */
+export function sheetOrder(count: StockCount): StockCount {
+  const items = [...count.items].sort(
+    (a, b) =>
+      a.productName.localeCompare(b.productName) ||
+      (a.expiryDate ?? '9999').localeCompare(b.expiryDate ?? '9999') ||
+      a.batchNumber.localeCompare(b.batchNumber),
+  );
+  return { ...count, items };
 }
 
 /** Inventory → Stock-takes: count sheets of the branch's stock, and posting the differences. */
@@ -184,7 +198,7 @@ export default class StockCountsPage {
   protected async start(): Promise<void> {
     this.busy.set(true);
     try {
-      this.current.set(await this.api.post<StockCount>('/stock-counts', {}));
+      this.current.set(sheetOrder(await this.api.post<StockCount>('/stock-counts', {})));
       this.entries.set({});
     } finally {
       this.busy.set(false);
@@ -192,7 +206,7 @@ export default class StockCountsPage {
   }
 
   protected async openCount(uid: string): Promise<void> {
-    this.current.set(await this.api.get<StockCount>(`/stock-counts/${uid}`));
+    this.current.set(sheetOrder(await this.api.get<StockCount>(`/stock-counts/${uid}`)));
     this.entries.set({});
   }
 
@@ -211,7 +225,9 @@ export default class StockCountsPage {
         lineUid,
         counted,
       }));
-      this.current.set(await this.api.put<StockCount>(`/stock-counts/${c.uid}/counts`, body));
+      this.current.set(
+        sheetOrder(await this.api.put<StockCount>(`/stock-counts/${c.uid}/counts`, body)),
+      );
       this.entries.set({});
       this.toasts.success(this.translations.t('count.saved'));
       return true;
@@ -230,7 +246,9 @@ export default class StockCountsPage {
     }
     this.busy.set(true);
     try {
-      this.current.set(await this.api.post<StockCount>(`/stock-counts/${c.uid}/post`, {}));
+      this.current.set(
+        sheetOrder(await this.api.post<StockCount>(`/stock-counts/${c.uid}/post`, {})),
+      );
       this.toasts.success(this.translations.t('count.posted'));
     } finally {
       this.busy.set(false);

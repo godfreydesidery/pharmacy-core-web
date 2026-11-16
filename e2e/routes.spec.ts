@@ -60,6 +60,7 @@ const TENANT_ROUTES = [
   '/inventory/destructions',
   '/purchasing/reorder',
   '/purchasing/supplier-returns',
+  '/purchasing/supplier-balances',
   '/catalogue/pricing',
   '/finance/statements',
   '/finance/opening-balances',

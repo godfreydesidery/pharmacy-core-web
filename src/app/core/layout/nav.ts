@@ -123,6 +123,11 @@ export const TENANT_NAV: NavItem[] = [
         permission: 'purchasing.view',
       },
       { label: 'Reorder suggestions', path: '/purchasing/reorder', permission: 'purchasing.view' },
+      {
+        label: 'Supplier balances',
+        path: '/purchasing/supplier-balances',
+        permission: 'purchasing.view',
+      },
     ],
   },
   {
