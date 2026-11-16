@@ -183,6 +183,11 @@ export class ShiftBarComponent {
   protected readonly busy = signal(false);
   protected readonly report = signal<ShiftView | null>(null);
 
+  /** Re-reads the open shift's figures, e.g. after the till completes a sale. */
+  refresh(): void {
+    void this.shift.reload();
+  }
+
   protected tenders(s: ShiftView): [string, number][] {
     return Object.entries(s.tenders);
   }

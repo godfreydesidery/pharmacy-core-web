@@ -9,6 +9,7 @@ import {
   workspaceGuard,
 } from './core/session/guards';
 import { SessionStore } from './core/session/session.store';
+import { planGuard } from './core/subscription/plan-guard';
 
 const page = (permission: string) => ({ data: { permission } });
 
@@ -63,7 +64,7 @@ export const routes: Routes = [
       },
       {
         path: '',
-        canActivateChild: [workspaceGuard, permissionGuard],
+        canActivateChild: [workspaceGuard, permissionGuard, planGuard],
         children: [
           {
             path: '',
@@ -141,6 +142,11 @@ export const routes: Routes = [
             loadComponent: () => import('./features/reports/reports.page'),
           },
           { path: 'admin', loadChildren: () => import('./features/admin/admin.routes') },
+          {
+            path: 'not-in-plan',
+            title: 'Not in your plan',
+            loadComponent: () => import('./features/misc/not-in-plan.page'),
+          },
         ],
       },
       {

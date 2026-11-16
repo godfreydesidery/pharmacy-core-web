@@ -74,7 +74,8 @@ export const STOCKOPS_EN: Readonly<Record<string, string>> = {
   'recall.noBatches': 'No batches of this product.',
   'recall.quarantinedToast': 'Batch quarantined at every branch.',
   'recall.releasedToast': 'Batch released; it can be sold again.',
-  'errors.batch_quarantined': 'That unit is in a recalled (quarantined) batch.',
+  'errors.batch_quarantined':
+    'That batch is recalled (quarantined): it cannot be sold, moved or repacked until it is released.',
   'dest.title': 'Destructions',
   'dest.sub':
     'The register of expired and damaged stock destroyed before a witness, with a printable certificate.',

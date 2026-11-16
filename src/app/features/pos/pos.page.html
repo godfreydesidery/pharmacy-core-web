@@ -58,12 +58,7 @@
         }
         <div class="grid-products">
           @for (p of products.value()?.items ?? []; track p.productUid) {
-            <button
-              type="button"
-              class="product"
-              [disabled]="p.quantityOnHand <= 0"
-              (click)="add(p)"
-            >
+            <button type="button" class="product" [disabled]="available(p) <= 0" (click)="add(p)">
               <div class="top">
                 <span class="thumb tone-{{ typeOf(p).tone }}" [title]="typeOf(p).label"
                   ><app-icon [name]="typeOf(p).icon" [size]="16"
@@ -72,6 +67,11 @@
                   <span class="badge purple" [title]="'pos.scanTheSerialNumberAtSale' | t"
                     >S/N</span
                   >
+                }
+                @if ((p.quarantinedUnits ?? 0) > 0) {
+                  <span class="badge red" [title]="'till.recalledHint' | t">{{
+                    'till.recalled' | t: { count: p.quarantinedUnits }
+                  }}</span>
                 }
                 @if (p.schedule !== 'OTC') {
                   <span
@@ -82,8 +82,16 @@
                 }
                 <span
                   class="badge dot"
-                  [class]="p.quantityOnHand <= 0 ? 'badge dot red' : 'badge dot green'"
-                  >{{ p.quantityOnHand <= 0 ? ('ui.l.out' | t) : p.quantityOnHand + ' left' }}</span
+                  [class]="available(p) <= 0 ? 'badge dot red' : 'badge dot green'"
+                  [title]="(p.openableUnits ?? 0) > 0 ? ('till.packsHint' | t) : ''"
+                  >{{
+                    available(p) <= 0
+                      ? ('ui.l.out' | t)
+                      : (p.openableUnits ?? 0) > 0
+                        ? ('till.looseAndPacks'
+                          | t: { loose: p.quantityOnHand, packs: p.openableUnits })
+                        : ('till.left' | t: { count: p.quantityOnHand })
+                  }}</span
                 >
               </div>
               <b>{{ p.name }}</b>
@@ -91,7 +99,22 @@
                 >{{ p.genericName ?? '' }}{{ p.strength ? ' · ' + p.strength : ''
                 }}{{ p.dosageForm ? ' · ' + (p.dosageForm | label) : '' }}</small
               >
-              <span class="price">{{ p.sellingPrice | money }}</span>
+              @if (cardPrices()[p.productUid]; as cp) {
+                <span class="price">
+                  {{ cp.unitPrice | money }}
+                  @if (cp.unitPrice !== p.sellingPrice) {
+                    <s class="muted shelf">{{ p.sellingPrice | money }}</s>
+                  }
+                </span>
+                @if (cp.source !== 'RETAIL') {
+                  <span class="badge green price-source"
+                    >{{ 'pricing.source.' + cp.source | t
+                    }}{{ cp.label ? ': ' + cp.label : '' }}</span
+                  >
+                }
+              } @else {
+                <span class="price">{{ p.sellingPrice | money }}</span>
+              }
             </button>
           } @empty {
             <div style="grid-column: 1/-1">
@@ -319,87 +342,86 @@
 
         <div class="pad stack" style="gap: 8px">
           @for (payment of payments(); track $index; let i = $index) {
-            <div class="payment">
-              <select
-                class="select sm"
-                [value]="payment.channel ?? payment.method"
-                (change)="choose(i, $any($event.target).value)"
-              >
-                @if (tillMethods.value(); as till) {
-                  @for (m of till; track m.code) {
-                    <option
-                      [value]="m.code"
-                      [selected]="
-                        m.code === payment.channel ||
-                        (!payment.channel && m.code === payment.method)
-                      "
-                    >
-                      {{ m.label }}
-                    </option>
-                  }
-                } @else {
-                  @for (m of methods; track m.method) {
-                    @if (!internalMethods.includes(m)) {
-                      <option [value]="m.method" [selected]="m.method === payment.method">
-                        {{ 'ui.pay.' + m.method | t: null : m.label }}
+            <div class="payment" [class.boxed]="payments().length > 1">
+              <div class="pm-head">
+                <select
+                  class="select sm"
+                  [value]="selectedCode(payment)"
+                  (change)="choose(i, $any($event.target).value)"
+                  [attr.aria-label]="'till.paymentMethod' | t"
+                >
+                  @if (tillMethods.value(); as till) {
+                    @for (m of till; track m.code) {
+                      <option [value]="m.code" [selected]="m.code === selectedCode(payment)">
+                        {{ m.label }}
                       </option>
                     }
+                  } @else {
+                    @for (m of methods; track m.method) {
+                      @if (!internalMethods.includes(m)) {
+                        <option [value]="m.method" [selected]="m.method === payment.method">
+                          {{ 'ui.pay.' + m.method | t: null : m.label }}
+                        </option>
+                      }
+                    }
                   }
-                }
-                @for (m of internalMethods; track m.method) {
-                  <option [value]="m.method" [selected]="m.method === payment.method">
-                    {{ 'ui.pay.' + m.method | t: null : m.label }}
-                  </option>
-                }
-              </select>
-              @if (accepted().length > 1) {
-                <select
-                  class="select sm currency"
-                  [value]="payment.currency ?? base()"
-                  (change)="setCurrency(i, $any($event.target))"
-                  [attr.aria-label]="'pos.paymentCurrency' | t"
-                >
-                  @for (c of accepted(); track c) {
-                    <option [value]="c" [selected]="c === (payment.currency ?? base())">
-                      {{ c }}
+                  @for (m of internalMethods; track m.method) {
+                    <option [value]="m.method" [selected]="m.method === selectedCode(payment)">
+                      {{ 'ui.pay.' + m.method | t: null : m.label }}
                     </option>
                   }
                 </select>
-              }
-              <input
-                class="input sm"
-                type="number"
-                min="0"
-                step="any"
-                [value]="payment.amount"
-                (input)="setAmount(i, +$any($event.target).value)"
-                [attr.aria-label]="'pos.amount' | t"
-              />
-              @if (payment.method !== 'CASH') {
+                @if (payments().length > 1) {
+                  <button
+                    type="button"
+                    class="icon-btn sm"
+                    (click)="removePayment(i)"
+                    [attr.aria-label]="'pos.removePayment' | t"
+                  >
+                    <app-icon name="x" [size]="14" />
+                  </button>
+                }
+              </div>
+              <div class="pm-body">
+                @if (accepted().length > 1) {
+                  <select
+                    class="select sm currency"
+                    [value]="payment.currency ?? base()"
+                    (change)="setCurrency(i, $any($event.target))"
+                    [attr.aria-label]="'pos.paymentCurrency' | t"
+                  >
+                    @for (c of accepted(); track c) {
+                      <option [value]="c" [selected]="c === (payment.currency ?? base())">
+                        {{ c }}
+                      </option>
+                    }
+                  </select>
+                }
                 <input
-                  class="input sm"
-                  [placeholder]="
-                    (payment.method === 'VOUCHER'
-                      ? 'pos.voucherCode'
-                      : tillMethodOf(payment)?.requiresReference
-                        ? 'pos.referenceRequired'
-                        : 'pos.reference'
-                    ) | t
-                  "
-                  [value]="payment.reference ?? ''"
-                  (input)="setReference(i, $any($event.target).value)"
+                  class="input sm pm-amount"
+                  type="number"
+                  min="0"
+                  step="any"
+                  [value]="payment.amount"
+                  (input)="setAmount(i, +$any($event.target).value)"
+                  [attr.aria-label]="'pos.amount' | t"
                 />
-              }
-              @if (payments().length > 1) {
-                <button
-                  type="button"
-                  class="icon-btn sm"
-                  (click)="removePayment(i)"
-                  [attr.aria-label]="'pos.removePayment' | t"
-                >
-                  <app-icon name="x" [size]="14" />
-                </button>
-              }
+                @if (payment.method !== 'CASH') {
+                  <input
+                    class="input sm pm-ref"
+                    [placeholder]="
+                      (payment.method === 'VOUCHER'
+                        ? 'pos.voucherCode'
+                        : tillMethodOf(payment)?.requiresReference
+                          ? 'pos.referenceRequired'
+                          : 'pos.reference'
+                      ) | t
+                    "
+                    [value]="payment.reference ?? ''"
+                    (input)="setReference(i, $any($event.target).value)"
+                  />
+                }
+              </div>
             </div>
             @if (tillMethodOf(payment)?.push) {
               <div class="row wrap push" style="gap: 6px">
@@ -549,22 +571,39 @@
       <div class="notice tone-purple">
         <app-icon name="stethoscope" /> {{ 'pos.theCartHoldsPrescriptionOnlyMedicine' | t }}
       </div>
+      @if (controlledInCart()) {
+        <div class="notice tone-red" style="margin-top: 8px">
+          <app-icon name="shield" /> {{ 'till.controlledNotice' | t }}
+        </div>
+      }
     </div>
     <div class="field">
       <label>{{ 'pos.prescriberName' | t }}</label
       ><input class="input" formControlName="prescriberName" />
+      @if (rxErr('prescriberName'); as m) {
+        <span class="error">{{ m }}</span>
+      }
     </div>
     <div class="field">
       <label>{{ 'pos.registrationNo' | t }}</label
       ><input class="input" formControlName="prescriberRegistration" placeholder="MCT-1234" />
+      @if (rxErr('prescriberRegistration'); as m) {
+        <span class="error">{{ m }}</span>
+      }
     </div>
     <div class="field">
       <label>{{ 'pos.prescriptionReference' | t }}</label
       ><input class="input" formControlName="reference" />
+      @if (rxErr('reference'); as m) {
+        <span class="error">{{ m }}</span>
+      }
     </div>
     <div class="field">
       <label>{{ 'pos.patientName' | t }}</label
       ><input class="input" formControlName="patientName" />
+      @if (rxErr('patientName'); as m) {
+        <span class="error">{{ m }}</span>
+      }
     </div>
     <div class="field full">
       <label>{{ 'files.prescriptionImage' | t }}</label>

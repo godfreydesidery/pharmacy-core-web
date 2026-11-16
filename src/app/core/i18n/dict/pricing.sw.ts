@@ -33,6 +33,8 @@ export const PRICING_SW: Readonly<Record<string, string>> = {
   'pricing.valid': 'Muda',
   'pricing.validFrom': 'Kuanzia',
   'pricing.validTo': 'Hadi',
+  'pricing.noEnd': 'bila tarehe ya mwisho',
+  'pricing.noEndHint': 'Acha wazi iendelee hadi uizime.',
   'pricing.active': 'Inatumika',
   'pricing.inactive': 'Haitumiki',
   'pricing.edit': 'Hariri',

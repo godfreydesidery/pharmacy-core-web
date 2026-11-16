@@ -1,3 +1,4 @@
+import { AccountNamePipe } from './accounts';
 import { Pipe, PipeTransform, inject } from '@angular/core';
 import { Translations } from '../i18n/translations.store';
 import { SettingsStore } from './settings.store';
@@ -83,4 +84,5 @@ export const FORMAT_PIPES = [
   DayPipe,
   WhenPipe,
   LabelPipe,
+  AccountNamePipe,
 ] as const;

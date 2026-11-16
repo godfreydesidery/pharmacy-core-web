@@ -23,6 +23,11 @@ export default [
     loadComponent: () => import('./receipt-form.page'),
   },
   {
+    path: 'supplier-balances',
+    title: 'Supplier balances',
+    loadComponent: () => import('./supplier-balances.page'),
+  },
+  {
     path: 'supplier-returns',
     title: 'Supplier returns',
     loadComponent: () => import('./supplier-returns.page'),

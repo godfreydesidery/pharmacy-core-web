@@ -334,6 +334,12 @@ span.block {
   font-size: 11.5px;
   color: var(--red);
 }
+/* A field the user has left (or tried to submit) while it is invalid. */
+.input.ng-invalid.ng-touched,
+.select.ng-invalid.ng-touched,
+textarea.input.ng-invalid.ng-touched {
+  border-color: var(--red);
+}
 .input,
 .select,
 textarea.input {

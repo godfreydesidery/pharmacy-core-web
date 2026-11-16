@@ -61,7 +61,7 @@ const TONES: Record<AccountType, string> = {
                 @for (a of g.accounts; track a.code) {
                   <tr>
                     <td class="mono">{{ a.code }}</td>
-                    <td class="strong">{{ a.name }}</td>
+                    <td class="strong">{{ a.name | account: a.code }}</td>
                     <td>
                       <span class="badge gray">{{ a.type | label }}</span>
                     </td>

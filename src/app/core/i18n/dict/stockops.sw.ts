@@ -74,7 +74,8 @@ export const STOCKOPS_SW: Readonly<Record<string, string>> = {
   'recall.noBatches': 'Hakuna bechi za bidhaa hii.',
   'recall.quarantinedToast': 'Bechi imetengwa katika kila tawi.',
   'recall.releasedToast': 'Bechi imeachiliwa; inaweza kuuzwa tena.',
-  'errors.batch_quarantined': 'Kipimo hicho kiko kwenye bechi iliyotengwa.',
+  'errors.batch_quarantined':
+    'Bechi hiyo imerejeshwa (imetengwa): haiwezi kuuzwa, kuhamishwa wala kufungwa upya hadi iachiliwe.',
   'dest.title': 'Uteketezaji',
   'dest.sub':
     'Rejista ya bidhaa zilizoisha muda au kuharibika zilizoteketezwa mbele ya shahidi, pamoja na cheti.',

@@ -213,6 +213,8 @@ export const SW: Readonly<Record<string, string>> = {
   'security.accepting': 'Inakubali…',
   'security.inviteClosed': 'Mwaliko huu ni {{status}}. Omba mwingine.',
   'security.retryIn': 'Jaribu tena baada ya sekunde {{seconds}}.',
+  'security.retryInMinute': 'Jaribu tena baada ya dakika 1.',
+  'security.retryInMinutes': 'Jaribu tena baada ya dakika {{minutes}}.',
   // per-area dictionaries (dict/)
   ...SW_AREAS,
 };

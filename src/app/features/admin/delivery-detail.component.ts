@@ -11,6 +11,7 @@ import { Api } from '../../core/api/api.service';
 import { SHARED } from '../../core/shared';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
+import { TEMPLATE_LABELS } from '../../core/notifications/notification.models';
 
 /** One message as it was sent; secrets in its links come back masked from the API. */
 interface DeliveryDetail {
@@ -39,7 +40,7 @@ interface DeliveryDetail {
     <app-drawer
       [open]="!!uid()"
       [title]="'admin2.deliveryDetail' | t"
-      [subtitle]="detail()?.templateKey ?? ''"
+      [subtitle]="messageName(detail()?.templateKey)"
       (closed)="closed.emit()"
     >
       @if (detail(); as d) {
@@ -115,6 +116,11 @@ export class DeliveryDetailComponent {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+
+  /** The message's name in the current language, not its template key. */
+  protected messageName(key: string | undefined): string {
+    return key ? this.translations.t(`tpl.${key}`, undefined, TEMPLATE_LABELS[key] ?? key) : '';
+  }
   readonly uid = input<string | null>(null);
   readonly closed = output<void>();
   readonly resent = output<void>();

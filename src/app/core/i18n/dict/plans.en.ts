@@ -51,7 +51,7 @@ export const PLANS_EN: Readonly<Record<string, string>> = {
   'plans.plan': 'Plan',
   'plans.period': 'Period',
   'plans.trialEnds': 'Trial ends',
-  'plans.trialEndsOn': 'Your free trial ends on {date}.',
+  'plans.trialEndsOn': 'Your free trial ends on {{date}}.',
   'plans.graceEnds': 'Grace period ends',
   'plans.changePlan': 'Change plan',
   'plans.extendTrial': 'Extend trial (days)',
@@ -72,8 +72,8 @@ export const PLANS_EN: Readonly<Record<string, string>> = {
   'plans.current': 'Current',
   'plans.upgradeHint':
     'Features your plan does not include are hidden from the menu. Ask the platform administrator to change your plan.',
-  'plans.banner.trial': 'Free trial of {plan}: {days} days left.',
-  'plans.banner.pastDue': 'Your subscription is unpaid. Pay by {date} to keep using the system.',
+  'plans.banner.trial': 'Free trial of {{plan}}: {{days}} days left.',
+  'plans.banner.pastDue': 'Your subscription is unpaid. Pay by {{date}} to keep using the system.',
   'plans.banner.see': 'See subscription',
   'plans.mrr': 'Monthly revenue',
   'plans.mrrCaption': 'Recurring, active subscriptions',
@@ -93,4 +93,14 @@ export const PLANS_EN: Readonly<Record<string, string>> = {
   'errors.invalid_currency': 'The currency is not valid.',
   'errors.invalid_days': 'Enter a number of days between 1 and 365.',
   'errors.invalid_price': 'Prices cannot be negative.',
+  'gate.title': 'Not in your plan',
+  'gate.body': '{{feature}} is not included in the {{plan}} plan.',
+  'gate.howAdmin':
+    'Upgrade the plan to use it: Administration → Subscription shows the plans and how to pay.',
+  'gate.howStaff': "Ask your pharmacy's administrator to upgrade the plan.",
+  'gate.seePlans': 'See plans and upgrade',
+  'plans.downgrade.confirm':
+    '{{plan}} is below what this pharmacy uses now:\n{{lines}}\n\nIts existing records stay, but it cannot add more beyond the new limits, and the modules listed close. Change the plan?',
+  'plans.downgrade.limit': '{{limit}}: {{used}} in use, {{allowed}} allowed',
+  'plans.downgrade.feature': '{{feature}} is not included',
 };

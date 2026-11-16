@@ -7,10 +7,11 @@ import {
   SubscriptionInvoice,
 } from '../../core/api/subscription.models';
 import { loaded } from '../../core/data/data';
-import { Translations } from '../../core/i18n/translations.store';
+import { Params, Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
 import { PlanUsageComponent } from '../../core/subscription/plan-usage.component';
 import { ToastService } from '../../core/ui/toast.service';
+import { downgradeLoss, losesAnything } from '../../core/subscription/downgrade';
 
 /**
  * The tenant page's subscription card for the root administrator: plan, status, usage, invoices;
@@ -207,12 +208,50 @@ export class TenantSubscriptionComponent {
   }
 
   protected async changePlan(planCode: string, cycle: BillingCycle): Promise<void> {
+    if (!this.confirmLosses(planCode)) {
+      return;
+    }
     await this.act(() =>
       this.api.put(
         `/platform/tenants/${this.tenantUid()}/subscription`,
         { planCode, cycle },
         { noBranch: true },
       ),
+    );
+  }
+
+  /**
+   * Before moving a pharmacy to a plan below what it uses (more branches, users or products than
+   * the plan allows, or modules it would lose), says exactly what and asks to go ahead.
+   */
+  private confirmLosses(planCode: string): boolean {
+    const current = this.sub.value();
+    const target = (this.plans.value() ?? []).find((p) => p.code === planCode);
+    if (!current || !target || target.code === current.plan.code) {
+      return true;
+    }
+    const loss = downgradeLoss(current.usage, current.plan, target);
+    if (!losesAnything(loss)) {
+      return true;
+    }
+    const t = (key: string, params?: Params) => this.translations.t(key, params);
+    const lines = [
+      ...loss.limits.map((l) =>
+        t('plans.downgrade.limit', {
+          limit: t('plans.limit.' + l.limit),
+          used: l.used,
+          allowed: l.allowed,
+        }),
+      ),
+      ...loss.features.map((f) =>
+        t('plans.downgrade.feature', { feature: t('plans.feature.' + f) }),
+      ),
+    ];
+    return window.confirm(
+      t('plans.downgrade.confirm', {
+        plan: target.name,
+        lines: lines.map((l) => '• ' + l).join('\n'),
+      }),
     );
   }
 
