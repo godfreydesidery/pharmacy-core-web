@@ -27,7 +27,7 @@ import { debounced, loaded } from '../../core/data/data';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
-import { validate } from '../../core/ui/forms';
+import { controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { ToastService } from '../../core/ui/toast.service';
 import {
@@ -303,6 +303,18 @@ export default class PosPage {
     reference: ['', Validators.required],
     patientName: ['', Validators.required],
   });
+
+  /** The message under a prescription field once it was touched or the form was submitted. */
+  protected rxErr(
+    name: 'prescriberName' | 'prescriberRegistration' | 'reference' | 'patientName',
+  ): string | null {
+    return controlError(this.rxForm.controls[name]);
+  }
+
+  /** A controlled drug is in the cart: every prescription detail goes into the register. */
+  protected readonly controlledInCart = computed(() =>
+    this.lines().some((l) => l.product.schedule === 'CONTROLLED'),
+  );
 
   protected readonly customerName = (c: Customer) => c.name;
   protected readonly customerDetail = (c: Customer) =>
@@ -581,6 +593,11 @@ export default class PosPage {
 
   protected savePrescription(): void {
     if (!validate(this.rxForm)) {
+      this.toasts.error(
+        this.translations.t(
+          this.controlledInCart() ? 'pos.controlledRxIncomplete' : 'till.rxIncomplete',
+        ),
+      );
       return;
     }
     const rx = this.rxForm.getRawValue();

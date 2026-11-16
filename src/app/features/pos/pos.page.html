@@ -551,22 +551,39 @@
       <div class="notice tone-purple">
         <app-icon name="stethoscope" /> {{ 'pos.theCartHoldsPrescriptionOnlyMedicine' | t }}
       </div>
+      @if (controlledInCart()) {
+        <div class="notice tone-red" style="margin-top: 8px">
+          <app-icon name="shield" /> {{ 'till.controlledNotice' | t }}
+        </div>
+      }
     </div>
     <div class="field">
       <label>{{ 'pos.prescriberName' | t }}</label
       ><input class="input" formControlName="prescriberName" />
+      @if (rxErr('prescriberName'); as m) {
+        <span class="error">{{ m }}</span>
+      }
     </div>
     <div class="field">
       <label>{{ 'pos.registrationNo' | t }}</label
       ><input class="input" formControlName="prescriberRegistration" placeholder="MCT-1234" />
+      @if (rxErr('prescriberRegistration'); as m) {
+        <span class="error">{{ m }}</span>
+      }
     </div>
     <div class="field">
       <label>{{ 'pos.prescriptionReference' | t }}</label
       ><input class="input" formControlName="reference" />
+      @if (rxErr('reference'); as m) {
+        <span class="error">{{ m }}</span>
+      }
     </div>
     <div class="field">
       <label>{{ 'pos.patientName' | t }}</label
       ><input class="input" formControlName="patientName" />
+      @if (rxErr('patientName'); as m) {
+        <span class="error">{{ m }}</span>
+      }
     </div>
     <div class="field full">
       <label>{{ 'files.prescriptionImage' | t }}</label>
