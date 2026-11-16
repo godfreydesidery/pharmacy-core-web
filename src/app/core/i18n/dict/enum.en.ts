@@ -140,4 +140,8 @@ export const ENUM_EN: Readonly<Record<string, string>> = {
   'enum.purchasing': 'Purchasing',
   'enum.reports': 'Reports',
   'enum.sales': 'Sales',
+  'enum.SENT': 'Sent',
+  'enum.FAILED': 'Failed',
+  'enum.QUEUED': 'Queued',
+  'enum.SENDING': 'Sending',
 };

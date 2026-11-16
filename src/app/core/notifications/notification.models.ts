@@ -97,4 +97,5 @@ export const TEMPLATE_LABELS: Record<string, string> = {
   'access.new_sign_in': 'New sign-in',
   'access.two_factor_code': 'Sign-in code',
   'tenant.welcome': 'Welcome',
+  'provider.test': 'Provider test message',
 };

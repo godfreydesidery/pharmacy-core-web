@@ -140,4 +140,8 @@ export const ENUM_SW: Readonly<Record<string, string>> = {
   'enum.purchasing': 'Ununuzi',
   'enum.reports': 'Ripoti',
   'enum.sales': 'Mauzo',
+  'enum.SENT': 'Imetumwa',
+  'enum.FAILED': 'Imeshindwa',
+  'enum.QUEUED': 'Kwenye foleni',
+  'enum.SENDING': 'Inatumwa',
 };

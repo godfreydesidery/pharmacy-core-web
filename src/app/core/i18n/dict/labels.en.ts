@@ -28,4 +28,5 @@ export const LABELS_EN: Readonly<Record<string, string>> = {
   'auditType.GoodsReceipt': 'Goods receipt',
   'auditType.Expense': 'Expense',
   'auditType.Webhook': 'Webhook',
+  'tpl.provider.test': 'Provider test message',
 };

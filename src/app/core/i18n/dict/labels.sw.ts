@@ -28,4 +28,5 @@ export const LABELS_SW: Readonly<Record<string, string>> = {
   'auditType.GoodsReceipt': 'Upokeaji wa bidhaa',
   'auditType.Expense': 'Matumizi',
   'auditType.Webhook': 'Webhook',
+  'tpl.provider.test': 'Ujumbe wa majaribio ya mtoa huduma',
 };
