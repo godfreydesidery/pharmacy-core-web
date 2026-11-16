@@ -194,6 +194,7 @@ export default class PosPage {
   }
   protected readonly baseValue = baseValue;
   private readonly customerLookup = viewChild<LookupComponent>('customerLookup');
+  private readonly shiftBar = viewChild(ShiftBarComponent);
 
   protected readonly q = signal('');
   private readonly query = debounced(this.q, 200);
@@ -721,6 +722,7 @@ export default class PosPage {
       this.toasts.success(this.translations.t('toast.saleCompleted', { number: sale.number }));
       this.clear();
       void this.products.reload();
+      this.shiftBar()?.refresh();
     } finally {
       this.busy.set(false);
     }
