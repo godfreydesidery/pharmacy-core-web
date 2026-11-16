@@ -133,10 +133,9 @@ export interface SupplierStatement {
     >
       @if (statement.value(); as s) {
         <div class="table-wrap">
-          <table class="table">
+          <table class="table statement">
             <thead>
               <tr>
-                <th>{{ 'payables.date' | t }}</th>
                 <th>{{ 'payables.document' | t }}</th>
                 <th class="right">{{ 'payables.debit' | t }}</th>
                 <th class="right">{{ 'payables.credit' | t }}</th>
@@ -146,8 +145,8 @@ export interface SupplierStatement {
             <tbody>
               @for (l of s.lines; track $index) {
                 <tr>
-                  <td class="muted">{{ l.date | day }}</td>
                   <td>
+                    <small class="muted block">{{ l.date | day }}</small>
                     {{ 'payables.type.' + l.type | t }}
                     @if (l.number) {
                       <span class="mono muted">{{ l.number }}</span>
@@ -163,7 +162,7 @@ export interface SupplierStatement {
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="5" class="empty">{{ 'payables.noLines' | t }}</td>
+                  <td colspan="4" class="empty">{{ 'payables.noLines' | t }}</td>
                 </tr>
               }
             </tbody>
@@ -184,6 +183,15 @@ export interface SupplierStatement {
       grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
       gap: 12px;
       margin-bottom: 16px;
+    }
+    /* Four columns that fit the drawer: the date sits above each document. */
+    .statement th,
+    .statement td {
+      padding-left: 8px;
+      padding-right: 8px;
+    }
+    .statement td.right {
+      white-space: nowrap;
     }
     .closing {
       padding: 12px 4px 0;
