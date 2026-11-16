@@ -126,6 +126,7 @@ export interface SupplierStatement {
     </div>
 
     <app-drawer
+      [wide]="true"
       [open]="!!selected()"
       [title]="selected()?.supplierName ?? ''"
       [subtitle]="'payables.statement' | t"
