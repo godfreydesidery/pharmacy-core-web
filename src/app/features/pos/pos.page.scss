@@ -144,14 +144,42 @@
   padding-top: 8px;
   border-top: 1px dashed var(--border);
 }
+/*
+ * A tender: the method (and its remove button) on top, then currency, amount and reference, which
+ * wrap rather than squeeze, so a split of three rows fits a 390 px phone as well as the desktop cart.
+ */
 .payment {
-  display: grid;
-  grid-template-columns: 130px 1fr auto auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.payment.boxed {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.pm-head {
+  display: flex;
   gap: 6px;
   align-items: center;
 }
-.payment:has(input:nth-of-type(2)) {
-  grid-template-columns: 130px 1fr 1fr auto;
+.pm-head .select {
+  flex: 1;
+  min-width: 0;
+}
+.pm-body {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.pm-body .pm-amount {
+  flex: 1 1 110px;
+  min-width: 110px;
+}
+.pm-body .pm-ref {
+  flex: 2 1 150px;
+  min-width: 130px;
 }
 .rx {
   border: 0;
@@ -170,7 +198,7 @@
 }
 @media (max-width: 1024px) {
   .pos {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
     padding-bottom: 72px;
   }
   .cart-bar {
@@ -212,7 +240,7 @@
 /* Multi-currency tenders: a narrow currency picker per payment, and its base value below. */
 .payment .currency {
   width: 76px;
-  flex: none;
+  flex: 0 0 76px;
 }
 .fx-note {
   font-size: 12px;

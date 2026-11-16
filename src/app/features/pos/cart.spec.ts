@@ -1,4 +1,4 @@
-import { SellableProduct } from '../../core/api/models';
+import { SellableProduct, TillMethod } from '../../core/api/models';
 import {
   addToCart,
   cartTotals,
@@ -7,7 +7,22 @@ import {
   needsPrescription,
   paidTotal,
   setQuantity,
+  splitPayment,
 } from './cart';
+
+function till(code: string, kind: TillMethod['kind']): TillMethod {
+  return {
+    code,
+    name: code,
+    label: code,
+    kind,
+    adapter: 'MANUAL',
+    requiresReference: false,
+    push: false,
+    accountReference: null,
+    enabled: true,
+  };
+}
 
 function product(overrides: Partial<SellableProduct> = {}): SellableProduct {
   return {
@@ -97,5 +112,26 @@ describe('cart', () => {
     expect(needsPrescription([{ product: product(), quantity: 1 }])).toBe(false);
     expect(needsCustomer(['CASH', 'CREDIT'])).toBe(true);
     expect(needsCustomer(['CASH', 'CARD'])).toBe(false);
+  });
+
+  it('opens a split row on a real method of the pharmacy, kind and channel together', () => {
+    const methods = [
+      till('CASH', 'CASH'),
+      till('MPESA', 'MOBILE_MONEY'),
+      till('CRDB', 'BANK_TRANSFER'),
+    ];
+    expect(splitPayment(methods, 3000)).toEqual({
+      method: 'MOBILE_MONEY',
+      channel: 'MPESA',
+      amount: 3000,
+      reference: null,
+    });
+    expect(splitPayment([till('CASH', 'CASH')], 10)).toEqual({
+      method: 'CASH',
+      channel: 'CASH',
+      amount: 10,
+      reference: null,
+    });
+    expect(splitPayment(null, 5)).toEqual({ method: 'MOBILE_MONEY', amount: 5, reference: null });
   });
 });

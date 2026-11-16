@@ -1,4 +1,4 @@
-import { PaymentMethod, SalePayment, SellableProduct } from '../../core/api/models';
+import { PaymentMethod, SalePayment, SellableProduct, TillMethod } from '../../core/api/models';
 
 /** Pure POS arithmetic. The API prices the sale itself; this previews the same rules. */
 
@@ -116,6 +116,23 @@ export function changeDue(payments: readonly SalePayment[], total: number): numb
   const paid = paidTotal(payments);
   const cash = paidTotal(payments.filter((p) => p.method === 'CASH'));
   return round2(Math.max(0, Math.min(paid - total, cash)));
+}
+
+/**
+ * A new split-payment row: the first method the pharmacy accepts that is not cash (else cash),
+ * with its booking kind and its channel set together, so the select shows what will be recorded.
+ * Without the pharmacy's list, plain mobile money.
+ */
+export function splitPayment(
+  methods: readonly TillMethod[] | null | undefined,
+  amount: number,
+): SalePayment {
+  const usable = (methods ?? []).filter((m) => m.enabled !== false);
+  const pick = usable.find((m) => m.kind !== 'CASH') ?? usable.find((m) => m.kind === 'CASH');
+  if (!pick) {
+    return { method: 'MOBILE_MONEY', amount, reference: null };
+  }
+  return { method: pick.kind as PaymentMethod, channel: pick.code, amount, reference: null };
 }
 
 export function needsPrescription(lines: readonly CartLine[]): boolean {

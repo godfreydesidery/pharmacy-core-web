@@ -41,6 +41,7 @@ import {
   baseValue,
   round2,
   setQuantity,
+  splitPayment,
   withSerials,
 } from './cart';
 import { SerialPickerComponent } from './serial-picker.component';
@@ -111,6 +112,27 @@ export default class PosPage {
   /** The registered method of a payment row, if it was picked from the registry. */
   protected tillMethodOf(payment: SalePayment): TillMethod | undefined {
     return (this.tillMethods.value() ?? []).find((m) => m.code === payment.channel);
+  }
+
+  /**
+   * The option a payment row's select shows: its channel, else the registry method matching how it
+   * is booked (a plain cash row shows the pharmacy's cash method), else the internal method.
+   */
+  protected selectedCode(payment: SalePayment): string {
+    if (payment.channel) {
+      return payment.channel;
+    }
+    const till = this.tillMethods.value() ?? [];
+    return (
+      till.find((m) => m.code === payment.method)?.code ??
+      till.find((m) => m.kind === payment.method)?.code ??
+      payment.method
+    );
+  }
+
+  /** The pharmacy's cash method code, for rows the till turns into cash. */
+  private cashChannel(): string | null {
+    return (this.tillMethods.value() ?? []).find((m) => m.kind === 'CASH')?.code ?? null;
   }
 
   /** Picks a registry method (sets how it is booked and its channel) or an internal one. */
@@ -507,10 +529,7 @@ export default class PosPage {
 
   protected addPayment(): void {
     const remaining = Math.max(this.balance(), 0);
-    this.payments.update((list) => [
-      ...list,
-      { method: 'MOBILE_MONEY', amount: remaining, reference: null },
-    ]);
+    this.payments.update((list) => [...list, splitPayment(this.tillMethods.value(), remaining)]);
   }
 
   protected removePayment(index: number): void {
@@ -519,7 +538,11 @@ export default class PosPage {
 
   protected quickCash(amount: number): void {
     this.payments.update((list) =>
-      list.map((p, i) => (i === 0 ? { ...p, method: 'CASH', amount } : p)),
+      list.map((p, i) =>
+        i === 0
+          ? { ...p, method: 'CASH', channel: this.cashChannel(), reference: null, amount }
+          : p,
+      ),
     );
   }
 

@@ -319,87 +319,86 @@
 
         <div class="pad stack" style="gap: 8px">
           @for (payment of payments(); track $index; let i = $index) {
-            <div class="payment">
-              <select
-                class="select sm"
-                [value]="payment.channel ?? payment.method"
-                (change)="choose(i, $any($event.target).value)"
-              >
-                @if (tillMethods.value(); as till) {
-                  @for (m of till; track m.code) {
-                    <option
-                      [value]="m.code"
-                      [selected]="
-                        m.code === payment.channel ||
-                        (!payment.channel && m.code === payment.method)
-                      "
-                    >
-                      {{ m.label }}
-                    </option>
-                  }
-                } @else {
-                  @for (m of methods; track m.method) {
-                    @if (!internalMethods.includes(m)) {
-                      <option [value]="m.method" [selected]="m.method === payment.method">
-                        {{ 'ui.pay.' + m.method | t: null : m.label }}
+            <div class="payment" [class.boxed]="payments().length > 1">
+              <div class="pm-head">
+                <select
+                  class="select sm"
+                  [value]="selectedCode(payment)"
+                  (change)="choose(i, $any($event.target).value)"
+                  [attr.aria-label]="'till.paymentMethod' | t"
+                >
+                  @if (tillMethods.value(); as till) {
+                    @for (m of till; track m.code) {
+                      <option [value]="m.code" [selected]="m.code === selectedCode(payment)">
+                        {{ m.label }}
                       </option>
                     }
+                  } @else {
+                    @for (m of methods; track m.method) {
+                      @if (!internalMethods.includes(m)) {
+                        <option [value]="m.method" [selected]="m.method === payment.method">
+                          {{ 'ui.pay.' + m.method | t: null : m.label }}
+                        </option>
+                      }
+                    }
                   }
-                }
-                @for (m of internalMethods; track m.method) {
-                  <option [value]="m.method" [selected]="m.method === payment.method">
-                    {{ 'ui.pay.' + m.method | t: null : m.label }}
-                  </option>
-                }
-              </select>
-              @if (accepted().length > 1) {
-                <select
-                  class="select sm currency"
-                  [value]="payment.currency ?? base()"
-                  (change)="setCurrency(i, $any($event.target))"
-                  [attr.aria-label]="'pos.paymentCurrency' | t"
-                >
-                  @for (c of accepted(); track c) {
-                    <option [value]="c" [selected]="c === (payment.currency ?? base())">
-                      {{ c }}
+                  @for (m of internalMethods; track m.method) {
+                    <option [value]="m.method" [selected]="m.method === selectedCode(payment)">
+                      {{ 'ui.pay.' + m.method | t: null : m.label }}
                     </option>
                   }
                 </select>
-              }
-              <input
-                class="input sm"
-                type="number"
-                min="0"
-                step="any"
-                [value]="payment.amount"
-                (input)="setAmount(i, +$any($event.target).value)"
-                [attr.aria-label]="'pos.amount' | t"
-              />
-              @if (payment.method !== 'CASH') {
+                @if (payments().length > 1) {
+                  <button
+                    type="button"
+                    class="icon-btn sm"
+                    (click)="removePayment(i)"
+                    [attr.aria-label]="'pos.removePayment' | t"
+                  >
+                    <app-icon name="x" [size]="14" />
+                  </button>
+                }
+              </div>
+              <div class="pm-body">
+                @if (accepted().length > 1) {
+                  <select
+                    class="select sm currency"
+                    [value]="payment.currency ?? base()"
+                    (change)="setCurrency(i, $any($event.target))"
+                    [attr.aria-label]="'pos.paymentCurrency' | t"
+                  >
+                    @for (c of accepted(); track c) {
+                      <option [value]="c" [selected]="c === (payment.currency ?? base())">
+                        {{ c }}
+                      </option>
+                    }
+                  </select>
+                }
                 <input
-                  class="input sm"
-                  [placeholder]="
-                    (payment.method === 'VOUCHER'
-                      ? 'pos.voucherCode'
-                      : tillMethodOf(payment)?.requiresReference
-                        ? 'pos.referenceRequired'
-                        : 'pos.reference'
-                    ) | t
-                  "
-                  [value]="payment.reference ?? ''"
-                  (input)="setReference(i, $any($event.target).value)"
+                  class="input sm pm-amount"
+                  type="number"
+                  min="0"
+                  step="any"
+                  [value]="payment.amount"
+                  (input)="setAmount(i, +$any($event.target).value)"
+                  [attr.aria-label]="'pos.amount' | t"
                 />
-              }
-              @if (payments().length > 1) {
-                <button
-                  type="button"
-                  class="icon-btn sm"
-                  (click)="removePayment(i)"
-                  [attr.aria-label]="'pos.removePayment' | t"
-                >
-                  <app-icon name="x" [size]="14" />
-                </button>
-              }
+                @if (payment.method !== 'CASH') {
+                  <input
+                    class="input sm pm-ref"
+                    [placeholder]="
+                      (payment.method === 'VOUCHER'
+                        ? 'pos.voucherCode'
+                        : tillMethodOf(payment)?.requiresReference
+                          ? 'pos.referenceRequired'
+                          : 'pos.reference'
+                      ) | t
+                    "
+                    [value]="payment.reference ?? ''"
+                    (input)="setReference(i, $any($event.target).value)"
+                  />
+                }
+              </div>
             </div>
             @if (tillMethodOf(payment)?.push) {
               <div class="row wrap push" style="gap: 6px">
