@@ -67,7 +67,7 @@ export class ApiError extends Error {
  * `errors.<reason>` line replaces it, and a reason with no line keeps the server's detail.
  */
 /** Reasons whose server wording is technical, so even English shows the dictionary text. */
-const FRIENDLY_IN_EVERY_LANGUAGE = new Set(['invalid_uid']);
+const FRIENDLY_IN_EVERY_LANGUAGE = new Set(['invalid_uid', 'batch_quarantined']);
 
 export function localizeError(
   error: ApiError,

@@ -517,6 +517,8 @@ export interface SellableProduct {
   quantityOnHand: number;
   /** Units the till can get by opening linked packs here (break bulk); absent means none. */
   openableUnits?: number;
+  /** Units here in recalled (quarantined) batches: not sellable until released. */
+  quarantinedUnits?: number;
   productType: ProductType;
   trackingMode: TrackingMode;
   unitOfMeasure: UnitOfMeasure;

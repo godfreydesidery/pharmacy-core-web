@@ -68,6 +68,11 @@
                     >S/N</span
                   >
                 }
+                @if ((p.quarantinedUnits ?? 0) > 0) {
+                  <span class="badge red" [title]="'till.recalledHint' | t">{{
+                    'till.recalled' | t: { count: p.quarantinedUnits }
+                  }}</span>
+                }
                 @if (p.schedule !== 'OTC') {
                   <span
                     class="badge"

@@ -20,4 +20,7 @@ export const TILL_SW: Readonly<Record<string, string>> = {
   'till.channel.CHEQUE': 'Hundi',
   'till.channel.VOUCHER': 'Vocha',
   'till.channel.SIMULATOR': 'Kiigaji (majaribio)',
+  'till.recalled': '{{count}} zimerejeshwa',
+  'till.recalledHint':
+    'Vipimo vya bechi iliyorejeshwa vimezuiwa na haviwezi kuuzwa hadi bechi iachiliwe (Stoo → Urejeshaji).',
 };

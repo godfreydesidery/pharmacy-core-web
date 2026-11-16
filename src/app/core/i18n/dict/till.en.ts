@@ -20,4 +20,7 @@ export const TILL_EN: Readonly<Record<string, string>> = {
   'till.channel.CHEQUE': 'Cheque',
   'till.channel.VOUCHER': 'Voucher',
   'till.channel.SIMULATOR': 'Simulator (testing)',
+  'till.recalled': '{{count}} recalled',
+  'till.recalledHint':
+    'Units in a recalled batch are held back and cannot be sold until the batch is released (Inventory → Recalls).',
 };
