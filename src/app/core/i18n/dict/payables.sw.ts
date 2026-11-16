@@ -1,0 +1,27 @@
+/** Ununuzi → Madeni ya wasambazaji na taarifa zao. */
+export const PAYABLES_SW: Readonly<Record<string, string>> = {
+  'nav.purchasing.supplier-balances': 'Madeni ya wasambazaji',
+  'payables.title': 'Madeni ya wasambazaji',
+  'payables.sub':
+    'Kiasi famasia inachodaiwa na kila msambazaji: bidhaa zilizopokelewa, ukiondoa malipo na marejesho. Fungua msambazaji kuona taarifa yake.',
+  'payables.export': 'Hamisha CSV',
+  'payables.totalOwed': 'Jumla inayodaiwa na wasambazaji',
+  'payables.suppliersOwed': 'Wasambazaji wanaodai',
+  'payables.search': 'Tafuta wasambazaji…',
+  'payables.owingOnly': 'Ficha wasambazaji waliolipwa',
+  'payables.supplier': 'Msambazaji',
+  'payables.lastActivity': 'Shughuli ya mwisho',
+  'payables.balance': 'Salio',
+  'payables.none': 'Hakuna madeni ya wasambazaji.',
+  'payables.statement': 'Taarifa ya akaunti',
+  'payables.date': 'Tarehe',
+  'payables.document': 'Hati',
+  'payables.debit': 'Imelipwa / imerejeshwa',
+  'payables.credit': 'Imepokelewa',
+  'payables.noLines': 'Bado hakuna shughuli.',
+  'payables.closing': 'Salio linalodaiwa',
+  'payables.type.OPENING': 'Salio la mwanzo',
+  'payables.type.RECEIPT': 'Bidhaa zilizopokelewa',
+  'payables.type.PAYMENT': 'Malipo',
+  'payables.type.RETURN': 'Marejesho kwa msambazaji',
+};
