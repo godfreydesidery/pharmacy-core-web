@@ -94,4 +94,10 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
   'errors.invalid_currency': 'Sarafu si sahihi.',
   'errors.invalid_days': 'Weka idadi ya siku kati ya 1 na 365.',
   'errors.invalid_price': 'Bei haiwezi kuwa hasi.',
+  'gate.title': 'Haipo kwenye mpango wako',
+  'gate.body': '{{feature}} haijajumuishwa kwenye mpango wa {{plan}}.',
+  'gate.howAdmin':
+    'Panda mpango ili uitumie: Utawala → Usajili inaonyesha mipango na jinsi ya kulipa.',
+  'gate.howStaff': 'Mwombe msimamizi wa famasia yako apandishe mpango.',
+  'gate.seePlans': 'Tazama mipango na upande',
 };

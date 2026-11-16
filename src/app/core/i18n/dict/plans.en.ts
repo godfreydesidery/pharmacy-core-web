@@ -93,4 +93,10 @@ export const PLANS_EN: Readonly<Record<string, string>> = {
   'errors.invalid_currency': 'The currency is not valid.',
   'errors.invalid_days': 'Enter a number of days between 1 and 365.',
   'errors.invalid_price': 'Prices cannot be negative.',
+  'gate.title': 'Not in your plan',
+  'gate.body': '{{feature}} is not included in the {{plan}} plan.',
+  'gate.howAdmin':
+    'Upgrade the plan to use it: Administration → Subscription shows the plans and how to pay.',
+  'gate.howStaff': "Ask your pharmacy's administrator to upgrade the plan.",
+  'gate.seePlans': 'See plans and upgrade',
 };
