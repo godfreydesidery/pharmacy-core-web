@@ -10,6 +10,7 @@ import {
   Promotion,
 } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
+import { isoDay } from '../../core/format/format';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
@@ -52,7 +53,8 @@ interface PromotionDraft {
   categoryUid: string;
   branchUid: string;
   validFrom: string;
-  validTo: string;
+  /** Empty or null: runs until switched off. */
+  validTo: string | null;
   active: boolean;
 }
 
@@ -243,7 +245,9 @@ interface PromotionDraft {
                     <td>
                       {{ p.branchUid ? branchName(p.branchUid) : ('pricing.allBranches' | t) }}
                     </td>
-                    <td class="muted">{{ p.validFrom }} – {{ p.validTo }}</td>
+                    <td class="muted">
+                      {{ p.validFrom }} – {{ p.validTo || ('pricing.noEnd' | t) }}
+                    </td>
                     <td class="right">
                       @if (canEdit()) {
                         <button class="btn sm" type="button" (click)="editPromotion(p)">
@@ -500,9 +504,10 @@ interface PromotionDraft {
             <input
               class="input"
               type="date"
-              [value]="p.validTo"
+              [value]="p.validTo ?? ''"
               (change)="p.validTo = $any($event.target).value"
             />
+            <small class="hint">{{ 'pricing.noEndHint' | t }}</small>
           </div>
           <label class="check full">
             <input
@@ -682,7 +687,8 @@ export default class PricingPage {
   }
 
   protected editPromotion(p: Promotion | null): void {
-    const today = new Date().toISOString().slice(0, 10);
+    // The pharmacy's local day (not UTC); a new promotion runs until switched off.
+    const today = isoDay();
     this.promotion.set({
       uid: p?.uid ?? null,
       name: p?.name ?? '',
@@ -692,7 +698,7 @@ export default class PricingPage {
       categoryUid: p?.categoryUid ?? '',
       branchUid: p?.branchUid ?? '',
       validFrom: p?.validFrom ?? today,
-      validTo: p?.validTo ?? today,
+      validTo: p?.validTo ?? '',
       active: p?.active ?? true,
     });
   }
@@ -711,7 +717,7 @@ export default class PricingPage {
         categoryUid: p.categoryUid || null,
         branchUid: p.branchUid || null,
         validFrom: p.validFrom,
-        validTo: p.validTo,
+        validTo: p.validTo || null,
         active: p.active,
       };
       if (p.uid) {
