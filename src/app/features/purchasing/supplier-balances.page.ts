@@ -13,22 +13,29 @@ import { SHARED } from '../../core/shared';
 export interface SupplierBalance {
   supplierUid: string;
   supplierName: string;
-  /** What the pharmacy owes the supplier (negative: the supplier owes the pharmacy). */
+  opening: number;
+  received: number;
+  returned: number;
+  paid: number;
+  /** What the pharmacy owes the supplier, in the base currency (negative: the supplier owes). */
   balance: number;
-  currency: string;
   lastActivity: string | null;
 }
 
 export type StatementLineType = 'OPENING' | 'RECEIPT' | 'PAYMENT' | 'RETURN';
 
-/** GET /api/v1/suppliers/{uid}/statement */
+/** GET /api/v1/suppliers/{uid}/statement (base currency). */
 export interface SupplierStatement {
+  supplierUid: string;
+  supplierName: string;
   lines: {
     date: string;
     type: StatementLineType;
+    documentUid: string | null;
     number: string | null;
-    debit: number;
-    credit: number;
+    reference: string | null;
+    /** Positive raises what is owed (opening, receipt); negative lowers it (payment, return). */
+    amount: number;
     balance: number;
   }[];
   balance: number;
@@ -98,7 +105,7 @@ export interface SupplierStatement {
                   <td class="strong">{{ b.supplierName }}</td>
                   <td class="muted">{{ b.lastActivity ? (b.lastActivity | day) : '—' }}</td>
                   <td class="right strong" [class.text-green]="b.balance < 0">
-                    {{ b.balance | money: b.currency }}
+                    {{ b.balance | money }}
                   </td>
                 </tr>
               } @empty {
@@ -145,10 +152,14 @@ export interface SupplierStatement {
                     @if (l.number) {
                       <span class="mono muted">{{ l.number }}</span>
                     }
+                    @if (l.reference) {
+                      <small class="muted block">{{ l.reference }}</small>
+                    }
                   </td>
-                  <td class="right">{{ l.debit ? (l.debit | money: currency()) : '' }}</td>
-                  <td class="right">{{ l.credit ? (l.credit | money: currency()) : '' }}</td>
-                  <td class="right strong">{{ l.balance | money: currency() }}</td>
+                  <!-- A payable account: payments and returns are debits, receipts credits. -->
+                  <td class="right">{{ l.amount < 0 ? (-l.amount | money) : '' }}</td>
+                  <td class="right">{{ l.amount > 0 ? (l.amount | money) : '' }}</td>
+                  <td class="right strong">{{ l.balance | money }}</td>
                 </tr>
               } @empty {
                 <tr>
@@ -160,7 +171,7 @@ export interface SupplierStatement {
         </div>
         <div class="row between closing">
           <span>{{ 'payables.closing' | t }}</span>
-          <b>{{ s.balance | money: currency() }}</b>
+          <b>{{ s.balance | money }}</b>
         </div>
       } @else {
         <app-empty [loading]="statement.loading()" icon="file" [title]="'payables.statement' | t" />
@@ -211,7 +222,6 @@ export default class SupplierBalancesPage {
   protected readonly owedCount = computed(
     () => (this.balances.value() ?? []).filter((b) => b.balance > 0).length,
   );
-  protected readonly currency = computed(() => this.selected()?.currency);
 
   protected open(balance: SupplierBalance): void {
     this.selected.set(balance);
