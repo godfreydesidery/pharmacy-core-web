@@ -54,6 +54,7 @@ import { UploadComponent } from '../../core/files/upload.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { AccountView, CoverageQuote, MemberView } from '../../core/api/credit.models';
 import { Translations } from '../../core/i18n/translations.store';
+import { SubscriptionStore } from '../../core/subscription/subscription.store';
 
 const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
   { method: 'CASH', label: 'Cash', icon: 'cash' },
@@ -92,6 +93,7 @@ const NOTES: Readonly<Record<string, number[]>> = {
 export default class PosPage {
   protected readonly session = inject(SessionStore);
   protected readonly settings = inject(SettingsStore);
+  private readonly subscription = inject(SubscriptionStore);
   private readonly api = inject(Api);
   private readonly files = inject(FilesService);
   private readonly toasts = inject(ToastService);
@@ -505,10 +507,17 @@ export default class PosPage {
     );
   }
 
-  /** The currencies a payment may be in: the base first. */
-  protected readonly accepted = computed(
-    () => this.settings.settings()?.acceptedCurrencies ?? [this.settings.currency()],
-  );
+  /**
+   * The currencies a payment may be in: the base first. On a plan without multiple currencies only
+   * the base is offered, even while the settings still list others (the API refuses foreign
+   * tenders there, and offering them led to a sale that could not complete).
+   */
+  protected readonly accepted = computed(() => {
+    const all = this.settings.settings()?.acceptedCurrencies ?? [this.settings.currency()];
+    return this.subscription.allows('MULTI_CURRENCY') || this.session.isRoot()
+      ? all
+      : all.filter((c) => c === this.settings.currency());
+  });
   protected readonly base = this.settings.currency;
 
   /**
