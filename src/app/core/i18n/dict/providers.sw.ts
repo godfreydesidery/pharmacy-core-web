@@ -48,6 +48,9 @@ export const PROVIDERS_SW: Readonly<Record<string, string>> = {
   'providers.lastSent': 'Uliotumwa mwisho',
   'providers.lastFailure': 'Hitilafu ya mwisho',
   'providers.usageThisMonth': 'Zilizotumwa mwezi huu',
+  'providers.unavailable': 'Watoa huduma za ujumbe hawakuweza kupakiwa',
+  'providers.secretsUnreadable':
+    'Nenosiri au ufunguo uliohifadhiwa hauwezi kusomwa tena (ufunguo wa usimbaji wa seva umebadilika). Uweke tena kisha uhifadhi.',
   'errors.provider_incomplete': 'Mtoa huduma anahitaji maelezo zaidi; angalia sehemu zenye nyota.',
   'errors.unknown_provider': 'Mtoa huduma huyo hawezi kutuma kwa njia hii.',
   'errors.invalid_email': 'Weka anwani sahihi ya barua pepe.',

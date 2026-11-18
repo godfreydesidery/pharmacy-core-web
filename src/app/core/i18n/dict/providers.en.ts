@@ -48,6 +48,9 @@ export const PROVIDERS_EN: Readonly<Record<string, string>> = {
   'providers.lastSent': 'Last sent',
   'providers.lastFailure': 'Last failure',
   'providers.usageThisMonth': 'Sent this month',
+  'providers.unavailable': 'Message providers could not be loaded',
+  'providers.secretsUnreadable':
+    'The saved password or key can no longer be read (the server’s encryption key changed). Enter it again and save.',
   'errors.provider_incomplete': 'The provider needs more details; see the starred fields.',
   'errors.unknown_provider': 'That provider cannot send on this channel.',
   'errors.invalid_email': 'Enter a valid email address.',

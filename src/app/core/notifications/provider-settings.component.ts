@@ -26,6 +26,8 @@ interface ProviderSettingView {
   settings: Record<string, string>;
   secrets: Record<string, string>;
   configured: boolean;
+  /** The saved secrets were sealed under another server key: they must be entered again. */
+  secretsUnreadable: boolean;
   effectiveProvider: string;
   effectiveSource: 'OWN' | 'PLATFORM' | 'ENVIRONMENT';
   lastSentAt: string | null;
@@ -68,6 +70,22 @@ interface Draft {
         <span>{{ 'providers.channel.WHATSAPP' | t }}: {{ u['WHATSAPP'] ?? 0 }}</span>
       </div>
     }
+    @if (views.error() && !views.value()) {
+      <div class="card card-pad stack">
+        <app-empty
+          icon="alert"
+          [title]="'providers.unavailable' | t"
+          [text]="views.error()?.message ?? ''"
+        />
+        <div class="row" style="justify-content: center">
+          <button class="btn" type="button" [disabled]="views.loading()" (click)="views.reload()">
+            {{ 'common.retry' | t }}
+          </button>
+        </div>
+      </div>
+    } @else if (views.loading() && !views.value()) {
+      <app-empty [loading]="true" />
+    }
     <div class="grid three-up">
       @for (p of views.value() ?? []; track p.channel) {
         @if (drafts()[p.channel]; as d) {
@@ -90,6 +108,9 @@ interface Draft {
                       }
               }}
             </p>
+            @if (p.secretsUnreadable) {
+              <p class="small text-red unreadable">{{ 'providers.secretsUnreadable' | t }}</p>
+            }
             @if (scope() === 'tenant') {
               <label class="check">
                 <input
@@ -227,6 +248,9 @@ interface Draft {
     }
     .text-red {
       color: var(--red);
+    }
+    .unreadable {
+      margin: 0;
     }
   `,
 })
