@@ -1,118 +1,405 @@
-.pos {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) 400px;
-  gap: 16px;
-  align-items: start;
-}
-.grid-products {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(176px, 1fr));
-  gap: 12px;
-  padding: 16px;
-  border-top: 1px solid var(--border);
-  max-height: calc(100vh - 290px);
-  overflow-y: auto;
-}
-.product {
-  border: 1px solid var(--border);
-  border-radius: 14px;
-  padding: 14px;
-  background: var(--surface);
-  cursor: pointer;
-  text-align: left;
+/*
+ * The till: three cards (the sale, the customer, the payment), a banner for the sale under way,
+ * then the entry row and the cart. Pharmacy Core's own tokens throughout.
+ */
+.till {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  transition:
-    border-color 0.15s,
-    box-shadow 0.15s,
-    transform 0.1s;
+  gap: 16px;
 }
-.product:hover:not(:disabled) {
-  border-color: var(--primary);
-  box-shadow: 0 6px 18px rgba(36, 99, 235, 0.14);
-  transform: translateY(-1px);
-}
-.product:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-.product .top {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.product .top .badge:last-child {
-  margin-left: auto;
-}
-.product .thumb {
-  width: 30px;
-  height: 30px;
-  border-radius: 8px;
+.till-cards {
   display: grid;
-  place-items: center;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.25fr);
+  gap: 16px;
+  align-items: stretch;
 }
-.product b {
-  font-size: 13px;
-  line-height: 1.3;
+.till-card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
 }
-.product .shelf {
-  font-size: 11.5px;
-  font-weight: 500;
-  margin-left: 4px;
-}
-.product .price-source {
-  align-self: flex-start;
-  font-size: 10.5px;
-}
-.product small {
-  color: var(--faint);
-  font-size: 11.5px;
-  min-height: 15px;
-}
-.price {
-  font-weight: 700;
+.till-card-h {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 11px 16px;
+  background: var(--primary-soft);
+  border-bottom: 1px solid var(--primary-soft-2);
+  border-radius: var(--radius) var(--radius) 0 0;
   color: var(--primary);
-  font-size: 15px;
+  font-weight: 600;
 }
-.cart {
-  position: sticky;
-  top: calc(var(--topbar-h) + 16px);
+.till-card-b {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
 }
-.pad {
-  padding: 12px 16px;
+.kv {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 10px;
 }
-.lines {
-  max-height: 280px;
-  overflow-y: auto;
-  padding: 0 16px;
+.kv > span:first-child {
+  color: var(--muted);
 }
-.line {
+.kv .discount {
+  width: 90px;
+  text-align: right;
+}
+.who {
   display: flex;
   align-items: center;
   gap: 10px;
-  padding: 10px 0;
+}
+.initials {
+  width: 36px;
+  height: 36px;
+  flex: none;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+  font-size: 13px;
+  background: var(--purple-soft);
+  color: var(--purple);
+}
+.walk-in {
+  margin: 0;
+  font-size: 13px;
+}
+
+/* Payment */
+.grand {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  padding-bottom: 8px;
+  border-bottom: 1px dashed var(--border-strong);
+  color: var(--muted);
+}
+.grand b {
+  font-size: 26px;
+  font-variant-numeric: tabular-nums;
+}
+.quick {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.split-chip {
+  color: var(--primary);
+}
+.due,
+.change-due {
+  display: flex;
+  justify-content: space-between;
+  font-weight: 600;
+}
+.change-due {
+  background: var(--green-soft);
+  color: var(--green);
+  border-radius: var(--radius-sm);
+  padding: 8px 12px;
+}
+.complete {
+  margin-top: 4px;
+}
+.complete kbd {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+
+/* A tender: method, currency and amount on one line, the reference below; wraps on a phone. */
+.payment {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.payment.boxed {
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.pm-head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  align-items: center;
+}
+.pm-head .select {
+  flex: 1 1 120px;
+  min-width: 0;
+}
+.pm-head .pm-amount {
+  flex: 1 1 110px;
+  min-width: 100px;
+  text-align: right;
+}
+.payment .currency {
+  width: 76px;
+  flex: 0 0 76px;
+}
+.fx-note {
+  font-size: 12px;
+  margin: -2px 0 2px;
+  padding-left: 2px;
+}
+
+/* The sale under way */
+.sale-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 18px;
+}
+.sale-title {
+  font: 700 20px var(--mono);
+  color: var(--primary);
+  letter-spacing: 0.02em;
+}
+.keys {
+  margin-left: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  color: var(--muted);
+  font-size: 12.5px;
+}
+kbd {
+  font: 600 11.5px var(--mono);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  border-radius: 5px;
+  padding: 1px 6px;
+  background: var(--surface-2);
+  color: var(--text-2);
+}
+
+/* Entry row */
+.entry {
+  display: grid;
+  grid-template-columns:
+    minmax(0, 2.6fr) minmax(90px, 0.8fr) 132px minmax(100px, 0.9fr) minmax(110px, 0.9fr)
+    auto;
+  gap: 10px;
+  align-items: end;
+  padding: 16px;
   border-bottom: 1px solid var(--border);
 }
-.line b {
-  font-size: 13px;
+.lbl {
+  display: block;
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+.entry-search {
+  position: relative;
+  min-width: 0;
+}
+.search-box {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 42px;
+  padding: 0 12px;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--ring);
+  color: var(--primary);
+}
+.search-box input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  outline: 0;
+  background: none;
+  font: 600 14.5px var(--font);
+  color: var(--text);
+}
+.ro {
+  height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  background: var(--surface-2);
+  font-weight: 600;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.stepper {
+  display: flex;
+  align-items: center;
+  height: 42px;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+}
+.stepper button {
+  width: 36px;
+  height: 100%;
+  border: 0;
+  background: none;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  color: var(--muted);
+}
+.stepper input {
+  flex: 1;
+  width: 40px;
+  min-width: 0;
+  border: 0;
+  text-align: center;
+  background: none;
+  font-weight: 700;
+  -moz-appearance: textfield;
+}
+.stepper input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+}
+.add {
+  height: 42px;
+  white-space: nowrap;
+}
+.add kbd {
+  background: rgba(255, 255, 255, 0.18);
+  color: #fff;
+  border-color: rgba(255, 255, 255, 0.4);
+}
+.suggest {
+  position: absolute;
+  z-index: 20;
+  top: calc(100% + 6px);
+  left: 0;
+  width: min(640px, 92vw);
+  max-height: 420px;
+  overflow-y: auto;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+}
+.opt {
+  width: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 90px;
+  gap: 12px;
+  align-items: center;
+  padding: 9px 14px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  color: var(--text);
+}
+.opt:last-child {
+  border-bottom: 0;
+}
+.opt.on {
+  background: var(--primary-soft);
+}
+.opt:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.opt.empty {
+  display: block;
+  color: var(--muted);
+  cursor: default;
+}
+.opt-name {
+  min-width: 0;
+}
+.opt-name b,
+.opt-name small {
   display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.line small {
-  color: var(--faint);
-  font-size: 11.5px;
+.opt-name small {
+  color: var(--muted);
+  font-size: 12px;
 }
-.amount {
-  width: 86px;
+.opt-flags {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+}
+.opt-price {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Cart */
+.table-wrap {
+  overflow-x: auto;
+}
+.cart-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+.cart-table th {
+  text-align: left;
+  font-size: 11.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+  font-weight: 600;
+  padding: 10px 14px;
+  background: var(--surface-2);
+  border-bottom: 1px solid var(--border);
+  white-space: nowrap;
+}
+.cart-table td {
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.cart-table .r {
   text-align: right;
 }
+.cart-table .n {
+  width: 40px;
+}
+.cart-table small .badge {
+  margin-left: 4px;
+}
+.cart-table .batch {
+  font-size: 12.5px;
+  white-space: nowrap;
+}
+.cart-table tfoot td {
+  border-bottom: 0;
+  font-weight: 600;
+}
+.cart-table .summary {
+  font-weight: 500;
+}
+.cart-table .total {
+  color: var(--primary);
+  font-size: 16px;
+  font-weight: 700;
+}
+.empty-row td {
+  border-bottom: 0;
+}
 .qty {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  border: 1px solid var(--border);
+  border: 1px solid var(--border-strong);
   border-radius: 9px;
 }
 .qty button {
@@ -137,126 +424,10 @@
 .qty input::-webkit-inner-spin-button {
   -webkit-appearance: none;
 }
-.totals {
-  border-top: 1px solid var(--border);
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  font-size: 13px;
+.icon-btn.remove {
+  color: var(--red);
+  background: var(--red-soft);
 }
-.between {
-  justify-content: space-between;
-}
-.grand {
-  font-size: 19px;
-  font-weight: 700;
-  padding-top: 8px;
-  border-top: 1px dashed var(--border);
-}
-/*
- * A tender: the method (and its remove button) on top, then currency, amount and reference, which
- * wrap rather than squeeze, so a split of three rows fits a 390 px phone as well as the desktop cart.
- */
-.payment {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  min-width: 0;
-}
-.payment.boxed {
-  padding: 8px;
-  border: 1px solid var(--border);
-  border-radius: 10px;
-}
-.pm-head {
-  display: flex;
-  gap: 6px;
-  align-items: center;
-}
-.pm-head .select {
-  flex: 1;
-  min-width: 0;
-}
-.pm-body {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-.pm-body .pm-amount {
-  flex: 1 1 110px;
-  min-width: 110px;
-}
-.pm-body .pm-ref {
-  flex: 2 1 150px;
-  min-width: 130px;
-}
-.rx {
-  border: 0;
-  cursor: pointer;
-  text-align: left;
-  width: 100%;
-}
-@media (max-width: 1200px) {
-  .pos {
-    grid-template-columns: minmax(0, 1fr) 340px;
-  }
-}
-/* The sticky cart bar exists only where the cart is stacked below the products. */
-.cart-bar {
-  display: none;
-}
-@media (max-width: 1024px) {
-  .pos {
-    grid-template-columns: minmax(0, 1fr);
-    padding-bottom: 72px;
-  }
-  .cart-bar {
-    position: fixed;
-    left: 12px;
-    right: 12px;
-    bottom: 12px;
-    z-index: 30;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    border: 0;
-    border-radius: 14px;
-    background: var(--primary);
-    color: #fff;
-    font-size: 15px;
-    box-shadow: var(--shadow);
-    cursor: pointer;
-  }
-  .cart-bar .grow {
-    flex: 1;
-    text-align: right;
-  }
-  .cart-bar .pay {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    font-weight: 600;
-  }
-  .cart {
-    position: static;
-  }
-  .grid-products {
-    max-height: none;
-  }
-}
-
-/* Multi-currency tenders: a narrow currency picker per payment, and its base value below. */
-.payment .currency {
-  width: 76px;
-  flex: 0 0 76px;
-}
-.fx-note {
-  font-size: 12px;
-  margin: -2px 0 2px;
-  padding-left: 2px;
-}
-
 .serials {
   display: flex;
   flex-wrap: wrap;
@@ -264,17 +435,37 @@
   margin-top: 4px;
 }
 
-/* Customer account and insurance cover under the customer picker. */
+/* Page actions */
+.count {
+  background: var(--primary);
+  color: var(--on-primary, #fff);
+  border-radius: 10px;
+  padding: 0 7px;
+  font-size: 12px;
+  line-height: 18px;
+}
+.btn.soft {
+  background: var(--primary-soft);
+  border-color: transparent;
+  color: var(--primary);
+}
+.btn.danger-outline {
+  color: var(--red);
+  border-color: color-mix(in srgb, var(--red) 35%, var(--border));
+}
+.actions .btn {
+  white-space: nowrap;
+}
+
+/* Customer account and insurance cover */
 .credit-strip {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   align-items: center;
-  margin-top: 8px;
   font-size: 12.5px;
 }
 .coverage {
-  margin-top: 10px;
   padding: 10px 12px;
   border: 1px solid color-mix(in srgb, var(--purple, #7c3aed) 35%, var(--border));
   border-radius: 12px;
@@ -295,8 +486,17 @@
   color: var(--muted);
   font-size: 11.5px;
 }
+.between {
+  justify-content: space-between;
+}
 .block {
   display: block;
+}
+.rx {
+  border: 0;
+  cursor: pointer;
+  text-align: left;
+  width: 100%;
 }
 .on-account {
   display: flex;
@@ -310,5 +510,95 @@
 .on-account.active {
   border-style: solid;
   border-color: var(--primary);
-  background: var(--primary-50, rgba(36, 99, 235, 0.06));
+  background: var(--primary-soft);
+}
+
+/* Parked sales */
+.parked {
+  display: flex;
+  flex-direction: column;
+}
+.parked-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.parked-row:last-child {
+  border-bottom: 0;
+}
+.parked-row .grow {
+  flex: 1;
+  min-width: 0;
+}
+
+@media (max-width: 1280px) {
+  .till-cards {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .pay-card {
+    grid-column: 1 / -1;
+  }
+}
+/* Tablets and phones: the items come first, the cards after them, one per row. */
+@media (max-width: 900px) {
+  .till-cards {
+    grid-template-columns: minmax(0, 1fr);
+    order: 3;
+  }
+  .sale-banner {
+    order: 1;
+  }
+  .cart-card {
+    order: 2;
+  }
+  .keys {
+    display: none;
+  }
+  .entry {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  }
+  .entry-search,
+  .add {
+    grid-column: 1 / -1;
+  }
+}
+.phone-total {
+  display: none;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 10px;
+  padding: 12px 8px;
+  font-size: 13px;
+}
+.phone-total b {
+  color: var(--primary);
+  font-size: 17px;
+}
+/* Phones: the cart keeps item, quantity, amount and remove; batch, unit price and stock step back. */
+@media (max-width: 600px) {
+  .cart-table thead th:nth-child(1),
+  .cart-table tbody td:nth-child(1),
+  .cart-table thead th:nth-child(3),
+  .cart-table tbody td:nth-child(3),
+  .cart-table thead th:nth-child(5),
+  .cart-table tbody td:nth-child(5),
+  .cart-table thead th:nth-child(7),
+  .cart-table tbody td:nth-child(7) {
+    display: none;
+  }
+  .cart-table tbody .empty-row td {
+    display: table-cell;
+  }
+  .cart-table tfoot {
+    display: none;
+  }
+  .phone-total {
+    display: flex;
+  }
+  .cart-table th,
+  .cart-table td {
+    padding: 10px 8px;
+  }
 }
