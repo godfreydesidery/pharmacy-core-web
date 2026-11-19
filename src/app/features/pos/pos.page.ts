@@ -3,6 +3,7 @@ import { formatMoney, minorUnits } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
+  ElementRef,
   computed,
   inject,
   signal,
@@ -13,6 +14,7 @@ import {
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import {
+  Batch,
   Category,
   CheckoutRequest,
   Customer,
@@ -55,6 +57,11 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { AccountView, CoverageQuote, MemberView } from '../../core/api/credit.models';
 import { Translations } from '../../core/i18n/translations.store';
 import { SubscriptionStore } from '../../core/subscription/subscription.store';
+import { LineBatch, nextBatch } from './fefo';
+import { ParkedSale, park, parkedKey, readParked, unpark, writeParked } from './parked';
+
+/** How many suggestions the entry row offers under the search box. */
+const SUGGESTIONS = 8;
 
 const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
   { method: 'CASH', label: 'Cash', icon: 'cash' },
@@ -89,6 +96,7 @@ const NOTES: Readonly<Record<string, number[]>> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pos.page.html',
   styleUrl: './pos.page.scss',
+  host: { '(document:keydown)': 'shortcut($event)' },
 })
 export default class PosPage {
   protected readonly session = inject(SessionStore);
@@ -363,7 +371,234 @@ export default class PosPage {
   /** Units the till can sell of a product: loose ones plus those in linked packs. */
   protected readonly available = available;
 
-  protected add(product: SellableProduct): void {
+  // ---------------------------------------------------------------- entry row
+
+  private readonly searchBox = viewChild<ElementRef<HTMLInputElement>>('searchBox');
+  /** The suggestions under the search box, and the one Enter will add. */
+  protected readonly suggestions = computed(() =>
+    (this.products.value()?.items ?? []).slice(0, SUGGESTIONS),
+  );
+  protected readonly suggestOpen = signal(false);
+  protected readonly highlight = signal(0);
+  protected readonly entryQty = signal(1);
+  /** The item Enter will add: none until the cashier searches or opens the suggestions. */
+  protected readonly entryProduct = computed<SellableProduct | null>(() =>
+    this.q().trim() || this.suggestOpen()
+      ? (this.suggestions()[Math.min(this.highlight(), this.suggestions().length - 1)] ?? null)
+      : null,
+  );
+  protected readonly entryPrice = computed(() => {
+    const product = this.entryProduct();
+    return product ? (this.cardPrices()[product.productUid]?.unitPrice ?? product.sellingPrice) : 0;
+  });
+  /** When the sale on screen began (shown in the banner; the API numbers it once it is paid). */
+  protected readonly startedAt = signal(new Date());
+
+  protected search(value: string): void {
+    this.q.set(value);
+    this.highlight.set(0);
+    this.suggestOpen.set(true);
+  }
+
+  /** Arrows move through the suggestions, Enter adds the highlighted one, Escape closes them. */
+  protected searchKey(event: KeyboardEvent): void {
+    const count = this.suggestions().length;
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.suggestOpen.set(true);
+      this.highlight.set(count ? (this.highlight() + 1) % count : 0);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.highlight.set(count ? (this.highlight() - 1 + count) % count : 0);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      this.addFromEntry();
+    } else if (event.key === 'Escape') {
+      this.suggestOpen.set(false);
+    }
+  }
+
+  protected setEntryQty(value: number): void {
+    this.entryQty.set(Math.max(1, Math.floor(Number(value) || 1)));
+  }
+
+  /** Adds the highlighted suggestion at the entry quantity, then readies the box for the next. */
+  protected addFromEntry(product: SellableProduct | null = this.entryProduct()): void {
+    if (!product) {
+      return;
+    }
+    this.add(product, this.entryQty());
+    this.q.set('');
+    this.entryQty.set(1);
+    this.highlight.set(0);
+    this.suggestOpen.set(false);
+    this.focusSearch();
+  }
+
+  protected focusSearch(): void {
+    this.searchBox()?.nativeElement.focus();
+  }
+
+  /** Units at or below this show amber: running low at this branch. */
+  protected readonly lowStock = 10;
+
+  /** A time of day as the till shows it (10:42). */
+  protected clock(at: Date): string {
+    return at.toLocaleTimeString(this.translations.locale(), {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  }
+
+  /** An expiry as month and year (Aug 2029). */
+  protected monthYear(iso: string): string {
+    const d = new Date(`${iso}T00:00:00`);
+    return d.toLocaleDateString(this.translations.locale(), { month: 'short', year: 'numeric' });
+  }
+
+  protected walkIn(): void {
+    this.pickCustomer(null);
+    this.customerLookup()?.setText('');
+  }
+
+  // ---------------------------------------------------------------- batches
+
+  /** Each product's batches at this branch, to show the one a line is sold from. */
+  protected readonly batches = signal<Record<string, Batch[]>>({});
+
+  private loadBatches(productUid: string): void {
+    if (!this.session.can('inventory.view') || this.batches()[productUid]) {
+      return;
+    }
+    void this.api
+      .get<Batch[]>(`/stock/${productUid}/batches`, {}, { silent: true })
+      .then((list) => this.batches.update((all) => ({ ...all, [productUid]: list })))
+      .catch(() => undefined);
+  }
+
+  protected lineBatch(line: CartLine): LineBatch | null {
+    return nextBatch(this.batches()[line.product.productUid] ?? [], line.quantity);
+  }
+
+  // ---------------------------------------------------------------- parked sales
+
+  private readonly parkedStore = computed(() => {
+    const tenant = this.session.tenant()?.uid;
+    const branch = this.session.branch()?.uid;
+    const user = this.session.user()?.uid;
+    return tenant && branch && user ? parkedKey(tenant, branch, user) : null;
+  });
+  protected readonly parked = signal<ParkedSale[]>([]);
+  protected readonly parkedOpen = signal(false);
+  private readonly parkedWatch = effect(() => {
+    const key = this.parkedStore();
+    untracked(() => this.parked.set(key ? readParked(this.storage(), key) : []));
+  });
+
+  private storage(): Storage | null {
+    try {
+      return window.localStorage;
+    } catch {
+      return null;
+    }
+  }
+
+  private saveParked(list: ParkedSale[]): void {
+    this.parked.set(list);
+    const key = this.parkedStore();
+    if (key) writeParked(this.storage(), key, list);
+  }
+
+  /** Puts the sale on screen aside and starts a fresh one. */
+  protected parkSale(): void {
+    if (!this.lines().length) {
+      this.toasts.error(this.translations.t('toast.addItem'));
+      return;
+    }
+    this.saveParked(
+      park(this.parked(), {
+        id: crypto.randomUUID(),
+        parkedAt: new Date().toISOString(),
+        lines: this.lines(),
+        customer: this.customer(),
+        discountPercent: this.discountPercent(),
+        total: this.totals().total,
+      }),
+    );
+    this.clear();
+    this.toasts.success(this.translations.t('pos.saleParked'));
+    this.focusSearch();
+  }
+
+  /** Brings a parked sale back; one already on screen is parked in its place. */
+  protected resume(id: string): void {
+    const { sale, rest } = unpark(this.parked(), id);
+    if (!sale) {
+      return;
+    }
+    this.saveParked(rest);
+    if (this.lines().length) {
+      this.parkSale();
+    }
+    this.clear();
+    this.lines.set(sale.lines);
+    this.discountPercent.set(sale.discountPercent);
+    if (sale.customer) {
+      this.pickCustomer(sale.customer);
+      this.customerLookup()?.setText(sale.customer.name);
+    }
+    sale.lines.forEach((l) => this.loadBatches(l.product.productUid));
+    this.syncCash();
+    this.parkedOpen.set(false);
+    this.focusSearch();
+  }
+
+  protected discard(id: string): void {
+    this.saveParked(unpark(this.parked(), id).rest);
+  }
+
+  /** A new sale: what is on screen is parked, not lost. */
+  protected newSale(): void {
+    if (this.lines().length) {
+      this.parkSale();
+    } else {
+      this.clear();
+      this.focusSearch();
+    }
+  }
+
+  protected cancelSale(): void {
+    if (this.lines().length && !window.confirm(this.translations.t('pos.confirmCancelSale'))) {
+      return;
+    }
+    this.clear();
+    this.focusSearch();
+  }
+
+  // ---------------------------------------------------------------- shortcuts
+
+  private modalOpen(): boolean {
+    return this.rxOpen() || !!this.receipt() || !!this.serialFor() || this.parkedOpen();
+  }
+
+  /** F2 search, F4 park, F9 complete the sale. */
+  protected shortcut(event: KeyboardEvent): void {
+    if (!this.session.branch() || this.modalOpen()) {
+      return;
+    }
+    if (event.key === 'F2') {
+      event.preventDefault();
+      this.focusSearch();
+    } else if (event.key === 'F4') {
+      event.preventDefault();
+      this.parkSale();
+    } else if (event.key === 'F9') {
+      event.preventDefault();
+      void this.checkout();
+    }
+  }
+
+  protected add(product: SellableProduct, quantity = 1): void {
     if (available(product) <= 0) {
       this.toasts.error(this.translations.t('toast.outOfStock', { name: product.name }));
       return;
@@ -374,8 +609,13 @@ export default class PosPage {
     }
     const before =
       this.lines().find((l) => l.product.productUid === product.productUid)?.quantity ?? 0;
-    this.lines.set(addToCart(this.lines(), product));
-    if (before >= available(product)) {
+    const wanted = before + Math.max(1, quantity);
+    let lines = addToCart(this.lines(), product);
+    if (wanted > before + 1) {
+      lines = setQuantity(lines, product.productUid, wanted);
+    }
+    this.lines.set(lines);
+    if (wanted > available(product)) {
       this.toasts.info(
         this.translations.t('toast.onlyOnHand', {
           count: available(product),
@@ -383,6 +623,7 @@ export default class PosPage {
         }),
       );
     }
+    this.loadBatches(product.productUid);
     this.syncCash();
   }
 
@@ -394,6 +635,7 @@ export default class PosPage {
     const product = this.serialFor();
     if (product) {
       this.lines.set(withSerials(this.lines(), product, serials));
+      this.loadBatches(product.productUid);
       this.syncCash();
     }
     this.serialFor.set(null);
@@ -628,6 +870,8 @@ export default class PosPage {
     this.diagnosisCode.set('');
     this.balanceToAccount.set(false);
     this.excessToAccount.set(false);
+    this.startedAt.set(new Date());
+    this.entryQty.set(1);
   }
 
   protected savePrescription(): void {
