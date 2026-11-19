@@ -134,4 +134,10 @@ export const ADMIN_EN: Readonly<Record<string, string>> = {
   'admin.pricesIncludeTax': 'Prices include VAT',
   'admin.pricesIncludeTaxHint':
     'Selling prices already include VAT: the till charges the shelf price and shows the VAT inside it. Off: VAT is added on top at the till.',
+  'admin.appearance': 'Appearance',
+  'admin.look': 'Look',
+  'admin.lookPremium': 'Premium (modern)',
+  'admin.lookClassic': 'Classic (Windows style)',
+  'admin.lookHint':
+    'How the app looks for everyone in this pharmacy. Classic has grey bevelled buttons, sunken fields and blue title bars, and no dark mode.',
 };

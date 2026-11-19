@@ -128,6 +128,8 @@ export interface Settings {
   acceptedCurrencies: string[];
   /** Selling prices include VAT (taken out of the price) rather than have it added on top. */
   pricesIncludeTax: boolean;
+  /** How the app looks for everyone in the pharmacy. */
+  look: 'PREMIUM' | 'CLASSIC';
 }
 
 export interface Member {

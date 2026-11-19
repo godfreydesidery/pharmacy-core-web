@@ -153,14 +153,16 @@
     }
     <app-language-switch class="hide-sm" [compact]="true" />
     <app-bell />
-    <button
-      class="icon-btn"
-      type="button"
-      (click)="theme.toggle()"
-      [attr.aria-label]="(theme.isDark() ? 'shell.lightTheme' : 'shell.darkTheme') | t"
-    >
-      <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" />
-    </button>
+    @if (!look.classic()) {
+      <button
+        class="icon-btn"
+        type="button"
+        (click)="theme.toggle()"
+        [attr.aria-label]="(theme.isDark() ? 'shell.lightTheme' : 'shell.darkTheme') | t"
+      >
+        <app-icon [name]="theme.isDark() ? 'sun' : 'moon'" />
+      </button>
+    }
     <div class="user">
       <button class="user-chip" type="button" (click)="userMenu.set(!userMenu())">
         <span class="avatar">{{ initials() }}</span>
