@@ -1,8 +1,9 @@
 /*
- * The classic look: a pharmacy setting (Settings → Appearance) that dresses the whole app in a
- * Windows 2000 style. Grey bevelled buttons, sunken white fields and lists, blue title bars on
- * cards and dialogs, a navy highlight for what is selected. Nothing changes but the styling: every
- * rule here applies only while the document element carries data-look="classic" (LookService).
+ * The classic look: a pharmacy setting (Settings → Appearance) that dresses the whole app like a
+ * Java desktop program in Swing's Nimbus look. Blue-grey panels, rounded glossy buttons, white
+ * fields with a blue focus ring, rounded frames, header strips, shaded alternate rows and a
+ * dark-blue highlight for what is selected. Nothing changes but the styling: every rule here
+ * applies only while the document element carries data-look="classic" (LookService).
  *
  * Loaded last (styles.scss) so its tokens win over the dark ones: the classic look has no dark
  * mode. Component styles carry an extra attribute on every part of their selectors (Angular's
@@ -10,89 +11,112 @@
  * a component's own rule for the same element.
  */
 
-$face: #d4d0c8;
-$hi: #ffffff;
-$light: #e8e6e0;
-$shadow: #808080;
-$dark: #404040;
-$navy: #0a246a;
-$caption-end: #4a76b8;
 $root: "html[data-look='classic']:root:root";
-$checker: repeating-conic-gradient(#{$hi} 0 25%, #{$face} 0 50%) 0 0 / 2px 2px;
 
-/* A raised edge (buttons, panels), a sunken one (fields, lists), and a button held down. */
-@mixin raised {
-  border: 1px solid;
-  border-color: $hi $dark $dark $hi;
+// Nimbus's own colours.
+$base: #d6d9df; // panels
+$panel: #dfe2e7; // a panel inside a panel (cards)
+$blue-grey: #a9b0be; // frame lines
+$border: #8e8f91; // control borders
+$selection: #39698a; // the selected row or item
+$selection-dark: #2c5370;
+$focus: #73a4d1; // the focus ring
+$hover: #e3e9f1;
+$alt-row: #f2f2f2;
+
+/* A rounded glossy control (buttons, drop-downs, toggles): light on top, a soft step mid-way. */
+@mixin glossy {
+  background: linear-gradient(#fbfbfc 0%, #eef0f3 48%, #d7dce4 52%, #e2e6ec 100%);
+  border: 1px solid $border;
+  border-radius: 7px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  color: #000;
+}
+@mixin glossy-hover {
+  background: linear-gradient(#ffffff 0%, #f5f7fa 48%, #e2e7ef 52%, #edf0f5 100%);
+}
+@mixin glossy-pressed {
+  background: linear-gradient(#b9c4d3 0%, #aab6c7 48%, #98a5b8 52%, #a8b3c4 100%);
+  border-color: #66758a;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.2);
+}
+/* The default button and a chosen toggle: the same gloss, tinted blue. */
+@mixin glossy-blue {
+  background: linear-gradient(#e6eef8 0%, #cddcee 48%, #aec7e3 52%, #c1d4ea 100%);
+  border-color: #5a7798;
+}
+/* A text field: white, a thin border a shade darker on top, a faint inner shadow. */
+@mixin field {
+  background-color: #fff;
+  border: 1px solid $border;
+  border-top-color: #73767a;
+  border-radius: 3px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
+}
+@mixin focus-ring {
+  border-color: #5a7798;
   box-shadow:
-    inset -1px -1px 0 $shadow,
-    inset 1px 1px 0 $light;
+    inset 0 1px 2px rgba(0, 0, 0, 0.1),
+    0 0 0 2px $focus;
 }
-@mixin sunken {
-  border: 1px solid;
-  border-color: $shadow $hi $hi $shadow;
-  box-shadow:
-    inset 1px 1px 0 $dark,
-    inset -1px -1px 0 $light;
-}
-@mixin pressed {
-  border: 1px solid;
-  border-color: $dark $hi $hi $dark;
-  box-shadow: inset 1px 1px 0 $shadow;
-}
-@mixin caption {
-  background: linear-gradient(90deg, $navy, $caption-end);
-  color: #fff;
+/* A header strip: table headers, card and section headings. */
+@mixin strip {
+  background: linear-gradient(#f6f7f9 0%, #e4e8ee 49%, #d5dbe4 51%, #dde2e9 100%);
+  border-bottom: 1px solid $blue-grey;
+  color: #000;
 }
 @mixin popup {
-  @include raised;
-  box-shadow:
-    inset -1px -1px 0 $shadow,
-    inset 1px 1px 0 $light,
-    2px 2px 0 rgba(0, 0, 0, 0.35);
+  background: #fff;
+  border: 1px solid $border;
+  border-radius: 5px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+@mixin selected {
+  background: $selection;
+  color: #fff;
 }
 
 html:root[data-look='classic'] {
-  --font: Tahoma, Verdana, 'Segoe UI', sans-serif;
-  --mono: 'Lucida Console', 'Courier New', monospace;
+  --font: 'Segoe UI', Tahoma, 'DejaVu Sans', sans-serif;
+  --mono: Consolas, 'Lucida Console', monospace;
 
-  --bg: #{$face};
-  --surface: #{$face};
-  --surface-2: #{$light};
-  --surface-hover: #dfe4ef;
-  --border: #{$shadow};
-  --border-strong: #{$dark};
+  --bg: #{$base};
+  --surface: #{$panel};
+  --surface-2: #eef0f3;
+  --surface-hover: #{$hover};
+  --border: #{$blue-grey};
+  --border-strong: #{$border};
   --text: #000000;
-  --text-2: #000000;
-  --muted: #404040;
-  --faint: #6a6a6a;
+  --text-2: #1a1a1a;
+  --muted: #4d5560;
+  --faint: #767b82;
 
-  --primary: #{$navy};
-  --primary-strong: #061a52;
-  --primary-soft: #dfe4ef;
-  --primary-soft-2: #c3cde6;
+  --primary: #{$selection};
+  --primary-strong: #{$selection-dark};
+  --primary-soft: #dbe5ef;
+  --primary-soft-2: #c3d4e5;
   --on-primary: #ffffff;
 
-  --green: #007a00;
-  --green-soft: #e3f1e3;
-  --amber: #8a6000;
-  --amber-soft: #f7efd5;
-  --orange: #b04a00;
-  --orange-soft: #f8e6d8;
-  --red: #b00000;
-  --red-soft: #f6dede;
-  --purple: #6b0080;
-  --purple-soft: #eee0f2;
-  --teal: #007070;
-  --teal-soft: #dcefef;
+  --green: #3d7a17;
+  --green-soft: #e4efdb;
+  --amber: #8f6100;
+  --amber-soft: #f6eccf;
+  --orange: #b35a00;
+  --orange-soft: #f6e3d2;
+  --red: #a92e22;
+  --red-soft: #f4dcd9;
+  --purple: #64479a;
+  --purple-soft: #e8e1f2;
+  --teal: #2a7373;
+  --teal-soft: #d9ecec;
 
-  --radius-sm: 0;
-  --radius: 0;
-  --radius-lg: 0;
+  --radius-sm: 3px;
+  --radius: 6px;
+  --radius-lg: 8px;
   --shadow-sm: none;
-  --shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
-  --shadow-lg: 2px 2px 0 rgba(0, 0, 0, 0.35);
-  --ring: none;
+  --shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  --shadow-lg: 0 10px 28px rgba(0, 0, 0, 0.3);
+  --ring: 0 0 0 2px #{$focus};
 
   --topbar-h: 48px;
   color-scheme: light;
@@ -101,161 +125,155 @@ html:root[data-look='classic'] {
 #{$root} {
   /* ---------- base ---------- */
   body {
-    font-size: 12px;
-    background: $face;
-    -webkit-font-smoothing: auto;
+    font-size: 12.5px;
+    background: $base;
   }
   ::selection {
-    background: $navy;
+    background: $selection;
     color: #fff;
   }
   ::-webkit-scrollbar {
-    width: 16px;
-    height: 16px;
-    background: $checker;
+    width: 14px;
+    height: 14px;
+    background: $base;
   }
   ::-webkit-scrollbar-thumb {
-    background: $face;
-    @include raised;
+    background: linear-gradient(90deg, #e6ebf2, #bcc6d4);
+    border: 1px solid #8e9bb0;
+    border-radius: 7px;
+  }
+  ::-webkit-scrollbar-thumb:horizontal {
+    background: linear-gradient(#e6ebf2, #bcc6d4);
   }
   ::-webkit-scrollbar-corner {
-    background: $face;
-  }
-  *,
-  *::before,
-  *::after {
-    transition: none !important;
+    background: $base;
   }
   .page-head h1 {
-    font-size: 18px;
+    font-size: 19px;
     letter-spacing: 0;
   }
   .page-head .sub {
     font-size: 12px;
   }
   kbd {
-    font: bold 11px var(--font);
-    background: $face;
-    color: #000;
-    border: 1px solid;
-    border-color: $hi $dark $dark $hi;
-    border-radius: 0;
-    padding: 0 4px;
+    font: 600 11px var(--font);
+    @include glossy;
+    border-radius: 4px;
+    padding: 0 5px;
   }
 
   /* ---------- buttons ---------- */
   .btn {
-    border-radius: 0;
-    background: $face;
-    color: #000;
     font-weight: normal;
-    font-size: 12px;
-    @include raised;
+    font-size: 12.5px;
+    @include glossy;
   }
-  .btn:hover {
-    background: $face;
+  .btn:hover:not(:disabled) {
+    @include glossy-hover;
   }
   .btn:active:not(:disabled) {
     transform: none;
-    @include pressed;
+    @include glossy-pressed;
   }
   .btn:focus-visible {
-    outline: 1px dotted #000;
-    outline-offset: -5px;
+    outline: none;
     box-shadow:
-      inset -1px -1px 0 $shadow,
-      inset 1px 1px 0 $light;
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 0 0 2px $focus;
   }
   .btn:disabled {
-    opacity: 1;
-    color: $shadow;
-    text-shadow: 1px 1px 0 $hi;
+    opacity: 0.6;
   }
-  /* The main action is the default button: a black frame around the bevel. */
+  /* The main action is the default button: tinted blue, bold. */
   .btn.primary,
   .btn.success,
   .btn.danger {
-    background: $face;
-    color: #000;
-    font-weight: bold;
-    border-color: #000;
-    box-shadow:
-      inset 1px 1px 0 $hi,
-      inset -1px -1px 0 $dark,
-      inset -2px -2px 0 $shadow;
+    @include glossy;
+    @include glossy-blue;
+    font-weight: 600;
   }
-  .btn.primary:hover {
-    background: $face;
+  .btn.primary:hover:not(:disabled),
+  .btn.success:hover:not(:disabled),
+  .btn.danger:hover:not(:disabled) {
+    background: linear-gradient(#eef4fb 0%, #d8e5f3 48%, #bad0e9 52%, #cddcef 100%);
   }
   .btn.success {
-    color: #005a00;
+    color: #1f5a08;
   }
   .btn.danger {
-    color: #900000;
+    @include glossy;
+    color: #8a1f15;
+    font-weight: 600;
   }
   .btn.ghost {
     background: transparent;
     border-color: transparent;
     box-shadow: none;
   }
-  .btn.ghost:hover {
-    border-color: $hi $shadow $shadow $hi;
+  .btn.ghost:hover:not(:disabled) {
+    @include glossy;
   }
   .btn.sm {
-    font-size: 12px;
-    border-radius: 0;
+    border-radius: 6px;
   }
   .btn.lg {
-    font-size: 14px;
-    border-radius: 0;
+    border-radius: 8px;
   }
   .icon-btn {
-    border-radius: 0;
-    color: #000;
+    border-radius: 6px;
+    color: #1a1a1a;
     border: 1px solid transparent;
   }
   .icon-btn:hover {
-    background: transparent;
-    color: #000;
-    border-color: $hi $shadow $shadow $hi;
+    @include glossy;
   }
   .icon-btn:active {
-    border-color: $shadow $hi $hi $shadow;
+    @include glossy-pressed;
   }
 
   /* ---------- fields ---------- */
   .input,
-  .select,
   textarea.input,
   .search {
-    border-radius: 0;
-    background-color: #fff;
     color: #000;
-    font-size: 12px;
-    @include sunken;
+    font-size: 12.5px;
+    @include field;
   }
   .input:focus,
-  .select:focus,
+  textarea.input:focus,
   .search:focus-within {
-    border-color: $shadow $hi $hi $shadow;
-    box-shadow:
-      inset 1px 1px 0 $dark,
-      inset -1px -1px 0 $light;
+    @include focus-ring;
   }
   .input:disabled,
-  .select:disabled,
   .input[readonly] {
-    background-color: $face;
-    color: $dark;
+    background-color: #eef0f3;
+    color: #4d5560;
   }
-  /* A drop-down list: the classic raised arrow button at its right end. */
+  /* A drop-down list looks like a glossy button with its arrow at the right. */
   .select:not([multiple]) {
     appearance: none;
-    padding-right: 22px;
-    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='20' viewBox='0 0 16 20' preserveAspectRatio='none'%3E%3Crect width='16' height='20' fill='%23d4d0c8'/%3E%3Cpath d='M0 0H15V1H1V19H0Z' fill='%23e8e6e0'/%3E%3Cpath d='M1 1H14V2H2V18H1Z' fill='%23fff'/%3E%3Cpath d='M15 0H16V20H0V19H15Z' fill='%23404040'/%3E%3Cpath d='M14 1H15V19H1V18H14Z' fill='%23808080'/%3E%3Cpath d='M4.5 8.5H11.5L8 12Z' fill='%23000'/%3E%3C/svg%3E");
-    background-repeat: no-repeat;
-    background-position: right 2px center;
-    background-size: 16px calc(100% - 4px);
+    padding-right: 26px;
+    color: #000;
+    font-size: 12.5px;
+    border: 1px solid $border;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    background:
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6'%3E%3Cpath d='M0 0H9L4.5 6Z' fill='%23333'/%3E%3C/svg%3E")
+        no-repeat right 9px center / 9px 6px,
+      linear-gradient(#fbfbfc 0%, #eef0f3 48%, #d7dce4 52%, #e2e6ec 100%);
+  }
+  .select:not([multiple]):focus {
+    border-color: #5a7798;
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.85),
+      0 0 0 2px $focus;
+  }
+  .select:disabled {
+    opacity: 0.65;
+  }
+  .select[multiple] {
+    @include field;
   }
   .input.ng-invalid.ng-touched,
   .select.ng-invalid.ng-touched,
@@ -264,187 +282,271 @@ html:root[data-look='classic'] {
   .select.invalid {
     border-color: var(--red);
   }
-  .field {
-    gap: 4px;
-  }
   .field > label {
-    font-size: 12px;
-    font-weight: normal;
-    color: #000;
+    font-weight: 600;
+    color: #1a1a1a;
   }
   .check input {
-    accent-color: $navy;
+    accent-color: $selection;
   }
-  /* A switch is a classic check box. */
+  /* A switch is a Nimbus check box: a small rounded glossy box with a dark tick. */
   .switch {
-    width: 13px;
-    height: 13px;
+    width: 15px;
+    height: 15px;
   }
   .switch span {
-    border-radius: 0;
-    background: #fff;
-    @include sunken;
+    @include glossy;
+    border-radius: 3px;
   }
   .switch span::before {
-    width: 3px;
-    height: 7px;
-    left: 4px;
-    top: 0;
+    width: 4px;
+    height: 8px;
+    left: 4.5px;
+    top: 1px;
     background: none;
     border-radius: 0;
-    border: solid #000;
+    border: solid #1d2a3a;
     border-width: 0 2px 2px 0;
     transform: rotate(45deg);
     opacity: 0;
   }
   .switch input:checked + span {
-    background: #fff;
+    @include glossy-blue;
   }
   .switch input:checked + span::before {
     transform: rotate(45deg);
     opacity: 1;
   }
   .switch input:focus-visible + span {
-    outline: 1px dotted #000;
-    outline-offset: 2px;
+    box-shadow: 0 0 0 2px $focus;
   }
 
   /* ---------- panels ---------- */
   .card {
-    border-radius: 0;
-    background: $face;
-    @include raised;
+    background: $panel;
+    border: 1px solid $blue-grey;
+    border-radius: 6px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
   }
-  /* A card's heading is a title bar. */
+  /* A card's heading is a header strip across its top. */
   .card-head {
-    @include caption;
-    margin: 3px 3px 0;
-    padding: 4px 8px;
-    min-height: 24px;
+    @include strip;
+    border-radius: 6px 6px 0 0;
+    padding: 7px 12px;
+    margin-bottom: 8px;
   }
   .card-head h3 {
-    font-size: 12px;
-    font-weight: bold;
-    color: #fff;
+    font-size: 12.5px;
+    font-weight: 600;
   }
   .card-head .link,
   .card-head a:not(.btn) {
-    color: #fff;
+    color: $selection-dark;
     text-decoration: underline;
   }
-  .card-head .muted,
-  .card-head small {
-    color: #dfe6f5;
-  }
   .toolbar {
-    border-bottom: 1px solid $shadow;
-    box-shadow: 0 1px 0 $hi;
+    border-bottom: 1px solid $blue-grey;
   }
   .stat .bubble,
-  .cell-main .thumb,
-  .legend i,
-  .badge.dot::before,
-  .skeleton,
-  .secret {
-    border-radius: 0;
+  .cell-main .thumb {
+    border-radius: 6px;
   }
   .notice {
-    border-radius: 0;
-    border: 1px solid $shadow;
+    border-radius: 5px;
+    border: 1px solid $blue-grey;
   }
   .badge {
-    border-radius: 0;
+    border-radius: 4px;
     border: 1px solid currentColor;
     background: #fff;
-    font-weight: normal;
+    font-weight: 600;
     font-size: 11px;
-    padding: 1px 6px;
+    padding: 1px 7px;
   }
   .badge.gray {
-    border-color: $shadow;
+    border-color: $border;
   }
 
   /* ---------- lists ---------- */
   .table-wrap {
     background: #fff;
-    @include sunken;
-    margin: 4px;
+    border: 1px solid $border;
+    border-radius: 4px;
+    margin: 6px;
   }
   .table {
     background: #fff;
-    font-size: 12px;
+    font-size: 12.5px;
   }
   .table th {
-    background: $face;
-    color: #000;
+    @include strip;
     font-weight: normal;
     font-size: 12px;
-    padding: 4px 8px;
-    border: 0;
-    box-shadow:
-      inset -1px -1px 0 $dark,
-      inset 1px 1px 0 $hi,
-      inset -2px -2px 0 $shadow;
+    color: #000;
+    padding: 5px 10px;
+    border-right: 1px solid #c3c9d3;
   }
   .table td {
-    padding: 5px 8px;
-    border-bottom: 1px solid #ecebe6;
+    padding: 6px 10px;
+    border-bottom: 0;
+  }
+  .table tbody tr:nth-child(even) {
+    background: $alt-row;
   }
   .table tbody tr:hover {
-    background: #dfe4ef;
+    background: #dbe5ef;
   }
   .table tfoot td {
-    background: $face;
-    border-top: 1px solid $shadow;
+    background: #eef0f3;
+    border-top: 1px solid $blue-grey;
   }
   .table-foot {
-    color: #000;
+    color: #1a1a1a;
     font-size: 12px;
-    border-top: 1px solid $hi;
   }
 
   /* ---------- tabs, chips, toggles ---------- */
   .tabs {
-    gap: 0;
-    padding: 6px 8px 0;
+    gap: 2px;
+    padding: 6px 10px 0;
     align-items: flex-end;
-    border-bottom: 1px solid $hi;
+    border-bottom: 1px solid $border;
   }
   .tabs a,
   .tabs button {
-    padding: 4px 12px;
-    margin-bottom: 0;
-    background: $face;
-    color: #000;
+    padding: 5px 14px;
+    margin-bottom: -1px;
     font-weight: normal;
-    font-size: 12px;
-    border: 1px solid;
-    border-color: $hi $dark transparent $hi;
-    box-shadow: inset -1px 0 0 $shadow;
+    font-size: 12.5px;
+    @include glossy;
+    border-radius: 7px 7px 0 0;
+    border-bottom-color: $border;
   }
   .tabs .active {
-    position: relative;
-    top: 1px;
-    padding: 6px 14px;
+    @include glossy-blue;
+    font-weight: 600;
     color: #000;
-    font-weight: bold;
-    border-color: $hi $dark $face $hi;
+    border-bottom-color: #c1d4ea;
   }
   .chip,
   .segmented button {
-    border-radius: 0;
-    background: $face;
-    color: #000;
     font-weight: normal;
     font-size: 12px;
-    @include raised;
+    @include glossy;
   }
   .chip.active,
   .segmented button.active {
-    background: $checker;
+    @include glossy-pressed;
+    @include glossy-blue;
+    font-weight: 600;
     color: #000;
-    font-weight: bold;
-    @include pressed;
+  }
+  .segmented {
+    background: none;
+    border: 0;
+    padding: 0;
+    gap: 0;
+  }
+  .segmented button {
+    border-radius: 0;
+    margin-left: -1px;
+  }
+  .segmented button:first-child {
+    border-radius: 7px 0 0 7px;
+  }
+  .segmented button:last-child {
+    border-radius: 0 7px 7px 0;
+  }
+
+  /* ---------- the window: sidebar and menu bar ---------- */
+  .sidebar {
+    background: $base;
+    border-right: 1px solid $blue-grey;
+  }
+  .brand {
+    @include strip;
+  }
+  .nav {
+    padding: 6px 8px;
+  }
+  .section {
+    color: #1a1a1a;
+    font-size: 11.5px;
+    letter-spacing: 0;
+    text-transform: none;
+    padding: 10px 6px 3px;
+    border-bottom: 1px solid $blue-grey;
+    margin-bottom: 4px;
+  }
+  .nav .item {
+    border-radius: 5px;
+    color: #000;
+    font-weight: normal;
+    font-size: 12.5px;
+    padding: 6px 10px;
+    border: 1px solid transparent;
+  }
+  .nav .item:hover {
+    background: $hover;
+  }
+  .nav .item.active,
+  .nav .item.active:hover {
+    @include selected;
+  }
+  .nav .item .chev {
+    color: inherit;
+  }
+  .sub a {
+    border-radius: 5px;
+    color: #000;
+    font-size: 12.5px;
+    padding: 5px 10px;
+  }
+  .sub a:hover {
+    background: $hover;
+    color: #000;
+  }
+  .sub a.active {
+    @include selected;
+    font-weight: normal;
+  }
+  .collapsed .group.flying .sub {
+    @include popup;
+  }
+  .promo {
+    background: $panel;
+    border: 1px solid $blue-grey;
+    border-radius: 6px;
+  }
+  .promo b {
+    color: $selection-dark;
+  }
+  .topbar {
+    background: linear-gradient(#f6f7f9 0%, #e6e9ee 50%, #d6d9df 100%);
+    backdrop-filter: none;
+    border-bottom: 1px solid $blue-grey;
+  }
+  .topbar .workspace {
+    border-radius: 7px;
+    border-color: transparent;
+  }
+  .topbar .workspace:hover,
+  .topbar .user-chip:hover {
+    background: rgba(255, 255, 255, 0.55);
+  }
+  .ws-mark:not(.ws-logo),
+  .avatar {
+    border-radius: 6px;
+    background: linear-gradient(#5d88ab, $selection);
+    color: #fff;
+    border: 1px solid $selection-dark;
+  }
+  .tenant-logo,
+  .ws-logo {
+    border-radius: 6px;
+  }
+  .user-chip {
+    border-radius: 7px;
   }
   .lang-switch {
     border: 0;
@@ -454,177 +556,41 @@ html:root[data-look='classic'] {
     gap: 0;
   }
   .lang-switch button {
-    border-radius: 0;
-    background: $face;
-    color: #000;
     font-weight: normal;
-    padding: 2px 8px;
-    @include raised;
+    padding: 3px 10px;
+    @include glossy;
+    border-radius: 0;
+    margin-left: -1px;
+  }
+  .lang-switch button:first-of-type {
+    border-radius: 7px 0 0 7px;
+  }
+  .lang-switch button:last-of-type {
+    border-radius: 0 7px 7px 0;
   }
   .lang-switch button.on {
-    background: $checker;
+    @include glossy-pressed;
+    @include glossy-blue;
     color: #000;
-    font-weight: bold;
-    @include pressed;
-  }
-  .segmented {
-    background: none;
-    border: 0;
-    padding: 0;
-    gap: 0;
-    border-radius: 0;
-  }
-
-  /* ---------- the window: sidebar and title bar ---------- */
-  .sidebar {
-    background: $face;
-    border-right: 1px solid $dark;
-    box-shadow: inset -1px 0 0 $shadow;
-  }
-  .brand {
-    background: $navy;
-    color: #fff;
-  }
-  .brand-text small {
-    color: #dfe6f5;
-  }
-  .nav {
-    padding: 6px;
-  }
-  .section {
-    color: $dark;
-    font-size: 11px;
-    letter-spacing: 0;
-    text-transform: none;
-    padding: 10px 4px 2px;
-    border-bottom: 1px solid $shadow;
-    box-shadow: 0 1px 0 $hi;
-    margin-bottom: 4px;
-  }
-  .nav .item {
-    border-radius: 0;
-    color: #000;
-    font-weight: normal;
-    font-size: 12px;
-    padding: 5px 8px;
-    border: 1px solid transparent;
-  }
-  .nav .item:hover {
-    background: transparent;
-    border-color: $hi $shadow $shadow $hi;
-  }
-  .nav .item.active,
-  .nav .item.active:hover {
-    background: $navy;
-    color: #fff;
-    border-color: transparent;
-  }
-  .nav .item .chev {
-    color: inherit;
-  }
-  .group.open .sub {
-    margin-left: 19px;
-    padding-left: 14px;
-    border-left: 1px dotted $shadow;
-  }
-  .sub a {
-    border-radius: 0;
-    color: #000;
-    font-size: 12px;
-    padding: 4px 8px;
-  }
-  .sub a:hover {
-    background: transparent;
-    color: #000;
-    text-decoration: underline;
-  }
-  .sub a.active {
-    background: $navy;
-    color: #fff;
-    font-weight: normal;
-  }
-  .collapsed .group.flying .sub {
-    border-radius: 0;
-    background: $face;
-    @include popup;
-  }
-  .promo {
-    border-radius: 0;
-    background: $face;
-    @include sunken;
-  }
-  .promo b {
-    color: $navy;
-  }
-  .topbar {
-    @include caption;
-    backdrop-filter: none;
-    border-bottom: 0;
-  }
-  .topbar .icon-btn,
-  .topbar .branch,
-  .topbar .workspace,
-  .topbar .user-chip,
-  .topbar .who {
-    color: #fff;
-  }
-  .topbar .icon-btn:hover {
-    border-color: rgba(255, 255, 255, 0.7) rgba(0, 0, 0, 0.5) rgba(0, 0, 0, 0.5)
-      rgba(255, 255, 255, 0.7);
-  }
-  .topbar .workspace {
-    border-radius: 0;
-    border-color: transparent;
-  }
-  .topbar .workspace:hover,
-  .topbar .user-chip:hover {
-    background: rgba(255, 255, 255, 0.14);
-  }
-  .topbar .ws-text small,
-  .topbar .who small {
-    color: #dfe6f5;
-  }
-  .ws-mark,
-  .tenant-logo {
-    border-radius: 0;
-  }
-  .ws-mark:not(.ws-logo) {
-    background: $face;
-    color: $navy;
-    @include raised;
-  }
-  .user-chip {
-    border-radius: 0;
-  }
-  .avatar {
-    border-radius: 0;
-    background: $face;
-    color: #000;
-    @include raised;
-  }
-  .topbar .lang-switch button {
-    height: 24px;
+    font-weight: 600;
   }
   .menu {
-    border-radius: 0;
-    background: $face;
-    padding: 2px;
+    padding: 3px;
     @include popup;
   }
   .menu a,
   .menu button {
-    border-radius: 0;
+    border-radius: 3px;
     color: #000;
-    font-size: 12px;
-    padding: 5px 10px;
+    font-size: 12.5px;
+    padding: 6px 10px;
   }
   .menu a:hover,
   .menu button:hover {
-    background: $navy;
-    color: #fff;
+    @include selected;
   }
   .menu .danger {
-    color: #900000;
+    color: var(--red);
   }
   .menu .danger:hover {
     color: #fff;
@@ -632,199 +598,173 @@ html:root[data-look='classic'] {
 
   /* ---------- dialogs, drawers, messages ---------- */
   .backdrop {
-    background: rgba(0, 0, 0, 0.12);
+    background: rgba(30, 40, 55, 0.3);
     backdrop-filter: none;
   }
   .modal,
   .drawer {
-    border-radius: 0;
-    background: $face;
-    animation: none;
-    @include popup;
+    background: $base;
+    border: 1px solid $border;
+    box-shadow: var(--shadow-lg);
   }
+  .modal {
+    border-radius: 8px;
+  }
+  /* A dialog's title bar: Nimbus's blue-grey frame title. */
   .modal > header,
   .drawer > header {
-    @include caption;
-    margin: 3px 3px 0;
-    padding: 4px 4px 4px 8px;
-    border-bottom: 0;
+    background: linear-gradient(#eef2f7 0%, #d2dbe7 49%, #bccadb 51%, #cbd6e4 100%);
+    border-bottom: 1px solid $blue-grey;
+    padding: 8px 10px 8px 14px;
     align-items: center;
+  }
+  .modal > header {
+    border-radius: 8px 8px 0 0;
   }
   .modal > header h3,
   .drawer > header h3 {
-    font-size: 12px;
-    font-weight: bold;
-    color: #fff;
+    font-size: 13px;
+    font-weight: 600;
   }
-  .drawer > header p {
-    color: #dfe6f5;
-  }
-  /* The close box of a title bar. */
   .modal > header .icon-btn,
   .drawer > header .icon-btn {
-    width: 20px;
-    height: 18px;
-    background: $face;
-    color: #000;
-    @include raised;
+    width: 24px;
+    height: 22px;
+    @include glossy;
   }
   .modal > header .icon-btn svg,
   .drawer > header .icon-btn svg {
-    width: 12px;
-    height: 12px;
+    width: 13px;
+    height: 13px;
   }
   .modal > footer {
-    border-top: 0;
+    border-top: 1px solid $blue-grey;
   }
   .toast {
-    background: #ffffe1;
+    background: #f9f8e6;
     color: #000;
-    border: 1px solid #000;
-    border-radius: 0;
-    font-size: 12px;
-    box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.35);
-    animation: none;
+    border: 1px solid $border;
+    border-radius: 6px;
+    font-size: 12.5px;
+    box-shadow: var(--shadow);
   }
   .toast.success app-icon {
-    color: #007a00;
+    color: #3d7a17;
   }
   .toast.error app-icon {
-    color: #b00000;
+    color: #a92e22;
   }
   .toast.info app-icon {
-    color: $navy;
+    color: $selection;
   }
 
   /* ---------- the till ---------- */
   .till-card-h {
-    @include caption;
-    margin: 3px 3px 0;
-    padding: 4px 8px;
-    border: 0;
-    border-radius: 0;
-    font-weight: bold;
+    @include strip;
+    border-radius: 6px 6px 0 0;
+    padding: 7px 12px;
+    font-weight: 600;
   }
-  /* The total reads like a cash register's display. */
   .grand {
-    background: #000;
-    color: #9be8a8;
-    padding: 6px 10px;
-    border-bottom: 0;
-    @include sunken;
+    @include field;
+    padding: 8px 12px;
+    color: #1a1a1a;
+    border-bottom-style: solid;
   }
   .grand b {
-    color: #00ff40;
-    font-family: var(--mono);
-    letter-spacing: 1px;
+    color: $selection;
   }
   .sale-title {
-    font: bold 16px var(--font);
-    color: $navy;
+    font: 600 17px var(--font);
+    color: $selection;
   }
   .search-box {
-    border-radius: 0;
-    background: #fff;
-    color: #000;
-    @include sunken;
-  }
-  .ro {
-    background-color: $face;
-  }
-  .shift-bar {
-    border-radius: 0;
-    @include raised;
-  }
-  .shift-bar.open {
-    background: $face;
+    color: #4d5560;
+    @include field;
+    @include focus-ring;
   }
   .search-box input {
-    font: 13px var(--font);
+    font: 13.5px var(--font);
+  }
+  .ro {
+    background-color: #eef0f3;
   }
   .stepper,
   .qty {
-    border-radius: 0;
-    background: #fff;
-    @include sunken;
+    @include field;
   }
   .stepper button,
   .qty button {
-    background: $face;
-    color: #000;
-    width: 22px;
-    @include raised;
+    width: 24px;
+    @include glossy;
+    border-radius: 0;
   }
   .suggest {
-    border-radius: 0;
-    background: #fff;
     @include popup;
   }
   .opt {
-    border-bottom-color: #ecebe6;
+    border-bottom-color: #e6e8ec;
+  }
+  .opt:nth-child(even) {
+    background: $alt-row;
   }
   .opt.on {
-    background: $navy;
-    color: #fff;
+    @include selected;
   }
   .opt.on small,
   .opt.on .muted {
-    color: #dfe6f5;
+    color: #d6e2ee;
   }
   .cart-table {
     background: #fff;
   }
   .cart-table th {
-    background: $face;
-    color: #000;
+    @include strip;
     font-weight: normal;
     font-size: 12px;
     text-transform: none;
     letter-spacing: 0;
-    padding: 4px 10px;
-    border: 0;
-    box-shadow:
-      inset -1px -1px 0 $dark,
-      inset 1px 1px 0 $hi,
-      inset -2px -2px 0 $shadow;
+    color: #000;
+    padding: 6px 12px;
+    border-right: 1px solid #c3c9d3;
   }
   .cart-table td {
-    padding: 6px 10px;
-    border-bottom-color: #ecebe6;
+    border-bottom: 0;
+  }
+  .cart-table tbody tr:nth-child(even) {
+    background: $alt-row;
   }
   .cart-table tfoot td {
-    background: $face;
+    background: #eef0f3;
+    border-top: 1px solid $blue-grey;
   }
   .complete kbd,
   .add kbd {
-    background: $face;
-    color: #000;
-    border-color: $hi $dark $dark $hi;
+    @include glossy;
+    border-radius: 4px;
   }
   .icon-btn.remove {
     background: transparent;
-    color: #b00000;
+    color: var(--red);
   }
   .btn.soft,
   .btn.danger-outline {
-    background: $face;
-    @include raised;
+    @include glossy;
   }
   .btn.soft {
-    color: $navy;
+    color: $selection-dark;
   }
   .btn.danger-outline {
-    color: #900000;
+    color: #8a1f15;
   }
   .count {
-    border-radius: 0;
+    border-radius: 8px;
   }
-  .initials {
-    border-radius: 0;
-    @include raised;
+  .shift-bar {
+    border: 1px solid $blue-grey;
+    border-radius: 6px;
   }
-  .change-due,
-  .payment.boxed,
-  .coverage,
-  .on-account {
-    border-radius: 0;
+  .shift-bar.open {
+    background: $panel;
   }
 }

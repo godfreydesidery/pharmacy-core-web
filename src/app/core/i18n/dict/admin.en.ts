@@ -137,7 +137,7 @@ export const ADMIN_EN: Readonly<Record<string, string>> = {
   'admin.appearance': 'Appearance',
   'admin.look': 'Look',
   'admin.lookPremium': 'Premium (modern)',
-  'admin.lookClassic': 'Classic (Windows style)',
+  'admin.lookClassic': 'Classic (Java desktop style)',
   'admin.lookHint':
-    'How the app looks for everyone in this pharmacy. Classic has grey bevelled buttons, sunken fields and blue title bars, and no dark mode.',
+    'How the app looks for everyone in this pharmacy. Classic looks like a Java desktop program: blue-grey panels, rounded glossy buttons and a dark-blue highlight, with no dark mode.',
 };
