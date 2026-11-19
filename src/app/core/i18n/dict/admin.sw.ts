@@ -131,4 +131,7 @@ export const ADMIN_SW: Readonly<Record<string, string>> = {
   'admin.copyThisSecretNowIt': 'Nakili siri hii sasa. Inaonyeshwa mara moja tu.',
   'admin.copy': 'Nakili',
   'admin.attemptS': 'majaribio',
+  'admin.pricesIncludeTax': 'Bei zinajumuisha VAT',
+  'admin.pricesIncludeTaxHint':
+    'Bei za kuuzia tayari zinajumuisha VAT: kaunta inatoza bei ya rafu na kuonyesha VAT iliyomo. Ikizimwa: VAT inaongezwa juu ya bei kwenye kaunta.',
 };

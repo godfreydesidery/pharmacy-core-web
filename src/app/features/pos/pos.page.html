@@ -690,7 +690,8 @@
                     @if (totals().discount) {
                       · {{ 'pos.discount2' | t }} − {{ totals().discount | money }}
                     }
-                    · {{ 'pos.tax' | t }} {{ totals().tax | money }}
+                    · {{ (taxIncluded() ? 'pos.vatIncluded' : 'pos.tax') | t }}
+                    {{ totals().tax | money }}
                   </td>
                   <td class="r total">{{ totals().total | money }}</td>
                   <td colspan="2"></td>
@@ -703,7 +704,8 @@
           <!-- Phones: the totals under the cart, as the table's footer row does not fit. -->
           <div class="phone-total">
             <span class="muted"
-              >{{ 'pos.subtotal' | t }} {{ totals().subtotal | money }} · {{ 'pos.tax' | t }}
+              >{{ 'pos.subtotal' | t }} {{ totals().subtotal | money }} ·
+              {{ (taxIncluded() ? 'pos.vatIncluded' : 'pos.tax') | t }}
               {{ totals().tax | money }}</span
             >
             <b>{{ totals().total | money }}</b>

@@ -146,3 +146,30 @@ describe('cart', () => {
     expect(splitPayment(null, 5)).toEqual({ method: 'MOBILE_MONEY', amount: 5, reference: null });
   });
 });
+
+describe('prices that include VAT', () => {
+  const lotion = {
+    productUid: 'l',
+    name: 'Body Lotion',
+    sellingPrice: 3540,
+    taxRatePercent: 18,
+    quantityOnHand: 10,
+  } as SellableProduct;
+
+  it('charges the shelf price and shows the VAT inside it', () => {
+    const totals = cartTotals([{ product: lotion, quantity: 1 }], 0, undefined, true);
+    expect(totals.total).toBe(3540);
+    expect(totals.tax).toBe(540);
+  });
+
+  it('takes the VAT out of what is left after a discount, to the cent', () => {
+    const shelf = { ...lotion, sellingPrice: 3200 } as SellableProduct;
+    const totals = cartTotals([{ product: shelf, quantity: 2 }], 10, undefined, true);
+    expect(totals.total).toBe(5760);
+    expect(totals.tax).toBe(878.64);
+  });
+
+  it('adds the VAT on top when prices exclude it, as before', () => {
+    expect(cartTotals([{ product: lotion, quantity: 1 }], 0).total).toBe(4177.2);
+  });
+});

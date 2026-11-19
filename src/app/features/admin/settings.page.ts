@@ -119,6 +119,15 @@ import { Translations } from '../../core/i18n/translations.store';
           </label>
           <label class="row" style="justify-content:space-between">
             <span
+              ><b style="font-weight:550">{{ 'admin.pricesIncludeTax' | t }}</b
+              ><br /><small class="muted">{{ 'admin.pricesIncludeTaxHint' | t }}</small></span
+            >
+            <span class="switch"
+              ><input type="checkbox" formControlName="pricesIncludeTax" /><span></span
+            ></span>
+          </label>
+          <label class="row" style="justify-content:space-between">
+            <span
               ><b style="font-weight:550">{{ 'admin.smsReceipts' | t }}</b
               ><br /><small class="muted">{{ 'admin.textTheReceiptToA' | t }}</small></span
             >
@@ -278,6 +287,7 @@ export default class SettingsPage implements OnInit {
     expiryAlertDays: [90, [Validators.min(1), Validators.max(730)]],
     lowStockAlerts: [true],
     smsReceipts: [false],
+    pricesIncludeTax: [false],
   });
 
   async ngOnInit(): Promise<void> {

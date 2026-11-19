@@ -92,4 +92,5 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.unitPrice': 'Bei ya kipimo',
   'pos.walkInNote':
     'Mteja wa kawaida. Tafuta hapo juu kumuunganisha kwa mkopo, bima au historia yake.',
+  'pos.vatIncluded': 'VAT imejumuishwa',
 };

@@ -91,4 +91,5 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.unitPrice': 'Unit price',
   'pos.walkInNote':
     'Walk-in customer. Search above to attach one for credit, insurance or their history.',
+  'pos.vatIncluded': 'VAT included',
 };

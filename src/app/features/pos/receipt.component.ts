@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, input } from '@angular/core';
 import { Sale } from '../../core/api/models';
 import { SettingsStore } from '../../core/format/settings.store';
 import { FORMAT_PIPES } from '../../core/format/pipes';
@@ -75,7 +75,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
           </div>
         }
         <div class="row between">
-          <span class="muted">{{ 'pos.tax' | t }}</span
+          <span class="muted">{{ (taxIncluded() ? 'pos.vatIncluded' : 'pos.tax') | t }}</span
           ><span>{{ sale().taxTotal | money }}</span>
         </div>
         <div class="row between grand">
@@ -167,4 +167,12 @@ export class ReceiptComponent {
   protected readonly logo = inject(TenantLogoStore);
   protected readonly settings = inject(SettingsStore);
   readonly sale = input.required<Sale>();
+  /**
+   * The sale's prices included VAT: its total is the subtotal less the discount, the tax inside.
+   * Read from the sale itself, so a receipt printed later shows how that sale was priced.
+   */
+  protected readonly taxIncluded = computed(() => {
+    const s = this.sale();
+    return s.taxTotal > 0 && Math.abs(s.total - (s.subtotal - s.discountTotal)) < 0.005;
+  });
 }

@@ -126,6 +126,8 @@ export interface Settings {
   smsReceipts: boolean;
   /** The base currency first, then the accepted foreign currencies. */
   acceptedCurrencies: string[];
+  /** Selling prices include VAT (taken out of the price) rather than have it added on top. */
+  pricesIncludeTax: boolean;
 }
 
 export interface Member {

@@ -236,8 +236,12 @@ export default class PosPage {
   protected readonly quoted = signal<Record<string, PricedLine>>({});
   protected readonly priceOf = (line: CartLine): number =>
     this.quoted()[line.product.productUid]?.unitPrice ?? line.product.sellingPrice;
+  /** The pharmacy's prices include VAT: the till charges the shelf price and shows the VAT in it. */
+  protected readonly taxIncluded = computed(
+    () => this.settings.settings()?.pricesIncludeTax ?? false,
+  );
   protected readonly totals = computed(() =>
-    cartTotals(this.lines(), this.discountPercent(), this.priceOf),
+    cartTotals(this.lines(), this.discountPercent(), this.priceOf, this.taxIncluded()),
   );
   private quoteSeq = 0;
   /** Re-prices the basket whenever its products, quantities or customer change. */
