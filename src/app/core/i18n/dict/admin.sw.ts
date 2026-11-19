@@ -137,7 +137,7 @@ export const ADMIN_SW: Readonly<Record<string, string>> = {
   'admin.appearance': 'Mwonekano',
   'admin.look': 'Mtindo',
   'admin.lookPremium': 'Premium (wa kisasa)',
-  'admin.lookClassic': 'Classic (mtindo wa Windows)',
+  'admin.lookClassic': 'Classic (mtindo wa programu ya Java)',
   'admin.lookHint':
-    'Jinsi programu inavyoonekana kwa kila mtu katika famasia hii. Classic ina vitufe vya kijivu vilivyoinuka, visanduku vilivyozama na mipau ya bluu ya vichwa, bila hali ya giza.',
+    'Jinsi programu inavyoonekana kwa kila mtu katika famasia hii. Classic inaonekana kama programu ya Java ya kompyuta: paneli za kijivu-bluu, vitufe vya mviringo vinavyong’aa na kuangaziwa kwa bluu iliyokolea, bila hali ya giza.',
 };
