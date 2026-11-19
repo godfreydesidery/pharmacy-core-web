@@ -1,5 +1,6 @@
 import {
   ChangeDetectionStrategy,
+  DestroyRef,
   Component,
   computed,
   effect,
@@ -18,6 +19,7 @@ import { BellComponent } from '../notifications/bell.component';
 import { TranslatePipe } from '../i18n/t.pipe';
 import { SessionStore } from '../session/session.store';
 import { IconComponent } from '../ui/icon.component';
+import { LookService } from '../ui/look.service';
 import { ThemeService } from '../ui/theme.service';
 import { LogoComponent } from './logo.component';
 import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
@@ -47,6 +49,8 @@ import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
 export class ShellComponent {
   protected readonly session = inject(SessionStore);
   protected readonly theme = inject(ThemeService);
+  /** The classic look has no dark mode, so the theme switch hides. */
+  protected readonly look = inject(LookService);
   protected readonly logo = inject(TenantLogoStore);
   private readonly settings = inject(SettingsStore);
   protected readonly subscription = inject(SubscriptionStore);
@@ -114,6 +118,8 @@ export class ShellComponent {
   );
 
   constructor() {
+    // Leaving the signed-in app (signing out) goes back to the premium look.
+    inject(DestroyRef).onDestroy(() => this.look.reset());
     effect(() => {
       const tenant = this.session.tenant();
       // A suspended pharmacy refuses every read but the root administrator's.

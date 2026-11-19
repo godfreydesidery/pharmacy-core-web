@@ -135,6 +135,15 @@ import { Translations } from '../../core/i18n/translations.store';
               ><input type="checkbox" formControlName="smsReceipts" /><span></span
             ></span>
           </label>
+          <h3>{{ 'admin.appearance' | t }}</h3>
+          <div class="field">
+            <label for="look">{{ 'admin.look' | t }}</label>
+            <select id="look" class="select" formControlName="look">
+              <option value="PREMIUM">{{ 'admin.lookPremium' | t }}</option>
+              <option value="CLASSIC">{{ 'admin.lookClassic' | t }}</option>
+            </select>
+            <span class="hint">{{ 'admin.lookHint' | t }}</span>
+          </div>
         </div>
       </form>
 
@@ -288,6 +297,7 @@ export default class SettingsPage implements OnInit {
     lowStockAlerts: [true],
     smsReceipts: [false],
     pricesIncludeTax: [false],
+    look: ['PREMIUM' as Settings['look']],
   });
 
   async ngOnInit(): Promise<void> {

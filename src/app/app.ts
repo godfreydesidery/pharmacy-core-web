@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { LookService } from './core/ui/look.service';
 import { ThemeService } from './core/ui/theme.service';
 import { ToasterComponent } from './core/ui/widgets';
 
@@ -12,4 +13,6 @@ import { ToasterComponent } from './core/ui/widgets';
 export class App {
   /** Created here so the saved theme applies before any page renders. */
   protected readonly theme = inject(ThemeService);
+  /** Likewise the pharmacy's look (premium or classic), remembered from the last visit. */
+  protected readonly look = inject(LookService);
 }

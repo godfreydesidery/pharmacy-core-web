@@ -134,4 +134,10 @@ export const ADMIN_SW: Readonly<Record<string, string>> = {
   'admin.pricesIncludeTax': 'Bei zinajumuisha VAT',
   'admin.pricesIncludeTaxHint':
     'Bei za kuuzia tayari zinajumuisha VAT: kaunta inatoza bei ya rafu na kuonyesha VAT iliyomo. Ikizimwa: VAT inaongezwa juu ya bei kwenye kaunta.',
+  'admin.appearance': 'Mwonekano',
+  'admin.look': 'Mtindo',
+  'admin.lookPremium': 'Premium (wa kisasa)',
+  'admin.lookClassic': 'Classic (mtindo wa Windows)',
+  'admin.lookHint':
+    'Jinsi programu inavyoonekana kwa kila mtu katika famasia hii. Classic ina vitufe vya kijivu vilivyoinuka, visanduku vilivyozama na mipau ya bluu ya vichwa, bila hali ya giza.',
 };

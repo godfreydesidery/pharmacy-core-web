@@ -1,5 +1,6 @@
 /* Pharmacy Core design system: tokens, base elements and shared components. Components keep their
    own styles small; everything reusable lives here. */
+@use 'sass:meta';
 
 :root {
   --font: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -981,3 +982,6 @@ app-attachments {
 .mt {
   margin-top: 18px;
 }
+
+/* The classic look (a pharmacy setting): loaded last so it overrides the tokens above. */
+@include meta.load-css('styles/classic');
