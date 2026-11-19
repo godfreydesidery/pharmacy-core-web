@@ -131,4 +131,7 @@ export const ADMIN_EN: Readonly<Record<string, string>> = {
   'admin.copyThisSecretNowIt': 'Copy this secret now. It is shown only once.',
   'admin.copy': 'Copy',
   'admin.attemptS': 'attempt(s)',
+  'admin.pricesIncludeTax': 'Prices include VAT',
+  'admin.pricesIncludeTaxHint':
+    'Selling prices already include VAT: the till charges the shelf price and shows the VAT inside it. Off: VAT is added on top at the till.',
 };

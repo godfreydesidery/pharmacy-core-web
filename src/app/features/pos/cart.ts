@@ -19,7 +19,11 @@ export interface CartTotals {
 
 export const round2 = (value: number): number => Math.round((value + Number.EPSILON) * 100) / 100;
 
-/** Gross per line, the sale-wide discount on each line, then tax on what remains (tax exclusive). */
+/**
+ * Gross per line, then the sale-wide discount on each line. Prices that exclude tax get tax added on
+ * what remains; prices that include it keep what remains as the line's total, the tax inside it
+ * being rate ÷ (100 + rate) of it. The API applies the same rules (SaleTotals).
+ */
 /** A line's unit price: the catalogue price unless pricing (lists, promotions) says otherwise. */
 export type PriceOf = (line: CartLine) => number;
 
@@ -27,6 +31,7 @@ export function cartTotals(
   lines: readonly CartLine[],
   discountPercent: number,
   priceOf: PriceOf = (line) => line.product.sellingPrice,
+  taxIncluded = false,
 ): CartTotals {
   const rate = Math.min(Math.max(discountPercent || 0, 0), 100);
   let subtotal = 0;
@@ -36,7 +41,10 @@ export function cartTotals(
   for (const line of lines) {
     const gross = round2(priceOf(line) * line.quantity);
     const lineDiscount = round2((gross * rate) / 100);
-    const lineTax = round2(((gross - lineDiscount) * (line.product.taxRatePercent || 0)) / 100);
+    const taxRate = line.product.taxRatePercent || 0;
+    const lineTax = taxIncluded
+      ? round2(((gross - lineDiscount) * taxRate) / (100 + taxRate))
+      : round2(((gross - lineDiscount) * taxRate) / 100);
     subtotal += gross;
     discount += lineDiscount;
     tax += lineTax;
@@ -45,7 +53,8 @@ export function cartTotals(
   subtotal = round2(subtotal);
   discount = round2(discount);
   tax = round2(tax);
-  return { items, subtotal, discount, tax, total: round2(subtotal - discount + tax) };
+  const total = taxIncluded ? subtotal - discount : subtotal - discount + tax;
+  return { items, subtotal, discount, tax, total: round2(total) };
 }
 
 /**
