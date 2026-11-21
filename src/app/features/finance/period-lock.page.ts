@@ -4,6 +4,7 @@ import { loaded } from '../../core/data/data';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 
 interface PeriodLock {
@@ -85,6 +86,7 @@ export default class PeriodLockPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   protected readonly latest = yesterday();
   protected readonly busy = signal(false);
   protected readonly date = signal('');
@@ -96,7 +98,11 @@ export default class PeriodLockPage {
   protected async save(lockedThrough: string | null): Promise<void> {
     if (
       lockedThrough === null &&
-      !window.confirm(this.translations.t('periodLock.confirmUnlock'))
+      !(await this.confirm.ask({
+        title: this.translations.t('common.areYouSure'),
+        text: this.translations.t('periodLock.confirmUnlock'),
+        icon: 'warning',
+      }))
     ) {
       return;
     }

@@ -8,6 +8,7 @@ import {
   rootGuard,
   workspaceGuard,
 } from './core/session/guards';
+import { leaveGuard } from './core/session/leave-guard';
 import { SessionStore } from './core/session/session.store';
 import { planGuard } from './core/subscription/plan-guard';
 
@@ -87,6 +88,7 @@ export const routes: Routes = [
             path: 'pos',
             title: 'Point of Sale',
             ...page('sales.sell'),
+            canDeactivate: [leaveGuard],
             loadComponent: () => import('./features/pos/pos.page'),
           },
           {

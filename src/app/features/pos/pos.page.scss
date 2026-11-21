@@ -278,6 +278,16 @@ kbd {
   height: 42px;
   white-space: nowrap;
 }
+.entry-actions {
+  display: flex;
+  gap: 6px;
+}
+.clear-entry {
+  width: 42px;
+  height: 42px;
+  padding: 0;
+  justify-content: center;
+}
 .add kbd {
   background: rgba(255, 255, 255, 0.18);
   color: #fff;
@@ -664,8 +674,11 @@ kbd {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
   .entry-search,
-  .add {
+  .entry-actions {
     grid-column: 1 / -1;
+  }
+  .entry-actions .add {
+    flex: 1;
   }
 }
 .phone-total {

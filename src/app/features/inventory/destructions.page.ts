@@ -7,6 +7,7 @@ import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
 import { LookupComponent } from '../../core/ui/lookup.component';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 
 type DestructionReason = 'EXPIRED' | 'DAMAGED';
@@ -311,6 +312,7 @@ export default class DestructionsPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   protected readonly current = signal<Destruction | null>(null);
   protected readonly editing = signal(false);
   protected readonly busy = signal(false);
@@ -376,7 +378,13 @@ export default class DestructionsPage {
       this.toasts.error(this.translations.t('dest.incomplete'));
       return;
     }
-    if (!window.confirm(this.translations.t('dest.confirm'))) {
+    if (
+      !(await this.confirm.ask({
+        title: this.translations.t('common.areYouSure'),
+        text: this.translations.t('dest.confirm'),
+        icon: 'danger',
+      }))
+    ) {
       return;
     }
     this.busy.set(true);

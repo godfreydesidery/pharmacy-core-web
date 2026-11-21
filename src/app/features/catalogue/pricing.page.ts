@@ -16,6 +16,7 @@ import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
 import { LookupComponent } from '../../core/ui/lookup.component';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 
 type Tab = 'lists' | 'branch' | 'promotions';
@@ -540,6 +541,7 @@ export default class PricingPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   protected readonly tabs: Tab[] = ['lists', 'branch', 'promotions'];
   protected readonly tab = signal<Tab>('lists');
   protected readonly busy = signal(false);
@@ -654,7 +656,11 @@ export default class PricingPage {
     const l = this.list();
     if (
       !l?.uid ||
-      !window.confirm(this.translations.t('pricing.confirmDelete', { name: l.name }))
+      !(await this.confirm.ask({
+        title: this.translations.t('common.areYouSure'),
+        text: this.translations.t('pricing.confirmDelete', { name: l.name }),
+        icon: 'danger',
+      }))
     ) {
       return;
     }
@@ -737,7 +743,11 @@ export default class PricingPage {
     const p = this.promotion();
     if (
       !p?.uid ||
-      !window.confirm(this.translations.t('pricing.confirmDelete', { name: p.name }))
+      !(await this.confirm.ask({
+        title: this.translations.t('common.areYouSure'),
+        text: this.translations.t('pricing.confirmDelete', { name: p.name }),
+        icon: 'danger',
+      }))
     ) {
       return;
     }

@@ -5,6 +5,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 
 export interface CountLine {
@@ -188,6 +189,7 @@ export default class StockCountsPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   protected readonly busy = signal(false);
   protected readonly current = signal<StockCount | null>(null);
   protected readonly entries = signal<Record<string, number | null>>({});
@@ -238,7 +240,14 @@ export default class StockCountsPage {
 
   protected async post(): Promise<void> {
     const c = this.current();
-    if (!c || !window.confirm(this.translations.t('count.confirmPost'))) {
+    if (
+      !c ||
+      !(await this.confirm.ask({
+        title: this.translations.t('common.areYouSure'),
+        text: this.translations.t('count.confirmPost'),
+        icon: 'warning',
+      }))
+    ) {
       return;
     }
     if (Object.keys(this.entries()).length && !(await this.save())) {

@@ -19,6 +19,7 @@ import { LanguageSwitchComponent } from '../i18n/language-switch.component';
 import { BellComponent } from '../notifications/bell.component';
 import { TranslatePipe } from '../i18n/t.pipe';
 import { Translations } from '../i18n/translations.store';
+import { LeaveGuard } from '../session/leave-guard';
 import { SessionStore } from '../session/session.store';
 import { IconComponent } from '../ui/icon.component';
 import { LookService } from '../ui/look.service';
@@ -61,6 +62,7 @@ export class ShellComponent {
   private readonly api = inject(Api);
   private readonly toast = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly leave = inject(LeaveGuard);
 
   protected readonly collapsed = signal(false);
   protected readonly mobileOpen = signal(false);
@@ -235,13 +237,24 @@ export class ShellComponent {
     }
   }
 
-  protected switchBranch(uid: string): void {
+  protected async switchBranch(uid: string, select?: HTMLSelectElement): Promise<void> {
+    if (!(await this.leave.canLeave())) {
+      // Stayed: the selector goes back to the branch still in use.
+      if (select) {
+        select.value = this.session.branch()?.uid ?? '';
+      }
+      return;
+    }
     const branch = this.session.branches().find((b) => b.uid === uid) ?? null;
     this.session.switchBranch(branch);
     void this.router.navigateByUrl(this.router.url);
   }
 
   protected async signOut(): Promise<void> {
+    this.userMenu.set(false);
+    if (!(await this.leave.canLeave())) {
+      return;
+    }
     try {
       await this.api.post('/auth/sign-out', {}, { silent: true });
     } catch {

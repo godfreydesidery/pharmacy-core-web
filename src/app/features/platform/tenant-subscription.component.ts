@@ -10,6 +10,7 @@ import { loaded } from '../../core/data/data';
 import { Params, Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
 import { PlanUsageComponent } from '../../core/subscription/plan-usage.component';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 import { downgradeLoss, losesAnything } from '../../core/subscription/downgrade';
 
@@ -184,6 +185,7 @@ export class TenantSubscriptionComponent {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   readonly tenantUid = input.required<string>();
   protected readonly busy = signal(false);
   protected readonly paying = signal<SubscriptionInvoice | null>(null);
@@ -208,7 +210,7 @@ export class TenantSubscriptionComponent {
   }
 
   protected async changePlan(planCode: string, cycle: BillingCycle): Promise<void> {
-    if (!this.confirmLosses(planCode)) {
+    if (!(await this.confirmLosses(planCode))) {
       return;
     }
     await this.act(() =>
@@ -224,7 +226,7 @@ export class TenantSubscriptionComponent {
    * Before moving a pharmacy to a plan below what it uses (more branches, users or products than
    * the plan allows, or modules it would lose), says exactly what and asks to go ahead.
    */
-  private confirmLosses(planCode: string): boolean {
+  private async confirmLosses(planCode: string): Promise<boolean> {
     const current = this.sub.value();
     const target = (this.plans.value() ?? []).find((p) => p.code === planCode);
     if (!current || !target || target.code === current.plan.code) {
@@ -247,12 +249,14 @@ export class TenantSubscriptionComponent {
         t('plans.downgrade.feature', { feature: t('plans.feature.' + f) }),
       ),
     ];
-    return window.confirm(
-      t('plans.downgrade.confirm', {
+    return this.confirm.ask({
+      title: t('common.areYouSure'),
+      text: t('plans.downgrade.confirm', {
         plan: target.name,
         lines: lines.map((l) => '• ' + l).join('\n'),
       }),
-    );
+      icon: 'warning',
+    });
   }
 
   protected async extendTrial(days: number): Promise<void> {

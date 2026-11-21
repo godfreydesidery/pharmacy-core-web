@@ -8,6 +8,8 @@ export const SW: Readonly<Record<string, string>> = {
   // common
   'common.save': 'Hifadhi',
   'common.cancel': 'Ghairi',
+  'common.confirm': 'Ndiyo, endelea',
+  'common.areYouSure': 'Una uhakika?',
   'common.close': 'Funga',
   'common.delete': 'Futa',
   'common.remove': 'Ondoa',

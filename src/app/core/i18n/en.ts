@@ -12,6 +12,8 @@ export const EN: Readonly<Record<string, string>> = {
   // common
   'common.save': 'Save',
   'common.cancel': 'Cancel',
+  'common.confirm': 'Yes, continue',
+  'common.areYouSure': 'Are you sure?',
   'common.close': 'Close',
   'common.delete': 'Delete',
   'common.remove': 'Remove',

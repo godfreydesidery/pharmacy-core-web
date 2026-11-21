@@ -2,13 +2,14 @@ import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { LookService } from './core/ui/look.service';
 import { ThemeService } from './core/ui/theme.service';
+import { ConfirmDialogComponent } from './core/ui/confirm';
 import { ToasterComponent } from './core/ui/widgets';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToasterComponent],
+  imports: [RouterOutlet, ToasterComponent, ConfirmDialogComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<router-outlet /><app-toaster />`,
+  template: `<router-outlet /><app-toaster /><app-confirm />`,
 })
 export class App {
   /** Created here so the saved theme applies before any page renders. */
