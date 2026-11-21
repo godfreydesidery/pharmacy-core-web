@@ -337,10 +337,12 @@
             }
             <div class="quick">
               <button type="button" class="chip" (click)="exact()">{{ 'pos.exact' | t }}</button>
-              @for (amount of quickAmounts(); track amount) {
-                <button type="button" class="chip" (click)="quickCash(amount)">
-                  {{ amount | money: payments()[0]?.currency ?? undefined }}
-                </button>
+              @if (quickCashEnabled) {
+                @for (amount of quickAmounts(); track amount) {
+                  <button type="button" class="chip" (click)="quickCash(amount)">
+                    {{ amount | money: payments()[0]?.currency ?? undefined }}
+                  </button>
+                }
               }
               <button type="button" class="chip split-chip" (click)="addPayment()">
                 {{ 'pos.split' | t }}

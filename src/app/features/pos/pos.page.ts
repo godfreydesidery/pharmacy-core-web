@@ -49,7 +49,7 @@ import {
 } from './cart';
 import { SerialPickerComponent } from './serial-picker.component';
 import { ShiftBarComponent } from './shift-bar.component';
-import { TILL_SHIFTS_ENABLED } from '../../core/features';
+import { QUICK_CASH_AMOUNTS_ENABLED, TILL_SHIFTS_ENABLED } from '../../core/features';
 import { productTypeOf } from '../../core/ui/product-types';
 import { ReceiptComponent } from './receipt.component';
 import { FilesService } from '../../core/files/files.service';
@@ -212,6 +212,8 @@ export default class PosPage {
   protected readonly tillShifts = TILL_SHIFTS_ENABLED;
 
   protected readonly q = signal('');
+  /** The quick cash amounts show only when switched on; Exact always shows. */
+  protected readonly quickCashEnabled = QUICK_CASH_AMOUNTS_ENABLED;
   protected readonly query = debounced(this.q, 200);
   protected readonly categoryUid = signal<string | null>(null);
   protected readonly categories = loaded<Category[]>(() =>
