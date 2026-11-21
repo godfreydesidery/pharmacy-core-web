@@ -118,7 +118,7 @@
           <app-icon name="building" [size]="16" />
           <select
             class="select sm"
-            (change)="switchBranch($any($event.target).value)"
+            (change)="switchBranch($any($event.target).value, $any($event.target))"
             [attr.aria-label]="'shell.branch' | t"
           >
             @if (session.isRoot() || session.workspace()?.allBranches) {

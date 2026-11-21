@@ -3,6 +3,7 @@ import { formatMoney, minorUnits } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   computed,
   inject,
@@ -31,6 +32,8 @@ import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
+import { LeaveGuard } from '../../core/session/leave-guard';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 import {
   CartLine,
@@ -101,7 +104,10 @@ const NOTES: Readonly<Record<string, number[]>> = {
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './pos.page.html',
   styleUrl: './pos.page.scss',
-  host: { '(document:keydown)': 'shortcut($event)' },
+  host: {
+    '(document:keydown)': 'shortcut($event)',
+    '(window:beforeunload)': 'warnBeforeUnload($event)',
+  },
 })
 export default class PosPage {
   protected readonly session = inject(SessionStore);
@@ -111,6 +117,7 @@ export default class PosPage {
   private readonly files = inject(FilesService);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   protected readonly methods = METHODS;
   /** The methods this pharmacy accepts at the till, from the payment registry. */
   protected readonly tillMethods = loaded<TillMethod[]>(() =>
@@ -624,15 +631,43 @@ export default class PosPage {
     this.entryQty.set(Math.max(1, Math.floor(Number(value) || 1)));
   }
 
+  /**
+   * While the quantity is typed: keeps the price and line total current. A blank or zero box is
+   * left alone (the change event settles it), so the box is not rewritten under the cashier.
+   */
+  protected typeEntryQty(value: string): void {
+    const quantity = Math.floor(Number(value));
+    if (quantity >= 1) {
+      this.entryQty.set(quantity);
+    }
+  }
+
   /** Puts the chosen item in the cart at the entry quantity, then readies the box for the next. */
   protected addFromEntry(product: SellableProduct | null = this.entryProduct()): void {
     if (!product) {
       return;
     }
     this.add(product, this.entryQty());
+    this.resetEntry();
+  }
+
+  /** The ✕ beside Add: drops the chosen item and quantity without adding anything. */
+  protected clearEntry(): void {
+    this.resetEntry();
+  }
+
+  /**
+   * Empties the entry row and puts the cursor back on the item box. The quantity box is reset
+   * directly too: after Enter the browser still fires its change event with the old number.
+   */
+  private resetEntry(): void {
     this.chosen.set(null);
     this.q.set('');
     this.entryQty.set(1);
+    const qty = this.qtyBox()?.nativeElement;
+    if (qty) {
+      qty.value = '1';
+    }
     this.highlight.set(0);
     this.suggestOpen.set(false);
     this.focusSearch();
@@ -713,6 +748,39 @@ export default class PosPage {
     if (key) writeParked(this.storage(), key, list);
   }
 
+  /**
+   * Leaving the POS (another page, sign-out, another branch) with an unfinished sale asks first:
+   * stay, or discard the sale and leave.
+   */
+  private readonly leaveCheck = inject(DestroyRef).onDestroy(
+    inject(LeaveGuard).register(() => this.confirmLeave()),
+  );
+
+  private async confirmLeave(): Promise<boolean> {
+    if (!this.lines().length) {
+      return true;
+    }
+    const leave = await this.confirm.ask({
+      title: this.translations.t('pos.leaveSaleTitle'),
+      text: this.translations.t('pos.leaveSaleText'),
+      icon: 'danger',
+      confirmText: this.translations.t('pos.discardAndLeave'),
+      cancelText: this.translations.t('pos.stay'),
+    });
+    if (leave) {
+      this.clear();
+    }
+    return leave;
+  }
+
+  /** Reloading or closing the tab: only the browser's own warning can stop that. */
+  protected warnBeforeUnload(event: BeforeUnloadEvent): void {
+    if (this.lines().length) {
+      event.preventDefault();
+      event.returnValue = '';
+    }
+  }
+
   /** Puts the sale on screen aside and starts a fresh one. */
   protected parkSale(): void {
     if (!this.lines().length) {
@@ -757,8 +825,16 @@ export default class PosPage {
     this.focusSearch();
   }
 
-  protected discard(id: string): void {
-    this.saveParked(unpark(this.parked(), id).rest);
+  protected async discard(id: string): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: this.translations.t('pos.confirmDiscardParked'),
+      text: this.translations.t('pos.discardParkedText'),
+      icon: 'danger',
+      confirmText: this.translations.t('pos.discard'),
+    });
+    if (ok) {
+      this.saveParked(unpark(this.parked(), id).rest);
+    }
   }
 
   /** A new sale: what is on screen is parked, not lost. */
@@ -771,8 +847,17 @@ export default class PosPage {
     }
   }
 
-  protected cancelSale(): void {
-    if (this.lines().length && !window.confirm(this.translations.t('pos.confirmCancelSale'))) {
+  protected async cancelSale(): Promise<void> {
+    if (
+      this.lines().length &&
+      !(await this.confirm.ask({
+        title: this.translations.t('pos.confirmCancelSale'),
+        text: this.translations.t('pos.cancelSaleText'),
+        icon: 'danger',
+        confirmText: this.translations.t('pos.cancelSale'),
+        cancelText: this.translations.t('pos.keepSale'),
+      }))
+    ) {
       return;
     }
     this.clear();
@@ -782,7 +867,13 @@ export default class PosPage {
   // ---------------------------------------------------------------- shortcuts
 
   private modalOpen(): boolean {
-    return this.rxOpen() || !!this.receipt() || !!this.serialFor() || this.parkedOpen();
+    return (
+      this.rxOpen() ||
+      !!this.receipt() ||
+      !!this.serialFor() ||
+      this.parkedOpen() ||
+      !!this.confirm.current()
+    );
   }
 
   /** F2 search, F4 park, F9 complete the sale. */
@@ -1104,6 +1195,7 @@ export default class PosPage {
     void this.checkout();
   }
 
+  /** Completes the sale: checks it, asks for confirmation with its figures, then sends it. */
   protected async checkout(): Promise<void> {
     if (this.busy()) {
       return; // a second click before the first one's request has come back
@@ -1144,13 +1236,37 @@ export default class PosPage {
     if (
       this.change() > 0 &&
       tendered > Math.max(this.totals().total * 5, this.totals().total + 100) &&
-      !window.confirm(
-        this.translations.t('confirm.largeChange', {
+      !(await this.confirm.ask({
+        title: this.translations.t('pos.checkChange'),
+        text: this.translations.t('confirm.largeChange', {
           tendered: formatMoney(tendered, this.base()),
           change: formatMoney(this.change(), this.base()),
         }),
-      )
+        icon: 'warning',
+        confirmText: this.translations.t('pos.changeIsRight'),
+      }))
     ) {
+      return;
+    }
+    const t = (key: string, params?: Parameters<Translations['t']>[1]) =>
+      this.translations.t(key, params);
+    const money = (value: number) => formatMoney(value, this.base());
+    const sure = await this.confirm.ask({
+      title: t('pos.confirmComplete'),
+      text: t('pos.confirmCompleteText'),
+      details: [
+        {
+          label: t('pos.items'),
+          value: t('pos.linesAndUnits', { lines: lines.length, units: this.totals().items }),
+        },
+        { label: t('pos.total'), value: money(this.totals().total) },
+        { label: t('pos.paid'), value: money(this.paid()) },
+        ...(this.change() > 0 ? [{ label: t('pos.change'), value: money(this.change()) }] : []),
+      ],
+      icon: 'question',
+      confirmText: t('ui.l.completeSale'),
+    });
+    if (!sure || this.busy()) {
       return;
     }
     const request: CheckoutRequest = {

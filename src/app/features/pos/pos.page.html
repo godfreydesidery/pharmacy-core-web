@@ -505,8 +505,9 @@
                 type="number"
                 min="1"
                 [value]="entryQty()"
+                (input)="typeEntryQty($any($event.target).value)"
                 (change)="setEntryQty(+$any($event.target).value)"
-                (keydown.enter)="addFromEntry()"
+                (keydown.enter)="setEntryQty(+$any($event.target).value); addFromEntry()"
                 [attr.aria-label]="'pos.qty' | t"
               />
               <button
@@ -528,14 +529,26 @@
               {{ entryProduct() ? (entryPrice() * entryQty() | money) : '—' }}
             </div>
           </div>
-          <button
-            type="button"
-            class="btn primary add"
-            [disabled]="!entryProduct() || available(entryProduct()!) <= 0"
-            (click)="addFromEntry()"
-          >
-            <app-icon name="plus" [size]="16" /> {{ 'pos.add' | t }}
-          </button>
+          <div class="entry-actions">
+            <button
+              type="button"
+              class="btn primary add"
+              [disabled]="!entryProduct() || available(entryProduct()!) <= 0"
+              (click)="addFromEntry()"
+            >
+              <app-icon name="plus" [size]="16" /> {{ 'pos.add' | t }}
+            </button>
+            <button
+              type="button"
+              class="btn clear-entry"
+              [disabled]="!entryProduct() && entryQty() === 1"
+              (click)="clearEntry()"
+              [title]="'pos.clearEntry' | t"
+              [attr.aria-label]="'pos.clearEntry' | t"
+            >
+              <app-icon name="x" [size]="16" />
+            </button>
+          </div>
         </div>
 
         <!-- The cart. -->
