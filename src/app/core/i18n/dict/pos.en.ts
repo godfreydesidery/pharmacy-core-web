@@ -67,7 +67,7 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.linesAndUnits': '{{lines}} lines · {{units}} units',
   'pos.linesCount': '{{count}} lines',
   'pos.noParkedSales': 'The sale list is empty',
-  'pos.noParkedSalesHint': 'Park a sale (F4) to serve someone else and pick it up again here.',
+  'pos.noParkedSalesHint': 'Park a sale to serve someone else and pick it up again here.',
   'pos.outOfStock': 'Out of stock',
   'pos.parkThisSale': 'Park this sale',
   'pos.parkedHint':

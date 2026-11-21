@@ -40,7 +40,7 @@
     @if (tillShifts) {
       <app-shift-bar />
     }
-    <div class="till no-print">
+    <div class="till no-print" [style.padding-bottom.px]="roomBelow()">
       <!-- The three cards: the sale, who is buying, and how they pay. -->
       <div class="till-cards">
         <section class="card till-card">
@@ -337,10 +337,12 @@
             }
             <div class="quick">
               <button type="button" class="chip" (click)="exact()">{{ 'pos.exact' | t }}</button>
-              @for (amount of quickAmounts(); track amount) {
-                <button type="button" class="chip" (click)="quickCash(amount)">
-                  {{ amount | money: payments()[0]?.currency ?? undefined }}
-                </button>
+              @if (quickCashEnabled) {
+                @for (amount of quickAmounts(); track amount) {
+                  <button type="button" class="chip" (click)="quickCash(amount)">
+                    {{ amount | money: payments()[0]?.currency ?? undefined }}
+                  </button>
+                }
               }
               <button type="button" class="chip split-chip" (click)="addPayment()">
                 {{ 'pos.split' | t }}
@@ -396,7 +398,6 @@
             >
               <app-icon name="check" [size]="18" />
               {{ busy() ? ('ui.l.completing' | t) : ('ui.l.completeSale' | t) }}
-              <kbd>F9</kbd>
             </button>
           </div>
         </section>
@@ -408,12 +409,6 @@
           (lines().length ? 'pos.saleInProgress' : 'pos.newSale') | t
         }}</span>
         <span class="muted">{{ 'pos.startedAt' | t: { time: clock(startedAt()) } }}</span>
-        <span class="keys">
-          <span><kbd>F2</kbd> {{ 'pos.keySearch' | t }}</span>
-          <span><kbd>Enter</kbd> {{ 'pos.keyAdd' | t }}</span>
-          <span><kbd>F4</kbd> {{ 'pos.keyPark' | t }}</span>
-          <span><kbd>F9</kbd> {{ 'pos.keyPay' | t }}</span>
-        </span>
       </section>
 
       <section class="card cart-card">
@@ -429,7 +424,7 @@
               [class.open]="suggestOpen()"
               aria-haspopup="listbox"
               [attr.aria-expanded]="suggestOpen()"
-              (mousedown)="$event.preventDefault()"
+              (mousedown)="$event.preventDefault(); notePointer($event)"
               (click)="togglePicker()"
               (keydown)="boxKey($event)"
               autofocus
@@ -441,7 +436,7 @@
               <app-icon class="s2-arrow" name="chevron-right" [size]="16" />
             </button>
             @if (suggestOpen()) {
-              <div class="suggest" [class.up]="suggestUp()" [style.max-height.px]="suggestMax()">
+              <div class="suggest" [style.max-height.px]="suggestMax()">
                 <div class="s2-search">
                   <input
                     #searchBox
@@ -467,7 +462,7 @@
                         [attr.aria-selected]="i === highlight()"
                         [disabled]="available(p) <= 0"
                         (mousedown)="$event.preventDefault()"
-                        (mouseenter)="highlight.set(i)"
+                        (mousemove)="hover(i, $event)"
                         (click)="chooseItem(p)"
                       >
                         <span class="opt-name">{{ p.name }}</span>
@@ -545,7 +540,7 @@
             [disabled]="!entryProduct() || available(entryProduct()!) <= 0"
             (click)="addFromEntry()"
           >
-            <app-icon name="plus" [size]="16" /> {{ 'pos.add' | t }} <kbd>Enter</kbd>
+            <app-icon name="plus" [size]="16" /> {{ 'pos.add' | t }}
           </button>
         </div>
 
