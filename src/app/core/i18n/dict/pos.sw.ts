@@ -78,6 +78,8 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.price': 'Bei',
   'pos.removeLine': 'Ondoa mstari',
   'pos.remove': 'Ondoa',
+  'pos.selectItem': 'Chagua bidhaa…',
+  'pos.typeAtLeast': 'Andika herufi {{count}} au zaidi',
   'pos.leftCount': 'zimebaki {{count}}',
   'pos.sn': 'Na.',
   'pos.code': 'Msimbo',

@@ -280,15 +280,105 @@ kbd {
 .suggest {
   position: absolute;
   z-index: 20;
-  top: calc(100% + 6px);
+  top: calc(100% + 4px);
   left: 0;
-  width: min(640px, 92vw);
+  width: min(560px, 92vw);
+  min-width: 100%;
   max-height: 420px;
-  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius);
+  border-radius: var(--radius-sm);
   box-shadow: var(--shadow);
+}
+.s2-box {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 42px;
+  padding: 0 12px;
+  border: 2px solid var(--primary);
+  border-radius: var(--radius-sm);
+  background: var(--surface);
+  box-shadow: var(--ring);
+  color: var(--primary);
+  cursor: pointer;
+  text-align: left;
+}
+.s2-value {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 500;
+}
+.s2-value.placeholder {
+  color: var(--faint);
+  font-weight: 400;
+}
+.s2-arrow {
+  transform: rotate(90deg);
+  color: var(--muted);
+  transition: transform 0.15s;
+}
+.s2-box.open .s2-arrow {
+  transform: rotate(-90deg);
+}
+.s2-search {
+  padding: 8px;
+  border-bottom: 1px solid var(--border);
+}
+.s2-search input {
+  width: 100%;
+  height: 34px;
+  padding: 0 10px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 13.5px;
+  outline: none;
+}
+.s2-search input:focus {
+  border-color: var(--primary);
+}
+.s2-results {
+  overflow-y: auto;
+  min-height: 0;
+}
+/* The dropdown rolls open from the box: down below it, up above it. */
+.suggest {
+  animation: s2-drop 0.2s ease-out;
+}
+.suggest.up {
+  animation-name: s2-rise;
+}
+@keyframes s2-drop {
+  from {
+    clip-path: inset(0 0 100% 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@keyframes s2-rise {
+  from {
+    clip-path: inset(100% 0 0 0);
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .suggest {
+    animation: none;
+  }
 }
 .suggest.up {
   top: auto;
@@ -297,16 +387,17 @@ kbd {
 .opt {
   width: 100%;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto 90px;
+  grid-template-columns: minmax(0, 1fr) auto 100px;
   gap: 12px;
   align-items: center;
-  padding: 9px 14px;
+  padding: 8px 12px;
   border: 0;
   border-bottom: 1px solid var(--border);
   background: none;
   text-align: left;
   cursor: pointer;
   color: var(--text);
+  font-size: 13.5px;
 }
 .opt:last-child {
   border-bottom: 0;
@@ -325,26 +416,23 @@ kbd {
 }
 .opt-name {
   min-width: 0;
-}
-.opt-name b,
-.opt-name small {
-  display: block;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 500;
 }
-.opt-name small {
+.opt-stock {
   color: var(--muted);
   font-size: 12px;
+  white-space: nowrap;
 }
-.opt-flags {
-  display: flex;
-  gap: 4px;
-  align-items: center;
+.opt-stock.out {
+  color: var(--red);
 }
 .opt-price {
   text-align: right;
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
 }
 
 /* Cart */

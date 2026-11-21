@@ -63,6 +63,8 @@ import { ParkedSale, park, parkedKey, readParked, unpark, writeParked } from './
 
 /** How many suggestions the entry row offers under the search box. */
 const SUGGESTIONS = 8;
+/** Letters typed before the item list opens, so it does not pop up on every key. */
+const MIN_SEARCH = 2;
 
 const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
   { method: 'CASH', label: 'Cash', icon: 'cash' },
@@ -210,13 +212,13 @@ export default class PosPage {
   protected readonly tillShifts = TILL_SHIFTS_ENABLED;
 
   protected readonly q = signal('');
-  private readonly query = debounced(this.q, 200);
+  protected readonly query = debounced(this.q, 200);
   protected readonly categoryUid = signal<string | null>(null);
   protected readonly categories = loaded<Category[]>(() =>
     this.session.can('catalogue.view') ? { path: '/categories', options: { silent: true } } : null,
   );
   protected readonly products = loaded<Page<SellableProduct>>(() =>
-    this.session.branch()
+    this.session.branch() && this.query().trim().length >= MIN_SEARCH
       ? {
           path: '/pos/products',
           query: { q: this.query(), categoryUid: this.categoryUid(), limit: 60 },
@@ -385,20 +387,37 @@ export default class PosPage {
 
   // ---------------------------------------------------------------- entry row
 
+  /**
+   * The item picker works like select2: a box showing the chosen item; opening it drops down a
+   * search field, and from the second letter the matching items. Choosing one fills the box and
+   * moves to the quantity; Enter there (or Add) puts it in the cart.
+   */
+  private readonly pickerBox = viewChild<ElementRef<HTMLButtonElement>>('pickerBox');
   private readonly searchBox = viewChild<ElementRef<HTMLInputElement>>('searchBox');
-  /** The suggestions under the search box, and the one Enter will add. */
+  private readonly qtyBox = viewChild<ElementRef<HTMLInputElement>>('qtyBox');
+  /** Enough letters typed to search (and show the items). */
+  protected readonly searching = computed(() => this.q().trim().length >= MIN_SEARCH);
   protected readonly suggestions = computed(() =>
-    (this.products.value()?.items ?? []).slice(0, SUGGESTIONS),
+    this.searching() ? (this.products.value()?.items ?? []).slice(0, SUGGESTIONS) : [],
   );
   protected readonly suggestOpen = signal(false);
   protected readonly highlight = signal(0);
+  /** New results highlight the first item in stock (out-of-stock ones cannot be chosen). */
+  private readonly highlightWatch = effect(() => {
+    const list = this.suggestions();
+    untracked(() =>
+      this.highlight.set(
+        Math.max(
+          0,
+          list.findIndex((p) => available(p) > 0),
+        ),
+      ),
+    );
+  });
   protected readonly entryQty = signal(1);
-  /** The item Enter will add: none until the cashier searches or opens the suggestions. */
-  protected readonly entryProduct = computed<SellableProduct | null>(() =>
-    this.q().trim() || this.suggestOpen()
-      ? (this.suggestions()[Math.min(this.highlight(), this.suggestions().length - 1)] ?? null)
-      : null,
-  );
+  /** The item chosen in the picker: what Add puts in the cart. */
+  protected readonly chosen = signal<SellableProduct | null>(null);
+  protected readonly entryProduct = this.chosen.asReadonly();
   protected readonly entryPrice = computed(() => {
     const product = this.entryProduct();
     return product ? (this.cardPrices()[product.productUid]?.unitPrice ?? product.sellingPrice) : 0;
@@ -409,60 +428,173 @@ export default class PosPage {
   protected search(value: string): void {
     this.q.set(value);
     this.highlight.set(0);
-    this.openSuggest();
   }
 
-  /** Whether the suggestions open above the search box, and how tall they may grow. */
+  /** Whether the dropdown opens above the box, and how tall it may grow. */
   protected readonly suggestUp = signal(false);
   protected readonly suggestMax = signal(420);
 
   /**
-   * Opens the suggestions where they fit: below the search box, or above it when the box sits low
+   * Opens the dropdown with the cursor in its search field, starting it with `typed` (a key pressed
+   * on the closed box, or a scanner's first digit). It opens above the box when the box sits low
    * on the screen (the cards above push it down on a laptop), so the items stay in view.
    */
-  protected openSuggest(): void {
-    this.suggestOpen.set(true);
-    const wrap = this.searchBox()?.nativeElement.closest('.entry-search');
-    if (!wrap) {
-      return;
+  protected openPicker(typed = ''): void {
+    if (!this.suggestOpen()) {
+      this.q.set(typed);
+      this.highlight.set(0);
+      const box = this.pickerBox()?.nativeElement.getBoundingClientRect();
+      if (box) {
+        const topBar = 72;
+        const below = window.innerHeight - box.bottom - 12;
+        const above = box.top - topBar - 12;
+        const up = below < 300 && above > below;
+        this.suggestUp.set(up);
+        this.suggestMax.set(Math.max(180, Math.min(420, up ? above : below)));
+      }
+      this.suggestOpen.set(true);
+    } else if (typed) {
+      this.q.set(this.q() + typed);
     }
-    const box = wrap.getBoundingClientRect();
-    const topBar = 72;
-    const below = window.innerHeight - box.bottom - 12;
-    const above = box.top - topBar - 12;
-    const up = below < 300 && above > below;
-    this.suggestUp.set(up);
-    this.suggestMax.set(Math.max(160, Math.min(420, up ? above : below)));
+    setTimeout(() => this.searchBox()?.nativeElement.focus());
   }
 
-  /** Arrows move through the suggestions, Enter adds the highlighted one, Escape closes them. */
-  protected searchKey(event: KeyboardEvent): void {
-    const count = this.suggestions().length;
-    if (event.key === 'ArrowDown') {
+  /** Closes the dropdown; `refocus` puts the cursor back on the box (not when leaving it). */
+  protected closePicker(refocus = true): void {
+    if (!this.suggestOpen()) {
+      return;
+    }
+    this.suggestOpen.set(false);
+    this.q.set('');
+    if (refocus) {
+      setTimeout(() => this.pickerBox()?.nativeElement.focus());
+    }
+  }
+
+  protected togglePicker(): void {
+    if (this.suggestOpen()) {
+      this.closePicker();
+    } else {
+      this.openPicker();
+    }
+  }
+
+  /** On the closed box: typing opens the search with that letter; Enter adds the chosen item. */
+  protected boxKey(event: KeyboardEvent): void {
+    if (event.ctrlKey || event.metaKey || event.altKey) {
+      return;
+    }
+    if (event.key.length === 1 && event.key !== ' ') {
       event.preventDefault();
-      this.suggestOpen.set(true);
-      this.highlight.set(count ? (this.highlight() + 1) % count : 0);
-    } else if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      this.highlight.set(count ? (this.highlight() - 1 + count) % count : 0);
-    } else if (event.key === 'Enter') {
+      this.openPicker(event.key);
+    } else if (event.key === 'Enter' && this.chosen()) {
       event.preventDefault();
       this.addFromEntry();
-    } else if (event.key === 'Escape') {
-      this.suggestOpen.set(false);
+    } else if (event.key === 'Enter' || event.key === ' ' || event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.openPicker();
+    } else if (event.key === 'Backspace' || event.key === 'Delete') {
+      this.chosen.set(null);
     }
+  }
+
+  /** In the search field: arrows move, Enter chooses, Escape closes. */
+  protected searchKey(event: KeyboardEvent): void {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      this.step(1);
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.step(-1);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      void this.pickFromSearch();
+    } else if (event.key === 'Escape') {
+      event.preventDefault();
+      this.closePicker();
+    } else if (event.key === 'Tab') {
+      this.closePicker(false);
+    }
+  }
+
+  /** Moves the highlight to the next (or previous) item in stock. */
+  private step(direction: 1 | -1): void {
+    const list = this.suggestions();
+    const count = list.length;
+    let i = this.highlight();
+    for (let tried = 0; tried < count; tried++) {
+      i = (i + direction + count) % count;
+      if (available(list[i]) > 0) {
+        this.highlight.set(i);
+        return;
+      }
+    }
+  }
+
+  /**
+   * Enter in the search field. A scanned barcode or SKU that matches exactly goes straight into
+   * the cart; otherwise the highlighted item is chosen. A scanner presses Enter before the list
+   * has caught up, so then the API is asked directly.
+   */
+  private async pickFromSearch(): Promise<void> {
+    const typed = this.q().trim();
+    if (typed.length < MIN_SEARCH) {
+      return;
+    }
+    let list = this.suggestions();
+    if (this.q() !== this.query() || this.products.loading()) {
+      const page = await this.api
+        .get<Page<SellableProduct>>(
+          '/pos/products',
+          { q: typed, limit: SUGGESTIONS },
+          { silent: true },
+        )
+        .catch(() => null);
+      if (this.q().trim() !== typed) {
+        return;
+      }
+      list = page?.items ?? [];
+    }
+    const code = typed.toLowerCase();
+    const exact = list.find((p) => p.gtin === typed || (p.sku ?? '').toLowerCase() === code);
+    if (exact) {
+      if (available(exact) > 0) {
+        this.chosen.set(exact);
+        this.addFromEntry();
+      }
+      return;
+    }
+    const highlighted = list[Math.min(this.highlight(), list.length - 1)];
+    const pick =
+      highlighted && available(highlighted) > 0 ? highlighted : list.find((p) => available(p) > 0);
+    if (pick) {
+      this.chooseItem(pick);
+    }
+  }
+
+  /** Fills the box with the item and moves to the quantity. */
+  protected chooseItem(product: SellableProduct): void {
+    this.chosen.set(product);
+    this.suggestOpen.set(false);
+    this.q.set('');
+    setTimeout(() => {
+      const qty = this.qtyBox()?.nativeElement;
+      qty?.focus();
+      qty?.select();
+    });
   }
 
   protected setEntryQty(value: number): void {
     this.entryQty.set(Math.max(1, Math.floor(Number(value) || 1)));
   }
 
-  /** Adds the highlighted suggestion at the entry quantity, then readies the box for the next. */
+  /** Puts the chosen item in the cart at the entry quantity, then readies the box for the next. */
   protected addFromEntry(product: SellableProduct | null = this.entryProduct()): void {
     if (!product) {
       return;
     }
     this.add(product, this.entryQty());
+    this.chosen.set(null);
     this.q.set('');
     this.entryQty.set(1);
     this.highlight.set(0);
@@ -470,8 +602,9 @@ export default class PosPage {
     this.focusSearch();
   }
 
+  /** Puts the cursor on the item box, ready to type the next item. */
   protected focusSearch(): void {
-    this.searchBox()?.nativeElement.focus();
+    setTimeout(() => this.pickerBox()?.nativeElement.focus());
   }
 
   /** Units at or below this show amber: running low at this branch. */
@@ -623,7 +756,7 @@ export default class PosPage {
     }
     if (event.key === 'F2') {
       event.preventDefault();
-      this.focusSearch();
+      this.openPicker();
     } else if (event.key === 'F4') {
       event.preventDefault();
       this.parkSale();
@@ -907,6 +1040,7 @@ export default class PosPage {
     this.excessToAccount.set(false);
     this.startedAt.set(new Date());
     this.entryQty.set(1);
+    this.chosen.set(null);
   }
 
   protected savePrescription(): void {
