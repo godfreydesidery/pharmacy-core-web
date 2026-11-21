@@ -77,6 +77,8 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.price': 'Price',
   'pos.removeLine': 'Remove line',
   'pos.remove': 'Remove',
+  'pos.selectItem': 'Select an item…',
+  'pos.typeAtLeast': 'Type {{count}} or more letters',
   'pos.leftCount': '{{count}} left',
   'pos.sn': 'SN',
   'pos.code': 'Code',
