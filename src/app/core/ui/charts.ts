@@ -42,6 +42,55 @@ export function niceMax(value: number): number {
   return step * power;
 }
 
+/**
+ * An SVG path through the points as a smooth curve (monotone cubic, like d3's curveMonotoneX): it
+ * passes through every point and never overshoots between two of them, so a run of zero days stays
+ * on the axis and a peak is not exaggerated. Points must be in increasing x.
+ */
+export function smoothPath(points: readonly (readonly [number, number])[]): string {
+  const n = points.length;
+  if (n === 0) {
+    return '';
+  }
+  const at = ([px, py]: readonly [number, number]) => `${px.toFixed(1)},${py.toFixed(1)}`;
+  if (n === 1) {
+    return 'M' + at(points[0]);
+  }
+  // Secant slope of each segment, then a tangent at each point.
+  const secant = points.slice(1).map(([x1, y1], i) => (y1 - points[i][1]) / (x1 - points[i][0]));
+  const tangent = points.map((_, i) => {
+    if (i === 0) {
+      return secant[0];
+    }
+    if (i === n - 1) {
+      return secant[n - 2];
+    }
+    const s0 = secant[i - 1];
+    const s1 = secant[i];
+    if (s0 * s1 <= 0) {
+      return 0; // a peak, a dip or a flat run: level off here
+    }
+    const h0 = points[i][0] - points[i - 1][0];
+    const h1 = points[i + 1][0] - points[i][0];
+    const p = (s0 * h1 + s1 * h0) / (h0 + h1);
+    return Math.sign(s0) * Math.min(Math.abs(s0), Math.abs(s1), 0.5 * Math.abs(p)) * 2;
+  });
+  let d = 'M' + at(points[0]);
+  for (let i = 0; i < n - 1; i++) {
+    const [x0, y0] = points[i];
+    const [x1, y1] = points[i + 1];
+    const third = (x1 - x0) / 3;
+    d +=
+      'C' +
+      at([x0 + third, y0 + tangent[i] * third]) +
+      ' ' +
+      at([x1 - third, y1 - tangent[i + 1] * third]) +
+      ' ' +
+      at([x1, y1]);
+  }
+  return d;
+}
+
 /** The host's width as a signal, kept current by a ResizeObserver. */
 function observeWidth(fallback: number) {
   const host = inject(ElementRef<HTMLElement>);
@@ -204,9 +253,7 @@ export class LineChartComponent {
     const x = (i: number) => left + (i * (right - left)) / (count - 1);
     const y = (v: number) => top + (1 - v / max) * (bottom - top);
     const coords = points.map((p, i) => [x(i), y(p.value)] as const);
-    const line = coords.length
-      ? 'M' + coords.map(([cx, cy]) => `${cx.toFixed(1)},${cy.toFixed(1)}`).join('L')
-      : '';
+    const line = smoothPath(coords);
     const area = coords.length
       ? `${line}L${x(coords.length - 1)},${bottom}L${x(0)},${bottom}Z`
       : '';
