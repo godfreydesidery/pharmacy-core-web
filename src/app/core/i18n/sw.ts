@@ -97,6 +97,7 @@ export const SW: Readonly<Record<string, string>> = {
   // workspace
   'workspace.chooseWhere': 'Chagua mahali pa kufanyia kazi',
   'workspace.chooseBranch': 'Chagua tawi',
+  'workspace.opening': 'Inafungua duka lako…',
   'workspace.signedInAs': 'Umeingia kama {{name}}',
   'workspace.allBranches': 'Matawi yote',
   'workspace.allBranchesDetail': 'Dashibodi na ripoti za matawi yote',

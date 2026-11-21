@@ -34,7 +34,16 @@ interface Pending {
         <header>
           <app-logo [size]="38" />
           <div class="grow">
-            <h1>{{ (pending() ? 'workspace.chooseBranch' : 'workspace.chooseWhere') | t }}</h1>
+            <h1>
+              {{
+                (deciding()
+                  ? 'workspace.opening'
+                  : pending()
+                    ? 'workspace.chooseBranch'
+                    : 'workspace.chooseWhere'
+                ) | t
+              }}
+            </h1>
             <p class="muted">
               {{ 'workspace.signedInAs' | t: { name: session.user()?.name } }} ·
               {{ session.user()?.email }}
@@ -45,7 +54,9 @@ interface Pending {
           </button>
         </header>
 
-        @if (pending(); as p) {
+        @if (deciding()) {
+          <div class="empty">{{ 'common.loading' | t }}</div>
+        } @else if (pending(); as p) {
           <button class="btn ghost sm back" type="button" (click)="pending.set(null)">
             <app-icon name="arrow-left" [size]="15" /> {{ p.tenant.name }}
           </button>
@@ -256,6 +267,12 @@ export default class WorkspacePage implements OnInit {
   private readonly route = inject(ActivatedRoute);
 
   protected readonly pending = signal<Pending | null>(null);
+  /**
+   * True until the page knows whether to choose for the user: with one pharmacy (and one branch)
+   * it goes straight in, so the chooser must not flash first.
+   */
+  protected readonly deciding = signal(true);
+  private entering = false;
   protected readonly tenants = signal<Tenant[]>([]);
   protected readonly loading = signal(false);
   protected readonly query = signal('');
@@ -271,10 +288,18 @@ export default class WorkspacePage implements OnInit {
     } catch {
       /* the stored session is used as it is */
     }
-    if (this.session.isRoot()) {
-      await this.loadTenants();
-    } else if (this.session.memberships().length === 1 && !this.session.tenant()) {
-      await this.pickMembership(this.session.memberships()[0]);
+    try {
+      if (this.session.isRoot()) {
+        this.deciding.set(false);
+        await this.loadTenants();
+      } else if (this.session.memberships().length === 1 && !this.session.tenant()) {
+        // One pharmacy: straight in, and straight to its branch when there is only one.
+        await this.pickMembership(this.session.memberships()[0]);
+      }
+    } finally {
+      if (!this.entering) {
+        this.deciding.set(false);
+      }
     }
   }
 
@@ -319,6 +344,9 @@ export default class WorkspacePage implements OnInit {
   }
 
   protected enter(pending: Pending, branch: BranchRef | null): void {
+    // Keep "Opening…" on screen while the first page loads, rather than the chooser.
+    this.entering = true;
+    this.deciding.set(true);
     if (pending.membership) {
       this.session.enterMembership(pending.membership, pending.branches, branch);
     } else {

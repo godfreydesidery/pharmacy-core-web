@@ -100,6 +100,7 @@ export const EN: Readonly<Record<string, string>> = {
   // workspace
   'workspace.chooseWhere': 'Choose where to work',
   'workspace.chooseBranch': 'Choose a branch',
+  'workspace.opening': 'Opening your pharmacy…',
   'workspace.signedInAs': 'Signed in as {{name}}',
   'workspace.allBranches': 'All branches',
   'workspace.allBranchesDetail': 'Dashboards and reports across every branch',
