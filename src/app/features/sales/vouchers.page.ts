@@ -6,6 +6,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 
 /** Sales → Vouchers: sell prepaid vouchers and gift cards, and see their balances. */
@@ -116,6 +117,7 @@ export default class VouchersPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   protected readonly paidByOptions = ['CASH', 'MOBILE_MONEY', 'CARD', 'BANK_TRANSFER'];
   protected readonly open = signal(false);
   protected readonly busy = signal(false);
@@ -150,7 +152,13 @@ export default class VouchersPage {
   }
 
   protected async voidVoucher(v: Voucher): Promise<void> {
-    if (!window.confirm(this.translations.t('vouchers.confirmVoid', { code: v.code }))) {
+    if (
+      !(await this.confirm.ask({
+        title: this.translations.t('common.areYouSure'),
+        text: this.translations.t('vouchers.confirmVoid', { code: v.code }),
+        icon: 'danger',
+      }))
+    ) {
       return;
     }
     await this.api.post(`/vouchers/${v.uid}/void`, {});
