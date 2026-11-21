@@ -40,7 +40,7 @@
     @if (tillShifts) {
       <app-shift-bar />
     }
-    <div class="till no-print">
+    <div class="till no-print" [style.padding-bottom.px]="roomBelow()">
       <!-- The three cards: the sale, who is buying, and how they pay. -->
       <div class="till-cards">
         <section class="card till-card">
@@ -424,7 +424,7 @@
               [class.open]="suggestOpen()"
               aria-haspopup="listbox"
               [attr.aria-expanded]="suggestOpen()"
-              (mousedown)="$event.preventDefault()"
+              (mousedown)="$event.preventDefault(); notePointer($event)"
               (click)="togglePicker()"
               (keydown)="boxKey($event)"
               autofocus
@@ -436,7 +436,7 @@
               <app-icon class="s2-arrow" name="chevron-right" [size]="16" />
             </button>
             @if (suggestOpen()) {
-              <div class="suggest" [class.up]="suggestUp()" [style.max-height.px]="suggestMax()">
+              <div class="suggest" [style.max-height.px]="suggestMax()">
                 <div class="s2-search">
                   <input
                     #searchBox
@@ -462,7 +462,7 @@
                         [attr.aria-selected]="i === highlight()"
                         [disabled]="available(p) <= 0"
                         (mousedown)="$event.preventDefault()"
-                        (mouseenter)="highlight.set(i)"
+                        (mousemove)="hover(i, $event)"
                         (click)="chooseItem(p)"
                       >
                         <span class="opt-name">{{ p.name }}</span>

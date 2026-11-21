@@ -65,6 +65,8 @@ import { ParkedSale, park, parkedKey, readParked, unpark, writeParked } from './
 const SUGGESTIONS = 8;
 /** Letters typed before the item list opens, so it does not pop up on every key. */
 const MIN_SEARCH = 2;
+/** The item dropdown's height: the search field and about seven items. */
+const DROPDOWN_HEIGHT = 360;
 
 const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
   { method: 'CASH', label: 'Cash', icon: 'cash' },
@@ -210,10 +212,10 @@ export default class PosPage {
   private readonly shiftBar = viewChild(ShiftBarComponent);
   /** The shift strip shows only when till shifts are switched on. */
   protected readonly tillShifts = TILL_SHIFTS_ENABLED;
-
-  protected readonly q = signal('');
   /** The quick cash amounts show only when switched on; Exact always shows. */
   protected readonly quickCashEnabled = QUICK_CASH_AMOUNTS_ENABLED;
+
+  protected readonly q = signal('');
   protected readonly query = debounced(this.q, 200);
   protected readonly categoryUid = signal<string | null>(null);
   protected readonly categories = loaded<Category[]>(() =>
@@ -432,33 +434,47 @@ export default class PosPage {
     this.highlight.set(0);
   }
 
-  /** Whether the dropdown opens above the box, and how tall it may grow. */
-  protected readonly suggestUp = signal(false);
-  protected readonly suggestMax = signal(420);
+  /** How tall the dropdown may grow. */
+  protected readonly suggestMax = signal(DROPDOWN_HEIGHT);
+  /**
+   * Blank space under the till so the page can scroll the entry row up (an empty cart is short).
+   * It only grows, so the page never jumps back when the dropdown closes.
+   */
+  protected readonly roomBelow = signal(0);
 
   /**
    * Opens the dropdown with the cursor in its search field, starting it with `typed` (a key pressed
-   * on the closed box, or a scanner's first digit). It opens above the box when the box sits low
-   * on the screen (the cards above push it down on a laptop), so the items stay in view.
+   * on the closed box, or a scanner's first digit). Like select2 it always drops down under the
+   * box, inside the entry; when the box sits low (the cards above push it down on a laptop) the
+   * page first scrolls up so the whole dropdown is in view.
    */
   protected openPicker(typed = ''): void {
     if (!this.suggestOpen()) {
       this.q.set(typed);
       this.highlight.set(0);
-      const box = this.pickerBox()?.nativeElement.getBoundingClientRect();
-      if (box) {
-        const topBar = 72;
-        const below = window.innerHeight - box.bottom - 12;
-        const above = box.top - topBar - 12;
-        const up = below < 300 && above > below;
-        this.suggestUp.set(up);
-        this.suggestMax.set(Math.max(180, Math.min(420, up ? above : below)));
-      }
+      this.makeRoomBelow();
       this.suggestOpen.set(true);
     } else if (typed) {
       this.q.set(this.q() + typed);
     }
-    setTimeout(() => this.searchBox()?.nativeElement.focus());
+    setTimeout(() => this.searchBox()?.nativeElement.focus({ preventScroll: true }));
+  }
+
+  /** Scrolls the page so the box has a full dropdown's height under it. */
+  private makeRoomBelow(): void {
+    const box = this.pickerBox()?.nativeElement.getBoundingClientRect();
+    if (!box) {
+      return;
+    }
+    const short = box.bottom + DROPDOWN_HEIGHT + 16 - window.innerHeight;
+    if (short <= 0) {
+      return;
+    }
+    const scrollable = document.documentElement.scrollHeight - window.innerHeight - window.scrollY;
+    if (scrollable < short) {
+      this.roomBelow.update((room) => room + short - scrollable);
+    }
+    setTimeout(() => window.scrollBy({ top: short, behavior: 'smooth' }));
   }
 
   /** Closes the dropdown; `refocus` puts the cursor back on the box (not when leaving it). */
@@ -516,6 +532,24 @@ export default class PosPage {
       this.closePicker();
     } else if (event.key === 'Tab') {
       this.closePicker(false);
+    }
+  }
+
+  /**
+   * The mouse highlights the item under it, but only when it really moves: when the page scrolls
+   * the dropdown under a still pointer, the highlight stays where the keyboard put it.
+   */
+  private pointer = { x: -1, y: -1 };
+  protected notePointer(event: MouseEvent): void {
+    this.pointer = { x: event.clientX, y: event.clientY };
+  }
+  protected hover(index: number, event: MouseEvent): void {
+    if (event.clientX === this.pointer.x && event.clientY === this.pointer.y) {
+      return;
+    }
+    this.pointer = { x: event.clientX, y: event.clientY };
+    if (available(this.suggestions()[index]) > 0) {
+      this.highlight.set(index);
     }
   }
 

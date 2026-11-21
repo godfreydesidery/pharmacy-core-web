@@ -352,12 +352,9 @@ kbd {
   overflow-y: auto;
   min-height: 0;
 }
-/* The dropdown rolls open from the box: down below it, up above it. */
+/* The dropdown rolls down from the box. */
 .suggest {
   animation: s2-drop 0.2s ease-out;
-}
-.suggest.up {
-  animation-name: s2-rise;
 }
 @keyframes s2-drop {
   from {
@@ -367,22 +364,10 @@ kbd {
     clip-path: inset(0 0 0 0);
   }
 }
-@keyframes s2-rise {
-  from {
-    clip-path: inset(100% 0 0 0);
-  }
-  to {
-    clip-path: inset(0 0 0 0);
-  }
-}
 @media (prefers-reduced-motion: reduce) {
   .suggest {
     animation: none;
   }
-}
-.suggest.up {
-  top: auto;
-  bottom: calc(100% + 6px);
 }
 .opt {
   width: 100%;
@@ -489,7 +474,14 @@ kbd {
   font-weight: 700;
 }
 .cart-table .name {
-  min-width: 190px;
+  min-width: 170px;
+}
+.cart-table .code,
+.cart-table .batch {
+  font-size: 12px;
+}
+.cart-table .remove {
+  padding: 0 9px;
 }
 .cart-table .code,
 .cart-table .uom,
