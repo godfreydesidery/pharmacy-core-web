@@ -16,6 +16,7 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { ToastService } from '../../core/ui/toast.service';
 import { InvitationsPanelComponent } from './invitations-panel.component';
 import { Translations } from '../../core/i18n/translations.store';
+import { SessionStore } from '../../core/session/session.store';
 
 @Component({
   selector: 'app-users',
@@ -29,6 +30,11 @@ import { Translations } from '../../core/i18n/translations.store';
           <p class="sub">{{ 'ui.users.subtitle' | t }}</p>
         </div>
         <div class="actions">
+          @if (session.can('settings.manage')) {
+            <a class="btn" routerLink="/admin/audit" [queryParams]="{ action: 'SIGN_IN' }"
+              ><app-icon name="clock" [size]="16" /> {{ 'ui.users.signInHistory' | t }}</a
+            >
+          }
           <a class="btn" routerLink="/admin/roles"
             ><app-icon name="shield" [size]="16" /> {{ 'ui.users.roles' | t }}</a
           >
@@ -234,6 +240,7 @@ export default class UsersPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  protected readonly session = inject(SessionStore);
   protected readonly q = signal('');
   private readonly query = debounced(this.q);
   protected readonly list = pagedList<Member>(() => ({

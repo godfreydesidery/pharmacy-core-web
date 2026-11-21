@@ -1,6 +1,10 @@
 /** English texts of the admin pages. */
 export const ADMIN_EN: Readonly<Record<string, string>> = {
   'admin.allRecords': 'All records',
+  'admin.activity': 'Activity',
+  'admin.allActivity': 'All activity',
+  'admin.signIns': 'Sign-ins',
+  'admin.signOuts': 'Sign-outs',
   'admin.when': 'When',
   'admin.who': 'Who',
   'admin.action': 'Action',

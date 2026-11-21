@@ -1,9 +1,18 @@
 import { DatePipe } from '@angular/common';
-import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  computed,
+  inject,
+  input,
+  linkedSignal,
+  signal,
+} from '@angular/core';
 import { Translations } from '../../core/i18n/translations.store';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { AuditEntry } from '../../core/api/security.models';
 import { pagedList } from '../../core/data/data';
+import { describeDevice } from '../../core/ui/device';
 import { IconComponent } from '../../core/ui/icon.component';
 import { DrawerComponent } from '../../core/ui/overlay.components';
 import { PagerComponent } from '../../core/ui/widgets';
@@ -26,6 +35,16 @@ interface Change {
   template: `
     <div class="card">
       <div class="toolbar">
+        <select
+          class="input"
+          [value]="action()"
+          (change)="action.set($any($event.target).value)"
+          [attr.aria-label]="'admin.activity' | t"
+        >
+          <option value="">{{ 'admin.allActivity' | t }}</option>
+          <option value="SIGN_IN">{{ 'admin.signIns' | t }}</option>
+          <option value="SIGN_OUT">{{ 'admin.signOuts' | t }}</option>
+        </select>
         <label class="search">
           <app-icon name="search" [size]="16" />
           <input placeholder="Actor (email)…" (change)="actor.set($any($event.target).value)" />
@@ -151,6 +170,10 @@ interface Change {
       flex-wrap: wrap;
       padding: 14px 16px;
     }
+    .toolbar > .input {
+      width: auto;
+      flex: 0 1 auto;
+    }
     .clickable {
       cursor: pointer;
     }
@@ -233,6 +256,10 @@ export class AuditLogComponent {
     'Expense',
     'Webhook',
   ];
+  /** Opens on one kind of activity, such as SIGN_IN for the sign-in history. */
+  readonly initialAction = input('');
+
+  protected readonly action = linkedSignal(() => this.initialAction());
   protected readonly actor = signal('');
   protected readonly entityType = signal('');
   protected readonly from = signal('');
@@ -242,6 +269,7 @@ export class AuditLogComponent {
   protected readonly list = pagedList<AuditEntry>(() => ({
     path: this.path(),
     query: {
+      action: this.action(),
       actor: this.actor(),
       entityType: this.entityType(),
       from: this.from(),
@@ -289,6 +317,22 @@ export class AuditLogComponent {
   }
 
   protected summary(entry: AuditEntry): string {
+    if (entry.action === 'SIGN_IN' && entry.after) {
+      // How, from what, and where: "Password · Chrome on Windows · 41.59.1.20".
+      const { method, userAgent, ip } = entry.after as Record<string, string | null | undefined>;
+      const t: Parameters<typeof describeDevice>[1] = (key, params) =>
+        this.translations.t(key, params);
+      const text = [
+        method
+          ? this.translations.t(`ui.sec.method.${method}`, undefined, method.toLowerCase())
+          : '',
+        describeDevice(userAgent, t),
+        ip ?? '',
+      ]
+        .filter(Boolean)
+        .join(' · ');
+      return text.charAt(0).toUpperCase() + text.slice(1);
+    }
     const keys = Object.keys(entry.after ?? entry.before ?? {});
     if (!keys.length) {
       return '';

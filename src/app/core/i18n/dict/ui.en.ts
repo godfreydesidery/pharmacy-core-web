@@ -123,6 +123,7 @@ export const UI_EN: Readonly<Record<string, string>> = {
   'ui.users.user': 'User',
   'ui.users.role': 'Role',
   'ui.users.branches': 'Branches',
+  'ui.users.signInHistory': 'Sign-in history',
   'ui.users.lastSignIn': 'Last sign-in',
   'ui.users.status': 'Status',
   'ui.users.empty': 'No users',

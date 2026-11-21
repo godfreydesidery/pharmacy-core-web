@@ -125,6 +125,7 @@ export const UI_SW: Readonly<Record<string, string>> = {
   'ui.users.user': 'Mtumiaji',
   'ui.users.role': 'Jukumu',
   'ui.users.branches': 'Matawi',
+  'ui.users.signInHistory': 'Historia ya kuingia',
   'ui.users.lastSignIn': 'Aliingia mwisho',
   'ui.users.status': 'Hali',
   'ui.users.empty': 'Hakuna watumiaji',

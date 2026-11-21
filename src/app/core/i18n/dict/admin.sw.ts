@@ -1,6 +1,10 @@
 /** Swahili texts of the admin pages. */
 export const ADMIN_SW: Readonly<Record<string, string>> = {
   'admin.allRecords': 'Rekodi zote',
+  'admin.activity': 'Shughuli',
+  'admin.allActivity': 'Shughuli zote',
+  'admin.signIns': 'Walioingia',
+  'admin.signOuts': 'Waliotoka',
   'admin.when': 'Lini',
   'admin.who': 'Nani',
   'admin.action': 'Kitendo',
