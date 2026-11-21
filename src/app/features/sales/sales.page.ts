@@ -1,7 +1,7 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { SaleSummary } from '../../core/api/models';
 import { debounced, pagedList } from '../../core/data/data';
-import { downloadCsv } from '../../core/format/format';
+import { downloadCsv, isoDay } from '../../core/format/format';
 import { enumLabel } from '../../core/format/pipes';
 import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
@@ -50,20 +50,34 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               <option value="PARTIALLY_RETURNED">{{ 'sales.partiallyReturned' | t }}</option>
               <option value="RETURNED">{{ 'sales.returned' | t }}</option>
             </select>
-            <input
-              class="input"
+            <select
+              class="select"
               style="width:auto"
-              type="date"
-              (change)="from.set($any($event.target).value)"
-              [attr.aria-label]="'sales.from' | t"
-            />
-            <input
-              class="input"
-              style="width:auto"
-              type="date"
-              (change)="to.set($any($event.target).value)"
-              [attr.aria-label]="'sales.to' | t"
-            />
+              [value]="period()"
+              (change)="period.set($any($event.target).value)"
+              [attr.aria-label]="'sales.period' | t"
+            >
+              <option value="DAY">{{ 'sales.last24Hours' | t }}</option>
+              <option value="RANGE">{{ 'sales.chooseDates' | t }}</option>
+            </select>
+            @if (period() === 'RANGE') {
+              <input
+                class="input"
+                style="width:auto"
+                type="date"
+                [value]="from()"
+                (change)="from.set($any($event.target).value)"
+                [attr.aria-label]="'sales.from' | t"
+              />
+              <input
+                class="input"
+                style="width:auto"
+                type="date"
+                [value]="to()"
+                (change)="to.set($any($event.target).value)"
+                [attr.aria-label]="'sales.to' | t"
+              />
+            }
             <div class="spacer"></div>
             <button class="btn" type="button" (click)="export()">
               <app-icon name="download" [size]="16" /> {{ 'sales.export' | t }}
@@ -84,7 +98,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 </tr>
               </thead>
               <tbody>
-                @for (s of list.items(); track s.uid) {
+                @for (s of shown(); track s.uid) {
                   <tr class="clickable" [routerLink]="[s.uid]">
                     <td>
                       <div class="cell-main">
@@ -116,9 +130,9 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
             </table>
           </div>
           <app-pager
-            [count]="list.items().length"
-            [total]="list.total()"
-            [hasMore]="list.hasMore()"
+            [count]="shown().length"
+            [total]="period() === 'DAY' ? null : list.total()"
+            [hasMore]="hasMore()"
             [loading]="list.loading()"
             (more)="list.more()"
           />
@@ -131,6 +145,8 @@ export default class SalesPage {
   protected readonly session = inject(SessionStore);
   protected readonly q = signal('');
   protected readonly status = signal('');
+  /** DAY (the default): the last 24 hours. RANGE: the dates the user picks. */
+  protected readonly period = signal<'DAY' | 'RANGE'>('DAY');
   protected readonly from = signal('');
   protected readonly to = signal('');
   private readonly query = debounced(this.q);
@@ -138,9 +154,29 @@ export default class SalesPage {
     this.session.branch()
       ? {
           path: '/sales',
-          query: { q: this.query(), status: this.status(), from: this.from(), to: this.to() },
+          query: {
+            q: this.query(),
+            status: this.status(),
+            // The API filters by day; two days back covers 24 hours in any time zone, and
+            // shown() trims the rest.
+            from: this.period() === 'DAY' ? isoDay(-2) : this.from(),
+            to: this.period() === 'DAY' ? '' : this.to(),
+          },
         }
       : null,
+  );
+  /** The sales to show: in DAY, those of the last 24 hours. The list is newest first. */
+  protected readonly shown = computed(() => {
+    const items = this.list.items();
+    if (this.period() !== 'DAY') {
+      return items;
+    }
+    const since = Date.now() - 24 * 60 * 60 * 1000;
+    return items.filter((s) => new Date(s.createdAt).getTime() >= since);
+  });
+  /** In DAY, once a page reaches past 24 hours there is nothing more to load. */
+  protected readonly hasMore = computed(
+    () => this.list.hasMore() && this.shown().length === this.list.items().length,
   );
 
   private readonly translations = inject(Translations);
@@ -154,18 +190,16 @@ export default class SalesPage {
     downloadCsv(
       'sales.csv',
       ['Invoice', 'Customer', 'Date', 'Cashier', 'Payment', 'Items', 'Total', 'Status'],
-      this.list
-        .items()
-        .map((s) => [
-          s.number,
-          s.customerName ?? 'Walk-in',
-          s.createdAt,
-          s.cashierName,
-          this.methods(s),
-          s.itemCount,
-          s.total,
-          s.status,
-        ]),
+      this.shown().map((s) => [
+        s.number,
+        s.customerName ?? 'Walk-in',
+        s.createdAt,
+        s.cashierName,
+        this.methods(s),
+        s.itemCount,
+        s.total,
+        s.status,
+      ]),
     );
   }
 }
