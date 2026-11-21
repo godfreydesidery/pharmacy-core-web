@@ -37,7 +37,9 @@
   @if (!session.branch()) {
     <app-branch-required [what]="'ui.what.selling' | t" />
   } @else {
-    <app-shift-bar />
+    @if (tillShifts) {
+      <app-shift-bar />
+    }
     <div class="till no-print">
       <!-- The three cards: the sale, who is buying, and how they pay. -->
       <div class="till-cards">

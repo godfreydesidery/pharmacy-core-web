@@ -49,6 +49,7 @@ import {
 } from './cart';
 import { SerialPickerComponent } from './serial-picker.component';
 import { ShiftBarComponent } from './shift-bar.component';
+import { TILL_SHIFTS_ENABLED } from '../../core/features';
 import { productTypeOf } from '../../core/ui/product-types';
 import { ReceiptComponent } from './receipt.component';
 import { FilesService } from '../../core/files/files.service';
@@ -205,6 +206,8 @@ export default class PosPage {
   protected readonly baseValue = baseValue;
   private readonly customerLookup = viewChild<LookupComponent>('customerLookup');
   private readonly shiftBar = viewChild(ShiftBarComponent);
+  /** The shift strip shows only when till shifts are switched on. */
+  protected readonly tillShifts = TILL_SHIFTS_ENABLED;
 
   protected readonly q = signal('');
   private readonly query = debounced(this.q, 200);

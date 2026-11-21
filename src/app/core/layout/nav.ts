@@ -1,4 +1,5 @@
 import { PlanFeature } from '../api/subscription.models';
+import { TILL_SHIFTS_ENABLED } from '../features';
 
 /** The sidebar: groups of links, each shown only to sessions holding its permission. */
 export interface NavLink {
@@ -90,7 +91,9 @@ export const TENANT_NAV: NavItem[] = [
       { label: 'Sales history', path: '/sales', permission: 'sales.view' },
       { label: 'Returns', path: '/sales/returns', permission: 'sales.view' },
       { label: 'Vouchers', path: '/sales/vouchers', permission: 'sales.view' },
-      { label: 'Shifts', path: '/sales/shifts', permission: 'reports.view' },
+      ...(TILL_SHIFTS_ENABLED
+        ? [{ label: 'Shifts', path: '/sales/shifts', permission: 'reports.view' }]
+        : []),
     ],
   },
   {
