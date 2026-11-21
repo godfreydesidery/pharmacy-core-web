@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, output } from '@angular/core';
+import { Router } from '@angular/router';
 import { Tone, toneOf } from '../format/format';
 import { enumLabel } from '../format/pipes';
 import { TranslatePipe } from '../i18n/t.pipe';
 import { Translations } from '../i18n/translations.store';
 import { IconComponent } from './icon.component';
-import { ToastService } from './toast.service';
+import { Toast, ToastService } from './toast.service';
 
 /** A status as a coloured pill, such as COMPLETED or LOW_STOCK. */
 @Component({
@@ -127,7 +128,11 @@ export class PagerComponent {
   template: `
     <div class="toasts" aria-live="polite">
       @for (toast of toasts.toasts(); track toast.id) {
-        <div class="toast" [class]="'toast ' + toast.kind" (click)="toasts.dismiss(toast.id)">
+        <div
+          class="toast"
+          [class]="'toast ' + toast.kind + (toast.link ? ' linked' : '')"
+          (click)="open(toast)"
+        >
           <app-icon
             [name]="toast.kind === 'error' ? 'alert' : toast.kind === 'info' ? 'bell' : 'check'"
           />
@@ -169,6 +174,10 @@ export class PagerComponent {
     .toast.info app-icon {
       color: #93c5fd;
     }
+    .toast.linked span {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
     @keyframes in {
       from {
         transform: translateY(8px);
@@ -179,4 +188,12 @@ export class PagerComponent {
 })
 export class ToasterComponent {
   protected readonly toasts = inject(ToastService);
+  private readonly router = inject(Router);
+
+  protected open(toast: Toast): void {
+    this.toasts.dismiss(toast.id);
+    if (toast.link) {
+      void this.router.navigateByUrl(toast.link);
+    }
+  }
 }

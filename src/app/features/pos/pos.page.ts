@@ -49,6 +49,7 @@ import {
 } from './cart';
 import { SerialPickerComponent } from './serial-picker.component';
 import { ShiftBarComponent } from './shift-bar.component';
+import { TILL_SHIFTS_ENABLED } from '../../core/features';
 import { productTypeOf } from '../../core/ui/product-types';
 import { ReceiptComponent } from './receipt.component';
 import { FilesService } from '../../core/files/files.service';
@@ -205,6 +206,8 @@ export default class PosPage {
   protected readonly baseValue = baseValue;
   private readonly customerLookup = viewChild<LookupComponent>('customerLookup');
   private readonly shiftBar = viewChild(ShiftBarComponent);
+  /** The shift strip shows only when till shifts are switched on. */
+  protected readonly tillShifts = TILL_SHIFTS_ENABLED;
 
   protected readonly q = signal('');
   private readonly query = debounced(this.q, 200);
@@ -240,6 +243,11 @@ export default class PosPage {
   protected readonly taxIncluded = computed(
     () => this.settings.settings()?.pricesIncludeTax ?? false,
   );
+  /** A line's share of the sale-wide discount, as cartTotals() works it out. */
+  protected lineDiscount(line: CartLine): number {
+    const rate = Math.min(Math.max(this.discountPercent() || 0, 0), 100);
+    return round2((round2(this.priceOf(line) * line.quantity) * rate) / 100);
+  }
   protected readonly totals = computed(() =>
     cartTotals(this.lines(), this.discountPercent(), this.priceOf, this.taxIncluded()),
   );
@@ -401,7 +409,30 @@ export default class PosPage {
   protected search(value: string): void {
     this.q.set(value);
     this.highlight.set(0);
+    this.openSuggest();
+  }
+
+  /** Whether the suggestions open above the search box, and how tall they may grow. */
+  protected readonly suggestUp = signal(false);
+  protected readonly suggestMax = signal(420);
+
+  /**
+   * Opens the suggestions where they fit: below the search box, or above it when the box sits low
+   * on the screen (the cards above push it down on a laptop), so the items stay in view.
+   */
+  protected openSuggest(): void {
     this.suggestOpen.set(true);
+    const wrap = this.searchBox()?.nativeElement.closest('.entry-search');
+    if (!wrap) {
+      return;
+    }
+    const box = wrap.getBoundingClientRect();
+    const topBar = 72;
+    const below = window.innerHeight - box.bottom - 12;
+    const above = box.top - topBar - 12;
+    const up = below < 300 && above > below;
+    this.suggestUp.set(up);
+    this.suggestMax.set(Math.max(160, Math.min(420, up ? above : below)));
   }
 
   /** Arrows move through the suggestions, Enter adds the highlighted one, Escape closes them. */

@@ -6,6 +6,7 @@ import {
   effect,
   inject,
   signal,
+  untracked,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -17,10 +18,12 @@ import { SubscriptionStore } from '../subscription/subscription.store';
 import { LanguageSwitchComponent } from '../i18n/language-switch.component';
 import { BellComponent } from '../notifications/bell.component';
 import { TranslatePipe } from '../i18n/t.pipe';
+import { Translations } from '../i18n/translations.store';
 import { SessionStore } from '../session/session.store';
 import { IconComponent } from '../ui/icon.component';
 import { LookService } from '../ui/look.service';
 import { ThemeService } from '../ui/theme.service';
+import { ToastService } from '../ui/toast.service';
 import { LogoComponent } from './logo.component';
 import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
 
@@ -56,6 +59,8 @@ export class ShellComponent {
   protected readonly subscription = inject(SubscriptionStore);
   private readonly router = inject(Router);
   private readonly api = inject(Api);
+  private readonly toast = inject(ToastService);
+  private readonly translations = inject(Translations);
 
   protected readonly collapsed = signal(false);
   protected readonly mobileOpen = signal(false);
@@ -133,6 +138,16 @@ export class ShellComponent {
       }
       void this.logo.load(readable?.uid ?? null);
     });
+    // The free trial is a notice, not a bar: a toast once per pharmacy per browser session.
+    effect(() => {
+      const tenant = this.session.tenant();
+      const sub = this.subscription.status();
+      const days = this.subscription.trialDaysLeft();
+      if (!tenant || this.suspendedForMe() || sub?.status !== 'TRIAL' || days === null) {
+        return;
+      }
+      untracked(() => this.announceTrial(tenant.uid, sub.planName, days));
+    });
     effect(() => {
       const url = this.url();
       const group = TENANT_NAV.find((item) =>
@@ -145,6 +160,24 @@ export class ShellComponent {
       this.userMenu.set(false);
       this.flyout.set(null);
     });
+  }
+
+  private announceTrial(tenantUid: string, plan: string, days: number): void {
+    const key = 'pc.trialNotice.' + tenantUid;
+    try {
+      if (sessionStorage.getItem(key)) {
+        return;
+      }
+      sessionStorage.setItem(key, '1');
+    } catch {
+      /* without storage it may show again on reload */
+    }
+    const canManage = this.session.can('settings.manage');
+    const text = this.translations.t('plans.banner.trial', { days, plan });
+    this.toast.info(
+      canManage ? text + ' ' + this.translations.t('plans.banner.see') + ' →' : text,
+      { ttl: 8000, link: canManage ? '/admin/subscription' : undefined },
+    );
   }
 
   /** Expanded: open or close the group in place. Collapsed: float its links beside the icon. */
