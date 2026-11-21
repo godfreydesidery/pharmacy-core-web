@@ -77,12 +77,36 @@
 .group.open .chev {
   transform: rotate(180deg);
 }
+/*
+ * A group's links roll down when it opens (the row grows from 0 to its content's height, like the
+ * POS item list) and vanish at once when it closes: a transition takes the timing of the state it
+ * moves into, so only the open state has one.
+ */
 .sub {
-  display: none;
-  padding: 2px 0 6px 42px;
+  display: grid;
+  grid-template-rows: 0fr;
+  visibility: hidden;
 }
 .group.open .sub {
-  display: block;
+  grid-template-rows: 1fr;
+  visibility: visible;
+  transition: grid-template-rows 0.2s ease-out;
+}
+.sub-inner {
+  min-height: 0;
+  overflow: hidden;
+  padding-left: 42px;
+}
+.sub-inner > a:first-of-type {
+  margin-top: 2px;
+}
+.sub-inner > a:last-child {
+  margin-bottom: 6px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .group.open .sub {
+    transition: none;
+  }
 }
 .sub-title {
   display: none;
@@ -319,6 +343,8 @@
   }
   :host(.collapsed) .group.flying .sub {
     display: block;
+    visibility: visible;
+    transition: none;
     position: fixed;
     left: 84px;
     min-width: 220px;
@@ -331,6 +357,13 @@
     box-shadow: var(--shadow);
     z-index: 60;
     animation: fly-in 0.12s ease-out;
+  }
+  :host(.collapsed) .group.flying .sub-inner {
+    overflow: visible;
+    padding-left: 0;
+  }
+  :host(.collapsed) .group.flying .sub-inner > a {
+    margin: 0;
   }
   :host(.collapsed) .group.flying .sub-title {
     display: block;

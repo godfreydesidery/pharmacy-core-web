@@ -56,15 +56,17 @@
               [style.top.px]="flyout()?.id === item.id ? flyout()?.top : null"
               [style.bottom.px]="flyout()?.id === item.id ? flyout()?.bottom : null"
             >
-              <div class="sub-title">{{ 'nav.' + item.id | t: null : item.label }}</div>
-              @for (link of item.children; track link.path) {
-                <a
-                  [routerLink]="link.path"
-                  routerLinkActive="active"
-                  [routerLinkActiveOptions]="{ exact: true }"
-                  >{{ navKey(link.path) | t: null : link.label }}</a
-                >
-              }
+              <div class="sub-inner">
+                <div class="sub-title">{{ 'nav.' + item.id | t: null : item.label }}</div>
+                @for (link of item.children; track link.path) {
+                  <a
+                    [routerLink]="link.path"
+                    routerLinkActive="active"
+                    [routerLinkActiveOptions]="{ exact: true }"
+                    >{{ navKey(link.path) | t: null : link.label }}</a
+                  >
+                }
+              </div>
             </div>
           </div>
         } @else {
