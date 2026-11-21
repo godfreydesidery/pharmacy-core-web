@@ -106,7 +106,8 @@ const NOTES: Readonly<Record<string, number[]>> = {
   styleUrl: './pos.page.scss',
   host: {
     '(document:keydown)': 'shortcut($event)',
-    '(window:beforeunload)': 'warnBeforeUnload($event)',
+    '(window:beforeunload)': 'parkBeforeUnload()',
+    '(window:pagehide)': 'parkBeforeUnload()',
   },
 })
 export default class PosPage {
@@ -749,43 +750,37 @@ export default class PosPage {
   }
 
   /**
-   * Leaving the POS (another page, sign-out, another branch) with an unfinished sale asks first:
-   * stay, or discard the sale and leave.
+   * Leaving the POS (another page, sign-out, another branch) never loses an unfinished sale: it is
+   * parked in the Sale list, and the cashier picks it up from there on return.
    */
   private readonly leaveCheck = inject(DestroyRef).onDestroy(
-    inject(LeaveGuard).register(() => this.confirmLeave()),
+    inject(LeaveGuard).register(async () => {
+      if (this.parkCurrent()) {
+        this.toasts.success(this.translations.t('pos.saleParked'));
+      }
+      return true;
+    }),
   );
 
-  private async confirmLeave(): Promise<boolean> {
-    if (!this.lines().length) {
-      return true;
-    }
-    const leave = await this.confirm.ask({
-      title: this.translations.t('pos.leaveSaleTitle'),
-      text: this.translations.t('pos.leaveSaleText'),
-      icon: 'danger',
-      confirmText: this.translations.t('pos.discardAndLeave'),
-      cancelText: this.translations.t('pos.stay'),
-    });
-    if (leave) {
-      this.clear();
-    }
-    return leave;
-  }
-
-  /** Reloading or closing the tab: only the browser's own warning can stop that. */
-  protected warnBeforeUnload(event: BeforeUnloadEvent): void {
-    if (this.lines().length) {
-      event.preventDefault();
-      event.returnValue = '';
-    }
+  /** Reloading or closing the tab parks the sale too (storage writes finish before the page goes). */
+  protected parkBeforeUnload(): void {
+    this.parkCurrent();
   }
 
   /** Puts the sale on screen aside and starts a fresh one. */
   protected parkSale(): void {
-    if (!this.lines().length) {
+    if (!this.parkCurrent()) {
       this.toasts.error(this.translations.t('toast.addItem'));
       return;
+    }
+    this.toasts.success(this.translations.t('pos.saleParked'));
+    this.focusSearch();
+  }
+
+  /** Moves the sale on screen to the Sale list and clears the screen; false when it is empty. */
+  private parkCurrent(): boolean {
+    if (!this.lines().length) {
+      return false;
     }
     this.saveParked(
       park(this.parked(), {
@@ -798,8 +793,7 @@ export default class PosPage {
       }),
     );
     this.clear();
-    this.toasts.success(this.translations.t('pos.saleParked'));
-    this.focusSearch();
+    return true;
   }
 
   /** Brings a parked sale back; one already on screen is parked in its place. */
