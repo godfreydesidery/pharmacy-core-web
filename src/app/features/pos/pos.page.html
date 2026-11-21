@@ -430,14 +430,19 @@
                 [placeholder]="'pos.searchNameGenericSkuOrScan' | t"
                 [value]="q()"
                 (input)="search($any($event.target).value)"
-                (focus)="suggestOpen.set(true)"
+                (focus)="openSuggest()"
                 (blur)="suggestOpen.set(false)"
                 (keydown)="searchKey($event)"
                 autofocus
               />
             </div>
             @if (suggestOpen() && (q() || suggestions().length)) {
-              <div class="suggest" role="listbox">
+              <div
+                class="suggest"
+                role="listbox"
+                [class.up]="suggestUp()"
+                [style.max-height.px]="suggestMax()"
+              >
                 @for (p of suggestions(); track p.productUid; let i = $index) {
                   <button
                     type="button"
@@ -563,21 +568,24 @@
           <table class="cart-table">
             <thead>
               <tr>
-                <th class="n">#</th>
-                <th>{{ 'pos.item' | t }}</th>
+                <th class="n">{{ 'pos.sn' | t }}</th>
+                <th>{{ 'pos.code' | t }}</th>
+                <th>{{ 'pos.name' | t }}</th>
+                <th>{{ 'pos.uom' | t }}</th>
                 <th>{{ 'pos.batchExpiry' | t }}</th>
                 <th>{{ 'pos.qty' | t }}</th>
                 <th class="r">{{ 'pos.unitPrice' | t }}</th>
+                <th class="r">{{ 'pos.discount2' | t }}</th>
                 <th class="r">{{ 'pos.amount' | t }}</th>
-                <th>{{ 'pos.stockLeft' | t }}</th>
-                <th></th>
+                <th>{{ 'pos.action' | t }}</th>
               </tr>
             </thead>
             <tbody>
               @for (line of lines(); track line.product.productUid; let i = $index) {
                 <tr>
                   <td class="n muted">{{ i + 1 }}</td>
-                  <td>
+                  <td class="mono code">{{ line.product.sku ?? '—' }}</td>
+                  <td class="name">
                     <b>{{ line.product.name }}</b>
                     <small class="block muted">
                       {{ line.product.genericName ?? ''
@@ -599,6 +607,19 @@
                           >
                         }
                       }
+                      <span
+                        [title]="'pos.stockLeft' | t"
+                        [class]="
+                          available(line.product) - line.quantity <= 0
+                            ? 'badge red'
+                            : available(line.product) - line.quantity <= lowStock
+                              ? 'badge amber'
+                              : 'badge green'
+                        "
+                        >{{
+                          'pos.leftCount' | t: { count: available(line.product) - line.quantity }
+                        }}</span
+                      >
                     </small>
                     @if (line.serials?.length) {
                       <span class="serials">
@@ -608,9 +629,15 @@
                       </span>
                     }
                   </td>
+                  <td class="uom">
+                    {{ line.product.unitOfMeasure ? (line.product.unitOfMeasure | label) : '—' }}
+                  </td>
                   <td class="mono batch">
                     @if (lineBatch(line); as b) {
-                      {{ b.batchNumber }}{{ b.expiryDate ? ' · ' + monthYear(b.expiryDate) : '' }}
+                      {{ b.batchNumber }}
+                      @if (b.expiryDate) {
+                        <small class="block muted">{{ monthYear(b.expiryDate) }}</small>
+                      }
                       @if (b.more) {
                         <small class="block muted">{{ 'pos.andNextBatch' | t }}</small>
                       }
@@ -644,36 +671,24 @@
                     </div>
                   </td>
                   <td class="r num">{{ priceOf(line) | money }}</td>
+                  <td class="r num muted">{{ lineDiscount(line) | money }}</td>
                   <td class="r num">
-                    <b>{{ priceOf(line) * line.quantity | money }}</b>
+                    <b>{{ priceOf(line) * line.quantity - lineDiscount(line) | money }}</b>
                   </td>
                   <td>
-                    <span
-                      class="badge"
-                      [class]="
-                        available(line.product) - line.quantity <= 0
-                          ? 'badge red'
-                          : available(line.product) - line.quantity <= lowStock
-                            ? 'badge amber'
-                            : 'badge green'
-                      "
-                      >{{ available(line.product) - line.quantity | num }}</span
-                    >
-                  </td>
-                  <td class="r">
                     <button
                       type="button"
-                      class="icon-btn sm remove"
+                      class="btn sm danger-outline remove"
                       (click)="setQty(line, 0)"
                       [attr.aria-label]="'pos.removeLine' | t"
                     >
-                      <app-icon name="trash" [size]="15" />
+                      <app-icon name="trash" [size]="14" /> {{ 'pos.remove' | t }}
                     </button>
                   </td>
                 </tr>
               } @empty {
                 <tr class="empty-row">
-                  <td colspan="8">
+                  <td colspan="10">
                     <app-empty
                       icon="cart"
                       [title]="'pos.cartIsEmpty' | t"
@@ -687,7 +702,7 @@
               <tfoot>
                 <tr>
                   <td></td>
-                  <td colspan="4" class="muted summary">
+                  <td colspan="6" class="muted summary">
                     {{ 'pos.subtotal' | t }} {{ totals().subtotal | money }}
                     @if (totals().discount) {
                       · {{ 'pos.discount2' | t }} − {{ totals().discount | money }}
@@ -695,8 +710,9 @@
                     · {{ (taxIncluded() ? 'pos.vatIncluded' : 'pos.tax') | t }}
                     {{ totals().tax | money }}
                   </td>
+                  <td class="r total-label">{{ 'pos.total' | t }}</td>
                   <td class="r total">{{ totals().total | money }}</td>
-                  <td colspan="2"></td>
+                  <td></td>
                 </tr>
               </tfoot>
             }
