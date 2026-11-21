@@ -153,9 +153,8 @@ export class ShellComponent {
       const group = TENANT_NAV.find((item) =>
         item.children?.some((child) => url.startsWith(child.path)),
       );
-      if (group) {
-        this.openGroups.update((open) => new Set(open).add(group.id));
-      }
+      // One group open at a time: the current page's (none for a page outside the groups).
+      this.openGroups.set(group ? new Set([group.id]) : new Set());
       this.mobileOpen.set(false);
       this.userMenu.set(false);
       this.flyout.set(null);
@@ -222,16 +221,9 @@ export class ShellComponent {
     return !!item.children?.some((child) => this.url().startsWith(child.path));
   }
 
+  /** Opening a group closes the others (an accordion); clicking an open group closes it. */
   protected toggleGroup(id: string): void {
-    this.openGroups.update((open) => {
-      const next = new Set(open);
-      if (next.has(id)) {
-        next.delete(id);
-      } else {
-        next.add(id);
-      }
-      return next;
-    });
+    this.openGroups.update((open) => (open.has(id) ? new Set() : new Set([id])));
   }
 
   protected toggleMenu(): void {
