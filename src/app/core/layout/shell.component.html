@@ -194,15 +194,7 @@
     </div>
   }
   @if (!suspendedForMe() && session.tenant() && subscription.status(); as sub) {
-    @if (sub.status === 'TRIAL' && subscription.trialDaysLeft() !== null) {
-      <div class="suspended notice tone-blue no-print">
-        <app-icon name="clock" />
-        {{ 'plans.banner.trial' | t: { days: subscription.trialDaysLeft(), plan: sub.planName } }}
-        @if (session.can('settings.manage')) {
-          <a routerLink="/admin/subscription">{{ 'plans.banner.see' | t }}</a>
-        }
-      </div>
-    } @else if (sub.status === 'PAST_DUE') {
+    @if (sub.status === 'PAST_DUE') {
       <div class="suspended notice tone-amber no-print">
         <app-icon name="alert" />
         {{ 'plans.banner.pastDue' | t: { date: sub.graceEnds ?? sub.dueDate } }}
