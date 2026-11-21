@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input } from '@angular/core';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { AuditLogComponent } from './audit-log.component';
 
@@ -17,8 +17,11 @@ import { AuditLogComponent } from './audit-log.component';
           </p>
         </div>
       </div>
-      <app-audit-log path="/audit" />
+      <app-audit-log path="/audit" [initialAction]="action() ?? ''" />
     </div>
   `,
 })
-export default class AuditPage {}
+export default class AuditPage {
+  /** ?action=SIGN_IN opens the sign-in history (the Users page links to it). */
+  readonly action = input<string>();
+}

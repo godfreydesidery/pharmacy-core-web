@@ -21,6 +21,7 @@ import {
   TwoFactorSetup,
 } from '../../core/api/security.models';
 import { cancelled, createPasskey, passkeysSupported } from '../../core/security/webauthn';
+import { describeDevice, isMobile } from '../../core/ui/device';
 import { IconComponent } from '../../core/ui/icon.component';
 import { ToastService } from '../../core/ui/toast.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -499,38 +500,11 @@ export class AccountSecurityComponent implements OnInit {
   }
 
   protected mobile(agent: string | null): boolean {
-    return !!agent && /android|iphone|ipad|mobile/i.test(agent);
+    return isMobile(agent);
   }
 
   protected device(agent: string | null): string {
-    if (!agent) {
-      return this.translations.t('ui.sec.unknownDevice');
-    }
-    if (!/mozilla\//i.test(agent)) {
-      // Not a browser: an app, script or integration (e.g. "okhttp/4.12", "curl/8.4").
-      return this.translations.t('ui.sec.apiClient', { name: agent.split(/[\s(]/)[0] });
-    }
-    const browser = /edg\//i.test(agent)
-      ? 'Edge'
-      : /chrome\//i.test(agent)
-        ? 'Chrome'
-        : /firefox\//i.test(agent)
-          ? 'Firefox'
-          : /safari\//i.test(agent)
-            ? 'Safari'
-            : this.translations.t('ui.sec.browser');
-    const system = /windows/i.test(agent)
-      ? 'Windows'
-      : /android/i.test(agent)
-        ? 'Android'
-        : /iphone|ipad/i.test(agent)
-          ? 'iOS'
-          : /mac os/i.test(agent)
-            ? 'macOS'
-            : /linux/i.test(agent)
-              ? 'Linux'
-              : this.translations.t('ui.sec.unknownSystem');
-    return this.translations.t('ui.sec.browserOn', { browser, system });
+    return describeDevice(agent, (key, params) => this.translations.t(key, params));
   }
 
   protected method(method: string): string {
