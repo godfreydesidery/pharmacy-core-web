@@ -45,7 +45,9 @@
       <div class="till-cards">
         <section class="card till-card">
           <header class="till-card-h">
-            <app-icon name="receipt" [size]="16" /> {{ 'pos.sale' | t }}
+            <app-icon name="receipt" [size]="16" />
+            {{ (lines().length ? 'pos.saleInProgress' : 'pos.newSale') | t }}
+            <span class="started">{{ 'pos.startedAt' | t: { time: clock(startedAt()) } }}</span>
           </header>
           <div class="till-card-b">
             <div class="kv">
@@ -402,14 +404,6 @@
           </div>
         </section>
       </div>
-
-      <!-- The sale under way, and the keys that run the till. -->
-      <section class="card sale-banner">
-        <span class="sale-title">{{
-          (lines().length ? 'pos.saleInProgress' : 'pos.newSale') | t
-        }}</span>
-        <span class="muted">{{ 'pos.startedAt' | t: { time: clock(startedAt()) } }}</span>
-      </section>
 
       <section class="card cart-card">
         <!-- Entry row: find an item, set the quantity, add it, without leaving the page. -->
