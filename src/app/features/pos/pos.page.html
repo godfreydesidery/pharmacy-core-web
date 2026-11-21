@@ -398,7 +398,6 @@
             >
               <app-icon name="check" [size]="18" />
               {{ busy() ? ('ui.l.completing' | t) : ('ui.l.completeSale' | t) }}
-              <kbd>F9</kbd>
             </button>
           </div>
         </section>
@@ -410,12 +409,6 @@
           (lines().length ? 'pos.saleInProgress' : 'pos.newSale') | t
         }}</span>
         <span class="muted">{{ 'pos.startedAt' | t: { time: clock(startedAt()) } }}</span>
-        <span class="keys">
-          <span><kbd>F2</kbd> {{ 'pos.keySearch' | t }}</span>
-          <span><kbd>Enter</kbd> {{ 'pos.keyAdd' | t }}</span>
-          <span><kbd>F4</kbd> {{ 'pos.keyPark' | t }}</span>
-          <span><kbd>F9</kbd> {{ 'pos.keyPay' | t }}</span>
-        </span>
       </section>
 
       <section class="card cart-card">
@@ -547,7 +540,7 @@
             [disabled]="!entryProduct() || available(entryProduct()!) <= 0"
             (click)="addFromEntry()"
           >
-            <app-icon name="plus" [size]="16" /> {{ 'pos.add' | t }} <kbd>Enter</kbd>
+            <app-icon name="plus" [size]="16" /> {{ 'pos.add' | t }}
           </button>
         </div>
 

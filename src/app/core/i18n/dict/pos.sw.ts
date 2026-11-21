@@ -68,7 +68,7 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.linesAndUnits': 'mistari {{lines}} · vipimo {{units}}',
   'pos.linesCount': 'mistari {{count}}',
   'pos.noParkedSales': 'Orodha ya mauzo haina kitu',
-  'pos.noParkedSalesHint': 'Weka mauzo kando (F4) umhudumie mwingine, kisha uyarudishe hapa.',
+  'pos.noParkedSalesHint': 'Weka mauzo kando umhudumie mwingine, kisha uyarudishe hapa.',
   'pos.outOfStock': 'Imeisha',
   'pos.parkThisSale': 'Weka mauzo haya kando',
   'pos.parkedHint':
