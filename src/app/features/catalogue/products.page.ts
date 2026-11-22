@@ -19,6 +19,12 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         </div>
         <div class="actions">
           <app-export [list]="list" />
+          <app-import
+            path="/products/import"
+            permission="catalogue.manage"
+            title="ui.import.products"
+            (imported)="list.reload()"
+          />
           @if (session.can('catalogue.manage')) {
             <a class="btn primary" routerLink="new"
               ><app-icon name="plus" [size]="16" /> {{ 'catalogue.addProduct' | t }}</a
