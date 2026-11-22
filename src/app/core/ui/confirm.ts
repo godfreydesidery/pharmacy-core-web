@@ -3,6 +3,7 @@ import {
   Component,
   ElementRef,
   Injectable,
+  computed,
   effect,
   inject,
   signal,
@@ -23,6 +24,10 @@ export interface ConfirmOptions {
   confirmText?: string;
   /** The cancel button's words; "Cancel" when left out. */
   cancelText?: string;
+  /** Names the dialog, so its opener can {@link ConfirmService.update} or dismiss it later. */
+  key?: string;
+  /** False: only the two buttons answer it, not Escape or a click beside it. */
+  dismissible?: boolean;
 }
 
 interface Open extends ConfirmOptions {
@@ -43,6 +48,18 @@ export class ConfirmService {
     return new Promise((resolve) => this.state.set({ icon: 'question', ...options, resolve }));
   }
 
+  /** Changes the open dialog named {@code key}, such as a countdown in its text. */
+  update(key: string, changes: Partial<ConfirmOptions>): void {
+    this.state.update((open) => (open?.key === key ? { ...open, ...changes } : open));
+  }
+
+  /** Closes the dialog named {@code key}, if open, answering it "no". */
+  dismiss(key: string): void {
+    if (this.state()?.key === key) {
+      this.settle(false);
+    }
+  }
+
   /** Called by the dialog once its closing animation has played. */
   settle(ok: boolean): void {
     const open = this.state();
@@ -56,10 +73,16 @@ export class ConfirmService {
   selector: 'app-confirm',
   imports: [TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'current() && close(false)' },
+  host: {
+    '(document:keydown.escape)': 'current() && current()?.dismissible !== false && close(false)',
+  },
   template: `
     @if (current(); as c) {
-      <div class="backdrop" [class.closing]="closing()" (click)="close(false)">
+      <div
+        class="backdrop"
+        [class.closing]="closing()"
+        (click)="c.dismissible !== false && close(false)"
+      >
         <div
           class="popup"
           [class.closing]="closing()"
@@ -293,10 +316,13 @@ export class ConfirmDialogComponent {
   protected readonly closing = signal(false);
   private readonly ok = viewChild<ElementRef<HTMLButtonElement>>('ok');
 
+  /** The open dialog itself, unchanged by {@link ConfirmService.update} (a countdown's ticks). */
+  private readonly opened = computed(() => this.current()?.resolve);
+
   constructor() {
     // Enter confirms: the confirm button takes the focus when the dialog opens.
     effect(() => {
-      if (this.current()) {
+      if (this.opened()) {
         this.closing.set(false);
         setTimeout(() => this.ok()?.nativeElement.focus());
       }

@@ -13,6 +13,7 @@ import { LogoComponent } from '../../core/layout/logo.component';
 import { firstAllowedPath } from '../../core/layout/nav';
 import { usableReturnUrl } from '../../core/session/guards';
 import { SessionStore, WorkspaceTenant } from '../../core/session/session.store';
+import { SignOutService } from '../../core/session/sign-out';
 import { IconComponent } from '../../core/ui/icon.component';
 import { StatusBadgeComponent } from '../../core/ui/widgets';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -266,6 +267,7 @@ export default class WorkspacePage implements OnInit {
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly signOuts = inject(SignOutService);
 
   protected readonly pending = signal<Pending | null>(null);
   /**
@@ -291,7 +293,17 @@ export default class WorkspacePage implements OnInit {
     }
     try {
       const memberships = this.session.memberships();
-      if (this.session.isRoot()) {
+      const returnUrl = usableReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+      if (this.session.isRoot() && returnUrl?.startsWith('/platform')) {
+        // Back to the platform page the root administrator was on (signed out after inactivity).
+        this.entering = true;
+        await this.router.navigateByUrl(returnUrl);
+        if (this.router.url.startsWith('/workspace')) {
+          this.entering = false;
+          this.deciding.set(false);
+          await this.loadTenants();
+        }
+      } else if (this.session.isRoot()) {
         this.deciding.set(false);
         await this.loadTenants();
       } else if (memberships.length === 1 && memberships[0].tenantStatus !== 'SUSPENDED') {
@@ -370,9 +382,7 @@ export default class WorkspacePage implements OnInit {
   }
 
   protected signOut(): void {
-    void this.api.post('/auth/sign-out', {}, { silent: true }).catch(() => undefined);
-    this.session.signOut();
-    void this.router.navigate(['/sign-in']);
+    void this.signOuts.end('user');
   }
 
   private async loadTenants(): Promise<void> {

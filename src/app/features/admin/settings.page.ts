@@ -97,6 +97,15 @@ import { Translations } from '../../core/i18n/translations.store';
             />
             <span class="hint">{{ 'admin.theMostACashierWith' | t }}</span>
           </div>
+          <h3>{{ 'idle.security' | t }}</h3>
+          <div class="field">
+            <label>{{ 'idle.setting' | t }}</label
+            ><input class="input" type="number" min="5" max="60" formControlName="idleMinutes" />
+            @if (err('idleMinutes'); as e) {
+              <span class="error">{{ e }}</span>
+            }
+            <span class="hint">{{ 'idle.settingHint' | t }}</span>
+          </div>
           <h3>{{ 'admin.alerts' | t }}</h3>
           <div class="field">
             <label>{{ 'admin.expiryAlertWindowDays' | t }}</label
@@ -298,6 +307,7 @@ export default class SettingsPage implements OnInit {
     smsReceipts: [false],
     pricesIncludeTax: [false],
     look: ['PREMIUM' as Settings['look']],
+    idleMinutes: [15, [Validators.required, Validators.min(5), Validators.max(60)]],
   });
 
   async ngOnInit(): Promise<void> {

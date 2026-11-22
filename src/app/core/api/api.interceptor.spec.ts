@@ -97,7 +97,24 @@ describe('apiInterceptor', () => {
         { status: 401, statusText: 'Unauthorized' },
       );
     await result.catch(() => undefined);
-    expect(session.signedIn()).toBe(false);
+    await vi.waitFor(() => expect(session.signedIn()).toBe(false));
     expect(navigate).toHaveBeenCalledWith(['/sign-in'], { queryParams: { expired: 1 } });
+  });
+
+  it('says why on 401 session_idle, and records the idle sign-out', async () => {
+    const navigate = vi.spyOn(TestBed.inject(Router), 'navigate').mockResolvedValue(true);
+    const result = api.get('/settings', undefined, { silent: true });
+    http
+      .expectOne('/api/v1/settings')
+      .flush({ status: 401, reason: 'session_idle' }, { status: 401, statusText: 'Unauthorized' });
+    await result.catch(() => undefined);
+    await vi
+      .waitFor(() => http.expectOne('/api/v1/auth/sign-out'), { interval: 5 })
+      .then((req) => {
+        expect(req.request.body).toEqual({ reason: 'IDLE' });
+        req.flush({ status: 401 }, { status: 401, statusText: 'Unauthorized' });
+      });
+    await vi.waitFor(() => expect(session.signedIn()).toBe(false));
+    expect(navigate).toHaveBeenCalledWith(['/sign-in'], { queryParams: { idle: 1 } });
   });
 });

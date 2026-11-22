@@ -1,9 +1,9 @@
 import { HttpContextToken, HttpEvent, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
-import { inject } from '@angular/core';
-import { Router } from '@angular/router';
+import { Injector, inject } from '@angular/core';
 import { catchError, map, throwError } from 'rxjs';
 import { Translations } from '../i18n/translations.store';
 import { SessionStore } from '../session/session.store';
+import { SignOutService } from '../session/sign-out';
 import { ToastService } from '../ui/toast.service';
 import { ApiError, localizeError } from './api-error';
 
@@ -26,7 +26,7 @@ function isEnvelope(body: unknown): body is Envelope {
 /**
  * Adds the session's headers to every API request, unwraps the success envelope so callers get
  * `data` directly, and turns failures into {@link ApiError}s in the user's language: a toast by
- * default, and back to sign-in on 401.
+ * default, and back to sign-in on 401 (saying why when the session ended for want of use).
  */
 export const apiInterceptor: HttpInterceptorFn = (request, next) => {
   if (!request.url.startsWith(API_PREFIX)) {
@@ -34,7 +34,7 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
   }
   const session = inject(SessionStore);
   const toasts = inject(ToastService);
-  const router = inject(Router);
+  const injector = inject(Injector);
   const translations = inject(Translations);
 
   let headers = request.headers;
@@ -74,9 +74,14 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
         (key, params, fallback) => translations.t(key, params, fallback),
       );
       const signingIn = request.url.includes('/auth/sign-in');
+      const signingOut = request.url.includes('/auth/sign-out');
       if (error.status === 401 && !signingIn) {
-        session.signOut();
-        void router.navigate(['/sign-in'], { queryParams: { expired: 1 } });
+        if (!signingOut) {
+          // Looked up here, not above: the service itself sends requests through this interceptor.
+          void injector
+            .get(SignOutService)
+            .end(error.reason === 'session_idle' ? 'idle' : 'expired');
+        }
       } else if (!request.context.get(SILENT)) {
         toasts.error(error.message);
       }

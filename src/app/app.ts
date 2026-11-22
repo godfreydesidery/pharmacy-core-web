@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { IdleWatch } from './core/session/idle';
 import { LookService } from './core/ui/look.service';
 import { ThemeService } from './core/ui/theme.service';
 import { ConfirmDialogComponent } from './core/ui/confirm';
@@ -16,4 +17,6 @@ export class App {
   protected readonly theme = inject(ThemeService);
   /** Likewise the pharmacy's look (premium or classic), remembered from the last visit. */
   protected readonly look = inject(LookService);
+  /** Signs out after the pharmacy's inactivity limit, on every page while signed in. */
+  protected readonly idle = inject(IdleWatch);
 }
