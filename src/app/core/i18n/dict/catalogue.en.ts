@@ -25,6 +25,7 @@ export const CATALOGUE_EN: Readonly<Record<string, string>> = {
   'catalogue.export': 'Export',
   'catalogue.formModel': 'Form / model',
   'catalogue.genericNameInn': 'Generic name (INN)',
+  'catalogue.code': 'Code',
   'catalogue.gtinBarcode': 'GTIN (barcode)',
   'catalogue.identity': 'Identity',
   'catalogue.inactive': 'Inactive',

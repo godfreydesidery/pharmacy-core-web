@@ -63,6 +63,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
             <thead>
               <tr>
                 <th>{{ 'catalogue.product' | t }}</th>
+                <th>{{ 'catalogue.code' | t }}</th>
                 <th>{{ 'catalogue.category' | t }}</th>
                 <th>{{ 'catalogue.formModel' | t }}</th>
                 <th>{{ 'catalogue.manufacturer' | t }}</th>
@@ -86,7 +87,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                       <div>
                         <b>{{ p.name }}</b
                         ><small
-                          >{{ p.genericName ?? p.brand ?? '' }}{{ p.sku ? ' · ' + p.sku : ''
+                          >{{ p.genericName ?? p.brand ?? ''
                           }}{{ p.atcCode ? ' · ' + p.atcCode : '' }}</small
                         >
                       </div>
@@ -97,6 +98,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                       }
                     </div>
                   </td>
+                  <td class="mono">{{ p.sku ?? '—' }}</td>
                   <td>{{ p.categoryName ?? '—' }}</td>
                   <td class="muted">
                     @if (p.productType === 'MEDICINE' || !p.productType) {
@@ -119,7 +121,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="9">
+                  <td colspan="10">
                     <app-empty
                       [loading]="list.loading()"
                       icon="pill"
