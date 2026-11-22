@@ -76,13 +76,7 @@ import { SHARED } from '../../core/shared';
             [text]="'ui.empty.inbox' | t"
           />
         }
-        @if (list.hasMore()) {
-          <div class="more">
-            <button class="btn" type="button" [disabled]="list.loading()" (click)="list.more()">
-              {{ 'notifications.loadMore' | t }}
-            </button>
-          </div>
-        }
+        <app-pager [list]="list" />
       </div>
     </div>
   `,

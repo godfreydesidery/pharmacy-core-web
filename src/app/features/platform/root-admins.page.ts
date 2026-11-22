@@ -3,7 +3,7 @@ import { SessionStore } from '../../core/session/session.store';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { User } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { ToastService } from '../../core/ui/toast.service';
@@ -41,7 +41,7 @@ import { Translations } from '../../core/i18n/translations.store';
               </tr>
             </thead>
             <tbody>
-              @for (u of admins.value() ?? []; track u.uid) {
+              @for (u of admins.items(); track u.uid) {
                 <tr>
                   <td>
                     <div class="cell-main">
@@ -110,6 +110,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </tbody>
           </table>
         </div>
+        <app-pager [list]="admins" />
       </div>
     </div>
     <app-modal
@@ -163,7 +164,7 @@ export default class RootAdminsPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
-  protected readonly admins = loaded<User[]>(() => ({
+  protected readonly admins = pagedList<User>(() => ({
     path: '/platform/root-admins',
     options: { noBranch: true },
   }));

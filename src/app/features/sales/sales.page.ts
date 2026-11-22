@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { SaleSummary } from '../../core/api/models';
 import { debounced, pagedList } from '../../core/data/data';
-import { downloadCsv, isoDay } from '../../core/format/format';
+import { downloadCsv } from '../../core/format/format';
 import { enumLabel } from '../../core/format/pipes';
 import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
@@ -129,13 +129,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               </tbody>
             </table>
           </div>
-          <app-pager
-            [count]="shown().length"
-            [total]="period() === 'DAY' ? null : list.total()"
-            [hasMore]="hasMore()"
-            [loading]="list.loading()"
-            (more)="list.more()"
-          />
+          <app-pager [list]="list" />
         </div>
       }
     </div>
@@ -157,27 +151,19 @@ export default class SalesPage {
           query: {
             q: this.query(),
             status: this.status(),
-            // The API filters by day; two days back covers 24 hours in any time zone, and
-            // shown() trims the rest.
-            from: this.period() === 'DAY' ? isoDay(-2) : this.from(),
+            // DAY: the last 24 hours, filtered by the API, so the pages and total are exact.
+            since:
+              this.period() === 'DAY'
+                ? new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+                : '',
+            from: this.period() === 'DAY' ? '' : this.from(),
             to: this.period() === 'DAY' ? '' : this.to(),
           },
         }
       : null,
   );
-  /** The sales to show: in DAY, those of the last 24 hours. The list is newest first. */
-  protected readonly shown = computed(() => {
-    const items = this.list.items();
-    if (this.period() !== 'DAY') {
-      return items;
-    }
-    const since = Date.now() - 24 * 60 * 60 * 1000;
-    return items.filter((s) => new Date(s.createdAt).getTime() >= since);
-  });
-  /** In DAY, once a page reaches past 24 hours there is nothing more to load. */
-  protected readonly hasMore = computed(
-    () => this.list.hasMore() && this.shown().length === this.list.items().length,
-  );
+  /** The sales of the page shown, newest first. */
+  protected readonly shown = computed(() => this.list.items());
 
   private readonly translations = inject(Translations);
 

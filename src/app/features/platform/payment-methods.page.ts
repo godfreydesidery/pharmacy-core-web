@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Api } from '../../core/api/api.service';
 import { PaymentKind, PaymentMethodType } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
@@ -44,7 +44,7 @@ const ADAPTERS = ['NONE', 'MANUAL', 'SIMULATOR', 'MPESA', 'MIXX', 'AIRTEL', 'SEL
             </tr>
           </thead>
           <tbody>
-            @for (m of registry.value() ?? []; track m.code) {
+            @for (m of registry.items(); track m.code) {
               <tr>
                 <td>
                   <b>{{ m.name }}</b
@@ -72,6 +72,7 @@ const ADAPTERS = ['NONE', 'MANUAL', 'SIMULATOR', 'MPESA', 'MIXX', 'AIRTEL', 'SEL
           </tbody>
         </table>
       </div>
+      <app-pager [list]="registry" />
       <p class="muted mt">{{ 'payments.notConnectedHint' | t }}</p>
     </div>
 
@@ -157,7 +158,7 @@ export default class PlatformPaymentMethodsPage {
   private readonly translations = inject(Translations);
   protected readonly kinds = KINDS;
   protected readonly adapters = ADAPTERS;
-  protected readonly registry = loaded<PaymentMethodType[]>(() => ({
+  protected readonly registry = pagedList<PaymentMethodType>(() => ({
     path: '/platform/payment-methods',
     options: { noBranch: true },
   }));

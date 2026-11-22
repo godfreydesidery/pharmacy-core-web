@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { Page, Webhook, WebhookDelivery } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { loaded, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { ToastService } from '../../core/ui/toast.service';
@@ -47,7 +47,7 @@ import { Translations } from '../../core/i18n/translations.store';
               </tr>
             </thead>
             <tbody>
-              @for (w of hooks.value() ?? []; track w.uid) {
+              @for (w of hooks.items(); track w.uid) {
                 <tr>
                   <td>
                     <div class="cell-main">
@@ -95,6 +95,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </tbody>
           </table>
         </div>
+        <app-pager [list]="hooks" />
       </div>
     </div>
 
@@ -197,7 +198,7 @@ export default class WebhooksPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
-  protected readonly hooks = loaded<Webhook[]>(() => ({
+  protected readonly hooks = pagedList<Webhook>(() => ({
     path: '/webhooks',
     options: { noBranch: true },
   }));

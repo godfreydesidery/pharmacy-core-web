@@ -82,13 +82,7 @@ import { SHARED } from '../../core/shared';
         }
         @if (list.items().length) {
           <div class="card">
-            <app-pager
-              [count]="list.items().length"
-              [total]="list.total()"
-              [hasMore]="list.hasMore()"
-              [loading]="list.loading()"
-              (more)="list.more()"
-            />
+            <app-pager [list]="list" />
           </div>
         }
       </div>

@@ -9,7 +9,7 @@ import {
   Product,
   Promotion,
 } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { loaded, pagedList } from '../../core/data/data';
 import { isoDay } from '../../core/format/format';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
@@ -116,7 +116,7 @@ interface PromotionDraft {
                 </tr>
               </thead>
               <tbody>
-                @for (l of lists.value() ?? []; track l.uid) {
+                @for (l of lists.items(); track l.uid) {
                   <tr>
                     <td>
                       <b>{{ l.name }}</b>
@@ -149,6 +149,7 @@ interface PromotionDraft {
               </tbody>
             </table>
           </div>
+          <app-pager [list]="lists" />
         }
         @case ('branch') {
           <div class="card card-pad mb">
@@ -233,7 +234,7 @@ interface PromotionDraft {
                 </tr>
               </thead>
               <tbody>
-                @for (p of promotions.value() ?? []; track p.uid) {
+                @for (p of promotions.items(); track p.uid) {
                   <tr>
                     <td>
                       <b>{{ p.name }}</b>
@@ -265,6 +266,7 @@ interface PromotionDraft {
               </tbody>
             </table>
           </div>
+          <app-pager [list]="promotions" />
         }
       }
     </div>
@@ -548,13 +550,13 @@ export default class PricingPage {
   protected readonly customerTypes = CUSTOMER_TYPES;
   protected readonly canEdit = () => this.session.can('catalogue.manage');
 
-  protected readonly lists = loaded<PriceList[]>(() =>
+  protected readonly lists = pagedList<PriceList>(() =>
     this.tab() === 'lists' ? { path: '/price-lists', options: { noBranch: true } } : null,
   );
   protected readonly branchPrices = loaded<BranchPrice[]>(() =>
     this.tab() === 'branch' ? { path: '/branch-prices', options: { noBranch: true } } : null,
   );
-  protected readonly promotions = loaded<Promotion[]>(() =>
+  protected readonly promotions = pagedList<Promotion>(() =>
     this.tab() === 'promotions' ? { path: '/promotions', options: { noBranch: true } } : null,
   );
   protected readonly categories = loaded<Category[]>(() =>

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
 import { Api } from '../../core/api/api.service';
 import { TillMethod } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
@@ -37,7 +37,7 @@ import { ToastService } from '../../core/ui/toast.service';
               </tr>
             </thead>
             <tbody>
-              @for (m of methods.value() ?? []; track m.code) {
+              @for (m of methods.items(); track m.code) {
                 <tr>
                   <td>
                     <b>{{ m.name }}</b
@@ -86,6 +86,7 @@ import { ToastService } from '../../core/ui/toast.service';
             </tbody>
           </table>
         </div>
+        <app-pager [list]="methods" />
       </div>
     </div>
   `,
@@ -94,7 +95,7 @@ export default class PaymentMethodsPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
-  protected readonly methods = loaded<TillMethod[]>(() => ({
+  protected readonly methods = pagedList<TillMethod>(() => ({
     path: '/payment-methods',
     options: { noBranch: true },
   }));

@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Api } from '../../core/api/api.service';
 import { Batch, Product } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
@@ -167,7 +167,7 @@ interface DraftLine {
                 </tr>
               </thead>
               <tbody>
-                @for (d of destructions.value() ?? []; track d.uid) {
+                @for (d of destructions.items(); track d.uid) {
                   <tr class="clickable" (click)="current.set(d)">
                     <td class="mono strong">{{ d.number }}</td>
                     <td>{{ d.destroyedOn | day }}</td>
@@ -190,6 +190,7 @@ interface DraftLine {
               </tbody>
             </table>
           </div>
+          <app-pager [list]="destructions" />
         </div>
       }
     </div>
@@ -323,7 +324,7 @@ export default class DestructionsPage {
   protected readonly certificateNumber = signal('');
   protected readonly note = signal('');
   protected readonly lines = signal<DraftLine[]>([]);
-  protected readonly destructions = loaded<Destruction[]>(() =>
+  protected readonly destructions = pagedList<Destruction>(() =>
     this.session.branch() ? { path: '/destructions' } : null,
   );
 

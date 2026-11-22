@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Api } from '../../core/api/api.service';
 import { ClaimView, PayerView, RemittanceView } from '../../core/api/credit.models';
-import { loaded } from '../../core/data/data';
+import { loaded, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { ToastService } from '../../core/ui/toast.service';
@@ -41,7 +41,7 @@ import { Translations } from '../../core/i18n/translations.store';
               </tr>
             </thead>
             <tbody>
-              @for (r of remittances.value() ?? []; track r.uid) {
+              @for (r of remittances.items(); track r.uid) {
                 <tr>
                   <td class="mono">
                     <b>{{ r.number }}</b>
@@ -72,6 +72,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </tbody>
           </table>
         </div>
+        <app-pager [list]="remittances" />
       </div>
     </div>
 
@@ -221,7 +222,7 @@ export default class RemittancesPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
-  protected readonly remittances = loaded<RemittanceView[]>(() => ({
+  protected readonly remittances = pagedList<RemittanceView>(() => ({
     path: '/insurance/remittances',
     options: { noBranch: true },
   }));

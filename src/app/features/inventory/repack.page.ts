@@ -243,13 +243,7 @@ interface Row {
                   </tbody>
                 </table>
               </div>
-              <app-pager
-                [count]="history.items().length"
-                [total]="history.total()"
-                [hasMore]="history.hasMore()"
-                [loading]="history.loading()"
-                (more)="history.more()"
-              />
+              <app-pager [list]="history" />
             </div>
           }
           @case ('packs') {

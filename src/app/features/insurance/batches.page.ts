@@ -3,7 +3,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { firstValueFrom } from 'rxjs';
 import { Api, apiUrl } from '../../core/api/api.service';
 import { ClaimBatchView, PayerView } from '../../core/api/credit.models';
-import { loaded } from '../../core/data/data';
+import { loaded, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { ToastService } from '../../core/ui/toast.service';
@@ -48,7 +48,7 @@ import { Translations } from '../../core/i18n/translations.store';
               </tr>
             </thead>
             <tbody>
-              @for (b of batches.value() ?? []; track b.uid) {
+              @for (b of batches.items(); track b.uid) {
                 <tr>
                   <td>
                     <b class="mono">{{ b.number }}</b
@@ -100,6 +100,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </tbody>
           </table>
         </div>
+        <app-pager [list]="batches" />
       </div>
     </div>
 
@@ -172,7 +173,7 @@ export default class BatchesPage {
   private readonly http = inject(HttpClient);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
-  protected readonly batches = loaded<ClaimBatchView[]>(() => ({
+  protected readonly batches = pagedList<ClaimBatchView>(() => ({
     path: '/insurance/batches',
     options: { noBranch: true },
   }));
