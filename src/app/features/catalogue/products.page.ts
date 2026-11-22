@@ -214,7 +214,7 @@ export default class ProductsPage {
         'Category',
         'Form',
         'Strength',
-        'Schedule',
+        'Dispensing class',
         'Cost',
         'Price',
         'Reorder',

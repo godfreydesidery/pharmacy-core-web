@@ -48,7 +48,7 @@ export const CATALOGUE_SW: Readonly<Record<string, string>> = {
   'catalogue.products': 'Bidhaa',
   'catalogue.reorderLevel': 'Kiwango cha kuagiza tena',
   'catalogue.save': 'Hifadhi',
-  'catalogue.schedule': 'Kundi la udhibiti',
+  'catalogue.schedule': 'Aina ya utoaji',
   'catalogue.sellingPrice': 'Bei ya kuuza',
   'catalogue.soldPer': 'Huuzwa kwa',
   'catalogue.status': 'Hali',

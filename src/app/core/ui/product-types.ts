@@ -14,7 +14,7 @@ export const PRODUCT_TYPES: {
     label: 'Medicine',
     icon: 'pill',
     tone: 'blue',
-    hint: 'Batches with expiry, dosage form, schedule',
+    hint: 'Batches with expiry, dosage form, dispensing class',
   },
   {
     code: 'MEDICAL_EQUIPMENT',

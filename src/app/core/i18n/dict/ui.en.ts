@@ -16,7 +16,7 @@ export const UI_EN: Readonly<Record<string, string>> = {
 
   // product types
   'ui.ptype.MEDICINE': 'Medicine',
-  'ui.ptype.MEDICINE.hint': 'Batches with expiry, dosage form, schedule',
+  'ui.ptype.MEDICINE.hint': 'Batches with expiry, dosage form, dispensing class',
   'ui.ptype.MEDICAL_EQUIPMENT': 'Equipment',
   'ui.ptype.MEDICAL_EQUIPMENT.hint': 'Wheelchairs, BP monitors — serial numbers & warranty',
   'ui.ptype.MEDICAL_SUPPLY': 'Supplies',
