@@ -125,6 +125,33 @@ export class ExportComponent {
   }
 }
 
+/**
+ * GETs a file from the API (such as a pharmacy's data export) and saves it under the name the API
+ * gave it; a refusal becomes a toast in the API's own words. True when it was saved.
+ */
+export async function downloadFrom(
+  http: HttpClient,
+  path: string,
+  toasts: ToastService,
+  fallback: string,
+): Promise<boolean> {
+  try {
+    save(
+      await firstValueFrom(
+        http.get(apiUrl(path), {
+          responseType: 'blob',
+          observe: 'response',
+          context: new HttpContext().set(SILENT, true),
+        }),
+      ),
+    );
+    return true;
+  } catch (failure) {
+    toasts.error(await reason(failure, fallback));
+    return false;
+  }
+}
+
 /** Saves the answer under the name the API gave it. */
 function save(response: HttpResponse<Blob>): void {
   const disposition = response.headers.get('Content-Disposition') ?? '';

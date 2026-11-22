@@ -79,4 +79,55 @@ export const PLATFORM_SW: Readonly<Record<string, string>> = {
     ' Wasimamizi wake bado wanaweza kusoma na kuhamisha data yake, lakini si kuibadilisha.',
   'errors.tenant_suspended_read_only':
     'Usajili wa famasia hii haujalipwa: bado unaweza kuona na kuhamisha data yake, lakini si kuibadilisha, mpaka ulipwe.',
+  // kufunga na kufuta
+  'enum.CLOSED': 'Imefungwa',
+  'enum.ERASED': 'Imefutwa',
+  'close.close': 'Funga famasia',
+  'close.closeTitle': 'Funga famasia hii',
+  'close.closeText':
+    'Hakuna atakayefanya kazi ndani yake tena. Wasimamizi wake bado wanaweza kuona na kuhamisha data yake. Baada ya muda wa kusubiri data yake inaweza kufutwa; hadi hapo inaweza kufunguliwa tena.',
+  'close.reasonPlaceholder': 'Mmiliki ameomba kuondoka; akaunti haijalipwa siku 90…',
+  'close.reopen': 'Fungua tena',
+  'close.closedNotice':
+    'Imefungwa{{reason}}. Data yake inaweza kufutwa kuanzia {{date}}, isipofunguliwa tena.',
+  'close.erasedNotice':
+    'Ilifutwa tarehe {{date}}. Imebaki kumbukumbu hii tu; jukwaa linabaki na kumbukumbu zake za malipo.',
+  'close.holdNotice':
+    'Zuio la kisheria{{reason}}: data yake haiwezi kufutwa mpaka zuio liondolewe.',
+  'close.hold': 'Zuio la kisheria',
+  'close.holdTitle': 'Weka zuio la kisheria',
+  'close.holdText':
+    'Mgogoro, uchunguzi wa mamlaka au amri ya mahakama: zuio likiwepo, data ya famasia haiwezi kufutwa.',
+  'close.holdPlaceholder': 'Uchunguzi wa TMDA 7/2026; kesi ya mahakama ya Kisutu 123/2026…',
+  'close.liftHold': 'Ondoa zuio la kisheria',
+  'close.liftHoldText': 'Data yake itaweza kufutwa ikishafungwa na muda wake wa kusubiri ukiisha.',
+  'close.export': 'Hamisha data',
+  'close.exportFailed': 'Data haikuweza kuhamishwa.',
+  'close.erase': 'Futa data',
+  'close.eraseTitle': 'Futa data ya famasia hii',
+  'close.eraseText':
+    'Kila mauzo, bidhaa, mteja, ingizo la hesabu, faili na kumbukumbu ya ukaguzi ya {{name}} inafutwa kabisa, pamoja na akaunti za wafanyakazi wake. Hili haliwezi kutenduliwa. Hamisha data kwanza kama kuna anayeihitaji.',
+  'close.eraseConfirm': 'Andika msimbo wa famasia ({{code}}) kuthibitisha',
+  'close.eraseWaiting': 'Inaweza kufutwa kuanzia {{date}}',
+  'close.eraseHeld': 'Iko chini ya zuio la kisheria',
+  'toast.pharmacyClosed': 'Famasia imefungwa',
+  'toast.pharmacyReopened': 'Famasia imefunguliwa tena',
+  'toast.holdPlaced': 'Zuio la kisheria limewekwa',
+  'toast.holdLifted': 'Zuio la kisheria limeondolewa',
+  'toast.pharmacyErased': 'Data ya famasia imefutwa',
+  'ui.closed.title': 'Famasia hii imefungwa',
+  'ui.closed.body':
+    '{{pharmacy}} imefungwa: hakuna anayefanya kazi ndani yake tena. Wasimamizi wake bado wanaweza kupakua data yake mpaka ifutwe.',
+  'data.export': 'Pakua data yote',
+  'data.exportHint':
+    'Kila kumbukumbu ya famasia hii kama majedwali (CSV) pamoja na faili zake, katika ZIP moja — kuhifadhi, kuhamia mfumo mwingine, au kwa mkaguzi.',
+  'data.yourData': 'Data yako',
+  'errors.tenant_closed':
+    'Famasia hii imefungwa. Wasimamizi wake bado wanaweza kuona na kuhamisha data yake.',
+  'errors.tenant_erased': 'Famasia hii ilifungwa na data yake imefutwa.',
+  'errors.erase_refused': 'Data ya famasia haiwezi kufutwa bado.',
+  'errors.confirm_code_mismatch': 'Andika msimbo wa famasia sawasawa kuthibitisha.',
+  'errors.already_closed': 'Famasia tayari imefungwa.',
+  'errors.not_closed': 'Famasia iliyofungwa tu ndiyo inaweza kufunguliwa tena.',
+  'errors.not_suspended': 'Famasia iliyosimamishwa tu ndiyo inaweza kurudishwa.',
 };

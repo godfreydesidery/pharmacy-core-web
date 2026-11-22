@@ -1,4 +1,7 @@
+import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ConfirmService } from '../../core/ui/confirm';
+import { downloadFrom } from '../../core/ui/export.component';
 import { Router } from '@angular/router';
 import { Api } from '../../core/api/api.service';
 import { Branch, Tenant } from '../../core/api/models';
@@ -28,19 +31,61 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
             <p class="sub">{{ t.code }}{{ t.legalName ? ' · ' + t.legalName : '' }}</p>
           </div>
           <div class="actions">
-            <button class="btn" type="button" (click)="editing.set(true)">
-              <app-icon name="edit" [size]="16" /> {{ 'common.edit' | t }}
-            </button>
-            <button class="btn primary" type="button" (click)="enter(t)">
-              <app-icon name="transfer" [size]="16" /> {{ 'platform.workInThisPharmacy' | t }}
-            </button>
+            @if (t.status !== 'ERASED') {
+              <button class="btn" type="button" (click)="editing.set(true)">
+                <app-icon name="edit" [size]="16" /> {{ 'common.edit' | t }}
+              </button>
+              <button
+                class="btn"
+                type="button"
+                data-testid="tenant-export"
+                [disabled]="exporting()"
+                (click)="exportData()"
+              >
+                <app-icon name="download" [size]="16" /> {{ 'close.export' | t }}
+              </button>
+              @if (t.legalHold) {
+                <button class="btn" type="button" [disabled]="busy()" (click)="liftHold()">
+                  <app-icon name="lock" [size]="16" /> {{ 'close.liftHold' | t }}
+                </button>
+              } @else {
+                <button class="btn" type="button" (click)="holding.set(true)">
+                  <app-icon name="shield" [size]="16" /> {{ 'close.hold' | t }}
+                </button>
+              }
+            }
+            @if (t.status === 'ACTIVE' || t.status === 'SUSPENDED') {
+              <button class="btn primary" type="button" (click)="enter(t)">
+                <app-icon name="transfer" [size]="16" /> {{ 'platform.workInThisPharmacy' | t }}
+              </button>
+            }
             @if (t.status === 'ACTIVE') {
               <button class="btn danger" type="button" (click)="suspending.set(true)">
                 <app-icon name="lock" [size]="16" /> {{ 'platform.suspend' | t }}
               </button>
-            } @else {
+            } @else if (t.status === 'SUSPENDED') {
               <button class="btn success" type="button" [disabled]="busy()" (click)="reactivate(t)">
                 <app-icon name="check" [size]="16" /> {{ 'platform.reactivate' | t }}
+              </button>
+            }
+            @if (t.status === 'ACTIVE' || t.status === 'SUSPENDED') {
+              <button class="btn danger" type="button" (click)="closing.set(true)">
+                <app-icon name="x" [size]="16" /> {{ 'close.close' | t }}
+              </button>
+            }
+            @if (t.status === 'CLOSED') {
+              <button class="btn success" type="button" [disabled]="busy()" (click)="reopen()">
+                <app-icon name="check" [size]="16" /> {{ 'close.reopen' | t }}
+              </button>
+              <button
+                class="btn danger"
+                type="button"
+                data-testid="tenant-erase"
+                [disabled]="!erasable(t)"
+                [title]="eraseBlocker(t)"
+                (click)="erasing.set(true)"
+              >
+                <app-icon name="trash" [size]="16" /> {{ 'close.erase' | t }}
               </button>
             }
           </div>
@@ -63,6 +108,34 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
                 ? 'susp.unpaidEffect'
                 : 'platform.itsUsersCannotSignIn'
               ) | t
+            }}
+          </div>
+        }
+        @if (t.status === 'CLOSED') {
+          <div class="notice tone-amber mb" data-testid="closed-notice">
+            <app-icon name="alert" />
+            {{
+              'close.closedNotice'
+                | t
+                  : {
+                      reason: t.statusReason ? ': ' + t.statusReason : '',
+                      date: (t.eraseAfter | when) ?? '—',
+                    }
+            }}
+          </div>
+        }
+        @if (t.status === 'ERASED') {
+          <div class="notice tone-gray mb" data-testid="erased-notice">
+            <app-icon name="trash" />
+            {{ 'close.erasedNotice' | t: { date: (t.erasedAt | when) ?? '—' } }}
+          </div>
+        }
+        @if (t.legalHold) {
+          <div class="notice tone-red mb" data-testid="hold-notice">
+            <app-icon name="shield" />
+            {{
+              'close.holdNotice'
+                | t: { reason: t.legalHoldReason ? ' (' + t.legalHoldReason + ')' : '' }
             }}
           </div>
         }
@@ -213,6 +286,98 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
         </button>
       </ng-container>
     </app-modal>
+
+    <app-modal [open]="closing()" [title]="'close.closeTitle' | t" (closed)="closing.set(false)">
+      <div class="stack">
+        <p>{{ 'close.closeText' | t }}</p>
+        <div class="field">
+          <label>{{ 'platform.reason' | t }}</label
+          ><textarea
+            class="input"
+            #closeReason
+            data-testid="close-reason"
+            [placeholder]="'close.reasonPlaceholder' | t"
+          ></textarea>
+        </div>
+      </div>
+      <ng-container footer>
+        <button class="btn" type="button" (click)="closing.set(false)">
+          {{ 'common.cancel' | t }}
+        </button>
+        <button
+          class="btn danger"
+          type="button"
+          data-testid="close-confirm"
+          [disabled]="busy()"
+          (click)="close(closeReason.value)"
+        >
+          {{ 'close.close' | t }}
+        </button>
+      </ng-container>
+    </app-modal>
+
+    <app-modal [open]="holding()" [title]="'close.holdTitle' | t" (closed)="holding.set(false)">
+      <div class="stack">
+        <p>{{ 'close.holdText' | t }}</p>
+        <div class="field">
+          <label>{{ 'platform.reason' | t }}</label
+          ><textarea
+            class="input"
+            #holdReason
+            data-testid="hold-reason"
+            [placeholder]="'close.holdPlaceholder' | t"
+          ></textarea>
+        </div>
+      </div>
+      <ng-container footer>
+        <button class="btn" type="button" (click)="holding.set(false)">
+          {{ 'common.cancel' | t }}
+        </button>
+        <button
+          class="btn danger"
+          type="button"
+          data-testid="hold-confirm"
+          [disabled]="busy()"
+          (click)="hold(holdReason.value)"
+        >
+          {{ 'close.hold' | t }}
+        </button>
+      </ng-container>
+    </app-modal>
+
+    @if (tenant.value(); as t) {
+      <app-modal [open]="erasing()" [title]="'close.eraseTitle' | t" (closed)="erasing.set(false)">
+        <div class="stack">
+          <div class="notice tone-red">
+            <app-icon name="alert" /> {{ 'close.eraseText' | t: { name: t.name } }}
+          </div>
+          <div class="field">
+            <label>{{ 'close.eraseConfirm' | t: { code: t.code } }}</label>
+            <input
+              class="input mono"
+              data-testid="erase-code"
+              autocomplete="off"
+              [value]="eraseCode()"
+              (input)="eraseCode.set($any($event.target).value)"
+            />
+          </div>
+        </div>
+        <ng-container footer>
+          <button class="btn" type="button" (click)="erasing.set(false)">
+            {{ 'common.cancel' | t }}
+          </button>
+          <button
+            class="btn danger"
+            type="button"
+            data-testid="erase-confirm"
+            [disabled]="busy() || eraseCode().trim().toUpperCase() !== t.code.toUpperCase()"
+            (click)="erase()"
+          >
+            {{ 'close.erase' | t }}
+          </button>
+        </ng-container>
+      </app-modal>
+    }
   `,
 })
 export default class TenantDetailPage {
@@ -224,6 +389,13 @@ export default class TenantDetailPage {
   readonly uid = input.required<string>();
   protected readonly busy = signal(false);
   protected readonly suspending = signal(false);
+  protected readonly closing = signal(false);
+  protected readonly holding = signal(false);
+  protected readonly erasing = signal(false);
+  protected readonly exporting = signal(false);
+  protected readonly eraseCode = signal('');
+  private readonly http = inject(HttpClient);
+  private readonly confirm = inject(ConfirmService);
   protected readonly editing = signal(false);
   protected readonly tenant = loaded<Tenant>(() => ({
     path: `/platform/tenants/${this.uid()}`,
@@ -264,6 +436,107 @@ export default class TenantDetailPage {
       {},
       this.translations.t('toast.pharmacyReactivated'),
     );
+  }
+
+  protected async close(reason: string): Promise<void> {
+    await this.change(
+      `/platform/tenants/${this.uid()}/close`,
+      { reason },
+      this.translations.t('toast.pharmacyClosed'),
+    );
+    this.closing.set(false);
+  }
+
+  protected reopen(): Promise<void> {
+    return this.change(
+      `/platform/tenants/${this.uid()}/reopen`,
+      {},
+      this.translations.t('toast.pharmacyReopened'),
+    );
+  }
+
+  protected async hold(reason: string): Promise<void> {
+    await this.change(
+      `/platform/tenants/${this.uid()}/legal-hold`,
+      { reason },
+      this.translations.t('toast.holdPlaced'),
+    );
+    this.holding.set(false);
+  }
+
+  protected async liftHold(): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: this.translations.t('close.liftHold'),
+      text: this.translations.t('close.liftHoldText'),
+      icon: 'warning',
+    });
+    if (!ok) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      this.tenant.set(
+        await this.api.delete<Tenant>(`/platform/tenants/${this.uid()}/legal-hold`, {
+          noBranch: true,
+        }),
+      );
+      this.toasts.success(this.translations.t('toast.holdLifted'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async erase(): Promise<void> {
+    this.busy.set(true);
+    try {
+      const erased = await this.api.post<{ tenant: Tenant }>(
+        `/platform/tenants/${this.uid()}/erase`,
+        { confirmCode: this.eraseCode().trim() },
+        { noBranch: true },
+      );
+      this.tenant.set(erased.tenant);
+      this.erasing.set(false);
+      this.eraseCode.set('');
+      this.toasts.success(this.translations.t('toast.pharmacyErased'));
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  protected async exportData(): Promise<void> {
+    this.exporting.set(true);
+    try {
+      await downloadFrom(
+        this.http,
+        `/platform/tenants/${this.uid()}/export`,
+        this.toasts,
+        this.translations.t('close.exportFailed'),
+      );
+    } finally {
+      this.exporting.set(false);
+    }
+  }
+
+  /** Closed, its cooling-off over and no legal hold: the erasure may go ahead. */
+  protected erasable(t: Tenant): boolean {
+    return (
+      t.status === 'CLOSED' &&
+      !t.legalHold &&
+      !!t.eraseAfter &&
+      new Date(t.eraseAfter).getTime() <= Date.now()
+    );
+  }
+
+  protected eraseBlocker(t: Tenant): string {
+    if (t.legalHold) {
+      return this.translations.t('close.eraseHeld');
+    }
+    if (!this.erasable(t) && t.eraseAfter) {
+      return this.translations.t('close.eraseWaiting', {
+        date: new Date(t.eraseAfter).toLocaleString(),
+      });
+    }
+    return '';
   }
 
   private async change(path: string, body: object, message: string): Promise<void> {

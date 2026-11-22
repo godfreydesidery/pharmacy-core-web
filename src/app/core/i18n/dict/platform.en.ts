@@ -79,4 +79,54 @@ export const PLATFORM_EN: Readonly<Record<string, string>> = {
   'susp.unpaidEffect': ' Its admins can still read and export its data, but not change it.',
   'errors.tenant_suspended_read_only':
     'This pharmacy’s subscription is unpaid: you can still see and export its data, but not change it, until it is paid.',
+  // closing and erasing
+  'enum.CLOSED': 'Closed',
+  'enum.ERASED': 'Erased',
+  'close.close': 'Close pharmacy',
+  'close.closeTitle': 'Close this pharmacy',
+  'close.closeText':
+    'Nobody will work in it any more. Its admins can still see and export its data. After the cooling-off period its data can be erased; until then it can be reopened.',
+  'close.reasonPlaceholder': 'The owner asked to leave; account unpaid for 90 days…',
+  'close.reopen': 'Reopen',
+  'close.closedNotice':
+    'Closed{{reason}}. Its data can be erased from {{date}}, unless it is reopened.',
+  'close.erasedNotice':
+    'Erased on {{date}}. Only this record is left; the platform keeps its billing records.',
+  'close.holdNotice': 'Legal hold{{reason}}: its data cannot be erased until the hold is lifted.',
+  'close.hold': 'Legal hold',
+  'close.holdTitle': 'Place a legal hold',
+  'close.holdText':
+    'A dispute, a regulator’s inquiry or a court order: while the hold stays, the pharmacy’s data cannot be erased.',
+  'close.holdPlaceholder': 'TMDA inquiry 7/2026; Kisutu court case 123/2026…',
+  'close.liftHold': 'Lift legal hold',
+  'close.liftHoldText':
+    'Its data can then be erased once it is closed and its cooling-off has ended.',
+  'close.export': 'Export data',
+  'close.exportFailed': 'The export could not be made.',
+  'close.erase': 'Erase data',
+  'close.eraseTitle': 'Erase this pharmacy’s data',
+  'close.eraseText':
+    'Every sale, product, customer, ledger entry, file and audit entry of {{name}} is deleted for good, with its own staff logins. This cannot be undone. Export the data first if anyone needs it.',
+  'close.eraseConfirm': 'Type the pharmacy’s code ({{code}}) to confirm',
+  'close.eraseWaiting': 'Can be erased from {{date}}',
+  'close.eraseHeld': 'Under a legal hold',
+  'toast.pharmacyClosed': 'Pharmacy closed',
+  'toast.pharmacyReopened': 'Pharmacy reopened',
+  'toast.holdPlaced': 'Legal hold placed',
+  'toast.holdLifted': 'Legal hold lifted',
+  'toast.pharmacyErased': 'The pharmacy’s data was erased',
+  'ui.closed.title': 'This pharmacy is closed',
+  'ui.closed.body':
+    '{{pharmacy}} is closed: nobody works in it any more. Its admins can still download its data until it is erased.',
+  'data.export': 'Download all data',
+  'data.exportHint':
+    'Every record of this pharmacy as spreadsheets (CSV) with its files, in one ZIP — to keep, to move to another system, or for an auditor.',
+  'data.yourData': 'Your data',
+  'errors.tenant_closed': 'This pharmacy is closed. Its admins can still see and export its data.',
+  'errors.tenant_erased': 'This pharmacy was closed and its data erased.',
+  'errors.erase_refused': 'The pharmacy’s data cannot be erased yet.',
+  'errors.confirm_code_mismatch': 'Type the pharmacy’s code exactly to confirm.',
+  'errors.already_closed': 'The pharmacy is already closed.',
+  'errors.not_closed': 'Only a closed pharmacy can be reopened.',
+  'errors.not_suspended': 'Only a suspended pharmacy can be reactivated.',
 };
