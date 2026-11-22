@@ -106,6 +106,16 @@ import { Translations } from '../../core/i18n/translations.store';
             }
             <span class="hint">{{ 'idle.settingHint' | t }}</span>
           </div>
+          <div class="field">
+            <label class="check" data-testid="require-2fa">
+              <input type="checkbox" formControlName="requireTwoFactor" />
+              {{ 'staff.require2fa' | t }}
+            </label>
+            <span class="hint">{{ 'staff.require2faHint' | t }}</span>
+            @if (err('requireTwoFactor'); as e) {
+              <span class="error">{{ e }}</span>
+            }
+          </div>
           <h3>{{ 'admin.alerts' | t }}</h3>
           <div class="field">
             <label>{{ 'admin.expiryAlertWindowDays' | t }}</label
@@ -308,6 +318,7 @@ export default class SettingsPage implements OnInit {
     pricesIncludeTax: [false],
     look: ['PREMIUM' as Settings['look']],
     idleMinutes: [15, [Validators.required, Validators.min(5), Validators.max(60)]],
+    requireTwoFactor: [false],
   });
 
   async ngOnInit(): Promise<void> {

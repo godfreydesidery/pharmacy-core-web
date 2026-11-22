@@ -117,4 +117,28 @@ export const ACCT_SW: Readonly<Record<string, string>> = {
   'errors.invalid_login': 'Akaunti ya mfanyakazi au nenosiri lake si sahihi.',
   'errors.login_linked':
     'Akaunti hii ya mfanyakazi sasa ni sehemu ya akaunti yako: ingia kwa barua pepe yako.',
+  'staff.myPharmacies': 'Famasia zako',
+  'staff.myPharmaciesHint':
+    'Famasia unazofanyia kazi kwa akaunti hii. Unaweza kuacha moja mwenyewe.',
+  'staff.leave': 'Acha',
+  'staff.leaveWarning':
+    'Hutafanya kazi tena {{pharmacy}}. Itahifadhi jina na barua pepe yako kama zilivyo sasa. Msimamizi wake tu anaweza kukurudisha.',
+  'staff.codeIfOn': 'Msimbo kutoka programu ya uthibitisho (kama unaitumia)',
+  'staff.leaveConfirm': 'Acha famasia',
+  'staff.left': 'Umeacha famasia.',
+  'staff.number': 'Namba ya mfanyakazi',
+  'staff.jobTitle': 'Cheo',
+  'staff.workPhone': 'Simu ya kazini',
+  'staff.workEmail': 'Barua pepe ya kazini',
+  'staff.hint': 'Inatunzwa na famasia hii tu; haibadilishi akaunti ya mtu mwenyewe.',
+  'staff.require2fa': 'Lazimisha uthibitisho wa hatua mbili kwa wote wanaofanya kazi hapa',
+  'staff.require2faHint':
+    'Wafanyakazi wasio na programu ya uthibitisho au passkey wataelekezwa kuiweka kabla ya kufanya kazi hapa. Weka yako kwanza.',
+  'errors.last_admin':
+    'Wewe ndiye pekee unayeweza kusimamia watu wa famasia hii: mpe mwingine nafasi hiyo kwanza.',
+  'errors.duplicate_staff_number': 'Mfanyakazi mwingine tayari ana namba hiyo.',
+  'errors.two_factor_required_by_pharmacy':
+    'Famasia hii inalazimisha uthibitisho wa hatua mbili: weka programu ya uthibitisho au passkey kwanza.',
+  'errors.two_factor_needed_first':
+    'Weka uthibitisho wa hatua mbili kwenye akaunti yako kabla ya kuulazimisha kwa wote.',
 };

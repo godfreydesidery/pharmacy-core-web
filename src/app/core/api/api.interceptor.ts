@@ -1,3 +1,4 @@
+import { Router } from '@angular/router';
 import { HttpContextToken, HttpEvent, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { Injector, inject } from '@angular/core';
 import { catchError, map, throwError } from 'rxjs';
@@ -82,6 +83,10 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
             .get(SignOutService)
             .end(error.reason === 'session_idle' ? 'idle' : 'expired');
         }
+      } else if (error.reason === 'two_factor_required_by_pharmacy') {
+        // G16: this pharmacy requires a second factor; set one up, then come back.
+        toasts.error(error.message);
+        void injector.get(Router).navigateByUrl('/account?setup=2fa');
       } else if (!request.context.get(SILENT)) {
         toasts.error(error.message);
       }
