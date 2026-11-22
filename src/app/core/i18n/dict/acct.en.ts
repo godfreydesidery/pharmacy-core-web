@@ -105,4 +105,19 @@ export const ACCT_EN: Readonly<Record<string, string>> = {
   'acct.resetTwoFactor': 'Also turn off two-factor (they lost their phone or app)',
   'acct.reason': 'How you checked who they are',
   'acct.recoveryStarted': 'Recovery started: the link to {{email}} works from {{time}}.',
+  // linking a pharmacy staff login (juma@DAWA) to this account
+  'link.title': 'Staff login of a pharmacy',
+  'link.hint':
+    'Has a pharmacy given you a staff login such as juma@DAWA? Link it to this account and sign in everywhere with your own email.',
+  'link.start': 'Link a staff login',
+  'link.signIn': 'The staff login (username@PHARMACY)',
+  'link.loginPassword': 'Its password',
+  'link.password': 'Your own password',
+  'link.warning':
+    'The pharmacy will see you under this account (your name and email). The staff login stops working; what you did with it stays in the pharmacy’s records.',
+  'link.submit': 'Link it',
+  'link.done': 'Linked: you now reach that pharmacy with your own account.',
+  'errors.invalid_login': 'The staff login or its password is wrong.',
+  'errors.login_linked':
+    'This staff login is now part of your own account: sign in with your email.',
 };
