@@ -64,6 +64,8 @@ export interface Invitation {
   invitedBy: string;
   expiresAt: IsoDateTime;
   createdAt: IsoDateTime;
+  /** The sign-in of the account that accepted; it may differ from the email invited. */
+  acceptedAs?: string | null;
 }
 
 export interface InvitationPreview {

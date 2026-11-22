@@ -294,11 +294,16 @@ export default class TenantsPage implements OnInit {
         country: value.country.toUpperCase(),
         headOffice: { ...value.headOffice, code: value.headOffice.code.toUpperCase() },
       };
-      const tenant = await this.api.post<Tenant>('/platform/tenants', body, {
-        silent: true,
-        noBranch: true,
-      });
+      const tenant = await this.api.post<Tenant & { adminInvited?: boolean }>(
+        '/platform/tenants',
+        body,
+        { silent: true, noBranch: true },
+      );
       this.toasts.success(this.translations.t('toast.tenantRegistered', { name: tenant.name }));
+      if (tenant.adminInvited) {
+        // The administrator's email already had an account: they join by accepting.
+        this.toasts.info(this.translations.t('join.adminInvited', { email: body.admin.email }));
+      }
       this.creating.set(false);
       await this.router.navigate(['/platform/tenants', tenant.uid]);
     } catch (failure) {

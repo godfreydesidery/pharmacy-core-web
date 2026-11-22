@@ -42,6 +42,10 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
     'Jina la mtumiaji ni herufi au tarakimu 2 hadi 32, na linaweza kuwa na . - au _ (mfano juma au mary.k).',
   'errors.not_managed':
     'Mtu huyu huingia kwa akaunti yake mwenyewe; ni yeye tu anayeweza kubadilisha nenosiri lake.',
+  'errors.account_exists':
+    'Barua pepe hii tayari ina akaunti: ingia kwanza, kisha ukubali mwaliko.',
+  'errors.managed_login_cannot_join':
+    'Akaunti ya mfanyakazi wa duka hufanya kazi katika duka hilo tu. Ingia kwa akaunti yako mwenyewe, au fungua moja, ili ukubali mwaliko huu.',
   'errors.direct_creation_disabled':
     'Duka hili hualika watu kwa barua pepe; halitengenezi akaunti za kuingia kwa ajili yao.',
 
