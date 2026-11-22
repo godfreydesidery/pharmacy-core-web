@@ -84,6 +84,15 @@ import { signInLabel } from '../../core/session/sign-in-label';
                       <div>
                         <b>{{ m.name }}</b
                         ><small>{{ m.managed ? signInOf(m.email) : m.email }}</small>
+                        @if (m.staff?.staffNumber || m.staff?.jobTitle) {
+                          <small class="staff"
+                            >{{ m.staff?.staffNumber }}
+                            @if (m.staff?.staffNumber && m.staff?.jobTitle) {
+                              ·
+                            }
+                            {{ m.staff?.jobTitle }}</small
+                          >
+                        }
                         @if (m.managed) {
                           <span class="badge purple" [title]="'logins.badgeTitle' | t">{{
                             'logins.badge' | t
@@ -219,7 +228,40 @@ import { signInLabel } from '../../core/session/sign-in-label';
             }
           </div>
         }
-        @if (current() || managedMode()) {
+        @if (current()) {
+          <div class="field">
+            <label>{{ 'staff.number' | t }}</label
+            ><input class="input" formControlName="staffNumber" maxlength="40" />
+            @if (err('staffNumber'); as m) {
+              <span class="error">{{ m }}</span>
+            }
+          </div>
+          <div class="field">
+            <label>{{ 'staff.jobTitle' | t }}</label
+            ><input class="input" formControlName="jobTitle" maxlength="80" />
+          </div>
+          <div class="field">
+            <label>{{ 'staff.workPhone' | t }}</label
+            ><input
+              class="input"
+              type="tel"
+              formControlName="workPhone"
+              placeholder="0754 000 111"
+            />
+            @if (err('workPhone'); as m) {
+              <span class="error">{{ m }}</span>
+            }
+          </div>
+          <div class="field">
+            <label>{{ 'staff.workEmail' | t }}</label
+            ><input class="input" type="email" formControlName="workEmail" />
+            <span class="hint">{{ 'staff.hint' | t }}</span>
+            @if (err('workEmail'); as m) {
+              <span class="error">{{ m }}</span>
+            }
+          </div>
+        }
+        @if (managedMode() || current()?.managed) {
           <div class="field">
             <label>{{ 'admin2.phone' | t }}</label
             ><input class="input" type="tel" formControlName="phone" placeholder="+255754000111" />
@@ -430,6 +472,10 @@ export default class UsersPage {
     phone: [''],
     username: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9][A-Za-z0-9._-]{1,31}$/)]],
     contactEmail: ['', Validators.email],
+    staffNumber: [''],
+    jobTitle: [''],
+    workPhone: [''],
+    workEmail: ['', Validators.email],
     roleUid: ['', Validators.required],
     allBranches: [true],
     active: [true],
@@ -474,6 +520,10 @@ export default class UsersPage {
       phone: member?.phone ?? '',
       username: '',
       contactEmail: member?.contactEmail ?? '',
+      staffNumber: member?.staff?.staffNumber ?? '',
+      jobTitle: member?.staff?.jobTitle ?? '',
+      workPhone: member?.staff?.workPhone ?? '',
+      workEmail: member?.staff?.workEmail ?? '',
       roleUid: member?.roleUid ?? '',
       allBranches: member?.allBranches ?? true,
       active: member?.active ?? true,
@@ -485,9 +535,14 @@ export default class UsersPage {
       email: !member && !managed,
       username: !member && managed,
       contactEmail: managed || !!member?.managed,
-      // A person's phone is theirs (an invitation carries none); a managed login's is the
-      // pharmacy's; an admin may fill in a phone only where a member has none yet.
-      phone: managed || !!member?.managed || (!!member && !member.phone),
+      // A person's phone is theirs, verified by them (an invitation carries none); a managed
+      // login's is the pharmacy's.
+      phone: managed || !!member?.managed,
+      // What the pharmacy keeps about a member, whoever they are.
+      staffNumber: !!member,
+      jobTitle: !!member,
+      workPhone: !!member,
+      workEmail: !!member,
     };
     for (const [name, on] of Object.entries(enabled)) {
       const control = this.form.get(name)!;
@@ -567,14 +622,17 @@ export default class UsersPage {
       if (current) {
         await this.api.put(
           `/users/${current.membershipUid}`,
-          current.managed
-            ? {
-                ...access,
-                active: v.active,
-                name: v.name.trim(),
-                contactEmail: v.contactEmail.trim() || null,
-              }
-            : { ...access, active: v.active },
+          {
+            ...access,
+            active: v.active,
+            ...(current.managed
+              ? { name: v.name.trim(), contactEmail: v.contactEmail.trim() || null }
+              : {}),
+            staffNumber: v.staffNumber.trim(),
+            jobTitle: v.jobTitle.trim(),
+            workPhone: v.workPhone.trim(),
+            workEmail: v.workEmail.trim(),
+          },
           { silent: true, noBranch: true },
         );
       } else if (this.managedMode()) {

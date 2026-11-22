@@ -141,6 +141,8 @@ export interface Settings {
   look: 'PREMIUM' | 'CLASSIC';
   /** Minutes without use that sign a person out of this pharmacy (5 to 60). */
   idleMinutes: number;
+  /** Everyone who works here needs an authenticator app or a passkey (G16). */
+  requireTwoFactor?: boolean;
 }
 
 /** `POST /auth/activity`: the session's inactivity limit after the person used the app. */
@@ -172,6 +174,15 @@ export interface Member {
   contactEmail?: string | null;
   /** Still on the temporary password the pharmacy gave. */
   passwordChangeRequired?: boolean;
+  /** What this pharmacy keeps about the person (G15); no other pharmacy sees it. */
+  staff?: StaffDetails | null;
+}
+
+export interface StaffDetails {
+  staffNumber: string | null;
+  jobTitle: string | null;
+  workPhone: string | null;
+  workEmail: string | null;
 }
 
 /** A managed login just created or reset: the temporary password is shown this once. */

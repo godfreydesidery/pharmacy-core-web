@@ -120,4 +120,29 @@ export const ACCT_EN: Readonly<Record<string, string>> = {
   'errors.invalid_login': 'The staff login or its password is wrong.',
   'errors.login_linked':
     'This staff login is now part of your own account: sign in with your email.',
+  // G14–G16: one's pharmacies, the pharmacy's own staff details, required two-factor
+  'staff.myPharmacies': 'Your pharmacies',
+  'staff.myPharmaciesHint':
+    'The pharmacies you work in with this account. You may leave one yourself.',
+  'staff.leave': 'Leave',
+  'staff.leaveWarning':
+    'You will no longer work in {{pharmacy}}. It keeps your name and email as they are now. Only its admin can add you back.',
+  'staff.codeIfOn': 'Code from your authenticator app (if you use one)',
+  'staff.leaveConfirm': 'Leave the pharmacy',
+  'staff.left': 'You left the pharmacy.',
+  'staff.number': 'Staff number',
+  'staff.jobTitle': 'Job title',
+  'staff.workPhone': 'Work phone',
+  'staff.workEmail': 'Work email',
+  'staff.hint': 'Kept by this pharmacy only; it does not change the person’s own account.',
+  'staff.require2fa': 'Require two-factor sign-in for everyone who works here',
+  'staff.require2faHint':
+    'Staff without an authenticator app or passkey are sent to set one up before they can work here. Set up your own first.',
+  'errors.last_admin':
+    'You are the only one who can manage this pharmacy’s people: give the role to someone else first.',
+  'errors.duplicate_staff_number': 'Another member already has that staff number.',
+  'errors.two_factor_required_by_pharmacy':
+    'This pharmacy requires two-factor sign-in: set up an authenticator app or a passkey first.',
+  'errors.two_factor_needed_first':
+    'Set up two-factor on your own account before requiring it of everyone.',
 };
