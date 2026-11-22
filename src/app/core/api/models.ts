@@ -29,6 +29,8 @@ export interface Membership {
   permissions: string[];
   allBranches: boolean;
   branches: BranchRef[];
+  /** The pharmacy's admin may create staff logins directly (set by the root administrator). */
+  directUserCreation?: boolean;
 }
 
 export interface SessionUser {
@@ -38,6 +40,8 @@ export interface SessionUser {
   rootAdmin: boolean;
   /** A root administrator must set up two-factor first (when the platform requires it). */
   twoFactorSetupRequired?: boolean;
+  /** A managed login on a temporary password must choose its own before working. */
+  passwordChangeRequired?: boolean;
 }
 
 export interface Session {
@@ -68,6 +72,8 @@ export interface Tenant {
   contactEmail?: string | null;
   contactPhone?: string | null;
   address?: string | null;
+  /** The pharmacy's admin may create staff logins directly, not only invite by email. */
+  directUserCreation?: boolean;
 }
 
 export interface RegisterTenant {
@@ -156,6 +162,19 @@ export interface Member {
   lastSignInAt: IsoDateTime | null;
   createdAt: IsoDateTime;
   phone?: string | null;
+  /** A login the pharmacy created: `email` is then its sign-in, username@code. */
+  managed?: boolean;
+  /** Where mail to a managed login goes. */
+  contactEmail?: string | null;
+  /** Still on the temporary password the pharmacy gave. */
+  passwordChangeRequired?: boolean;
+}
+
+/** A managed login just created or reset: the temporary password is shown this once. */
+export interface ManagedLoginPassword {
+  member: Member;
+  signIn: string;
+  temporaryPassword: string;
 }
 
 export interface Role {

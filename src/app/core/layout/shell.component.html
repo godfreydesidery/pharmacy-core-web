@@ -170,7 +170,7 @@
         <span class="avatar">{{ initials() }}</span>
         <span class="who"
           ><b>{{ session.user()?.name }}</b
-          ><small>{{ session.user()?.email }}</small></span
+          ><small>{{ session.signInName() }}</small></span
         >
         <app-icon name="chevron" [size]="15" />
       </button>

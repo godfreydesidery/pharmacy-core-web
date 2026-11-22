@@ -48,7 +48,7 @@ interface Pending {
             </h1>
             <p class="muted">
               {{ 'workspace.signedInAs' | t: { name: session.user()?.name } }} ·
-              {{ session.user()?.email }}
+              {{ session.signInName() }}
             </p>
           </div>
           <button class="btn ghost sm" type="button" (click)="signOut()">

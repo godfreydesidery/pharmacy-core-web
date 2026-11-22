@@ -105,6 +105,13 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
             <label>{{ 'platform.address' | t }}</label
             ><input class="input" formControlName="address" />
           </div>
+          <div class="field full">
+            <label class="check"
+              ><input type="checkbox" formControlName="directUserCreation" />
+              {{ 'logins.directSetting' | t }}</label
+            >
+            <span class="hint">{{ 'logins.directSettingHint' | t: { code: tenant().code } }}</span>
+          </div>
         </div>
       </form>
       <ng-container footer>
@@ -138,6 +145,7 @@ export class TenantEditComponent {
     contactEmail: ['', Validators.email],
     contactPhone: [''],
     address: [''],
+    directUserCreation: [true],
   });
 
   constructor() {
@@ -154,6 +162,7 @@ export class TenantEditComponent {
           contactEmail: t.contactEmail ?? '',
           contactPhone: t.contactPhone ?? '',
           address: t.address ?? '',
+          directUserCreation: t.directUserCreation ?? true,
         });
       }
     });
@@ -183,6 +192,7 @@ export class TenantEditComponent {
           contactEmail: blank(v.contactEmail),
           contactPhone: blank(v.contactPhone),
           address: blank(v.address),
+          directUserCreation: v.directUserCreation,
         },
         { noBranch: true, silent: true },
       );
