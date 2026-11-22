@@ -152,6 +152,8 @@ const TONES: Record<string, Tone> = {
   CONTROLLED: 'red',
   RETURNED: 'gray',
   SUSPENDED: 'red',
+  CLOSED: 'gray',
+  ERASED: 'gray',
   CANCELLED: 'red',
   OUT_OF_STOCK: 'red',
   EXPIRED: 'red',

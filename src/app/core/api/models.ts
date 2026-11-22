@@ -54,7 +54,8 @@ export interface Session {
 export type Me = Omit<Session, 'token' | 'expiresAt'>;
 
 /* ---------- platform ---------- */
-export type TenantStatus = 'ACTIVE' | 'SUSPENDED';
+/** CLOSED: nobody works in it, its admins may read and export; ERASED: only a tombstone is left. */
+export type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ERASED';
 
 export interface Tenant {
   uid: Uid;
@@ -68,6 +69,13 @@ export interface Tenant {
   statusReason: string | null;
   /** Why it is suspended: UNPAID (admins read-only), DISPUTE (legal hold), ABUSE, OTHER. */
   suspensionKind?: 'UNPAID' | 'DISPUTE' | 'ABUSE' | 'OTHER' | null;
+  /** A dispute, a regulator's or a court's order: its data may not be erased while it holds. */
+  legalHold?: boolean;
+  legalHoldReason?: string | null;
+  closedAt?: IsoDateTime | null;
+  /** When a closed pharmacy's cooling-off ends and it may be erased. */
+  eraseAfter?: IsoDateTime | null;
+  erasedAt?: IsoDateTime | null;
   branchCount: number;
   createdAt: IsoDateTime;
   contactName?: string | null;

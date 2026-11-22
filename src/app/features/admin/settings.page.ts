@@ -6,7 +6,9 @@ import {
   signal,
   computed,
 } from '@angular/core';
+import { HttpClient } from '@angular/common/http';
 import { FormBuilder, Validators } from '@angular/forms';
+import { downloadFrom } from '../../core/ui/export.component';
 import { Api } from '../../core/api/api.service';
 import { Settings, CurrencyInfo } from '../../core/api/models';
 import { SettingsStore } from '../../core/format/settings.store';
@@ -165,6 +167,22 @@ import { Translations } from '../../core/i18n/translations.store';
           </div>
         </div>
       </form>
+
+      <div class="card card-pad mt row between wrap" data-testid="data-export-card">
+        <div>
+          <h3>{{ 'data.yourData' | t }}</h3>
+          <p class="muted">{{ 'data.exportHint' | t }}</p>
+        </div>
+        <button
+          class="btn"
+          type="button"
+          data-testid="data-export"
+          [disabled]="exporting()"
+          (click)="exportData()"
+        >
+          <app-icon name="download" [size]="16" /> {{ 'data.export' | t }}
+        </button>
+      </div>
 
       <div class="card card-pad stack mt">
         <div class="row between">
@@ -347,6 +365,24 @@ export default class SettingsPage implements OnInit {
 
   protected err(name: string): string | null {
     return controlError(this.form.get(name));
+  }
+
+  protected readonly exporting = signal(false);
+  private readonly http = inject(HttpClient);
+
+  /** Every record of the pharmacy, with its files, as one ZIP (its right to take its data). */
+  protected async exportData(): Promise<void> {
+    this.exporting.set(true);
+    try {
+      await downloadFrom(
+        this.http,
+        '/data-export',
+        this.toasts,
+        this.translations.t('close.exportFailed'),
+      );
+    } finally {
+      this.exporting.set(false);
+    }
   }
 
   protected async save(): Promise<void> {

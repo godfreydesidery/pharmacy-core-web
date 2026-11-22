@@ -10,6 +10,7 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
 import { filter, map } from 'rxjs';
 import { Api } from '../api/api.service';
 import { TenantLogoStore } from '../files/tenant-logo.store';
@@ -26,6 +27,7 @@ import { IconComponent } from '../ui/icon.component';
 import { LookService } from '../ui/look.service';
 import { ThemeService } from '../ui/theme.service';
 import { ToastService } from '../ui/toast.service';
+import { downloadFrom } from '../ui/export.component';
 import { LogoComponent } from './logo.component';
 import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
 
@@ -65,6 +67,22 @@ export class ShellComponent {
   private readonly translations = inject(Translations);
   private readonly leave = inject(LeaveGuard);
   private readonly signOuts = inject(SignOutService);
+  private readonly http = inject(HttpClient);
+
+  /** The pharmacy's admins take its data out, even while it is unpaid or closed. */
+  protected async exportData(): Promise<void> {
+    this.exporting.set(true);
+    try {
+      await downloadFrom(
+        this.http,
+        '/data-export',
+        this.toast,
+        this.translations.t('close.exportFailed'),
+      );
+    } finally {
+      this.exporting.set(false);
+    }
+  }
 
   protected readonly collapsed = signal(false);
   protected readonly mobileOpen = signal(false);
@@ -86,10 +104,15 @@ export class ShellComponent {
   );
 
   protected readonly platformNav = computed(() => (this.session.isRoot() ? PLATFORM_NAV : []));
-  /** A suspended pharmacy, for anyone but a root administrator: only the account page stays open. */
-  protected readonly suspendedForMe = computed(
-    () => this.session.tenant()?.status === 'SUSPENDED' && !this.session.isRoot(),
-  );
+  /**
+   * A suspended or closed pharmacy, for anyone but a root administrator: only the account page
+   * stays open (and, for its admins, the download of its data).
+   */
+  protected readonly suspendedForMe = computed(() => {
+    const status = this.session.tenant()?.status;
+    return !!status && status !== 'ACTIVE' && !this.session.isRoot();
+  });
+  protected readonly exporting = signal(false);
   protected readonly blockedBySuspension = computed(
     () => this.suspendedForMe() && !this.url().startsWith('/account'),
   );
