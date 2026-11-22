@@ -48,7 +48,7 @@ export const CATALOGUE_EN: Readonly<Record<string, string>> = {
   'catalogue.products': 'Products',
   'catalogue.reorderLevel': 'Reorder level',
   'catalogue.save': 'Save',
-  'catalogue.schedule': 'Schedule',
+  'catalogue.schedule': 'Dispensing class',
   'catalogue.sellingPrice': 'Selling price',
   'catalogue.soldPer': 'Sold per',
   'catalogue.status': 'Status',

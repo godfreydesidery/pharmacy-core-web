@@ -16,7 +16,7 @@ export const UI_SW: Readonly<Record<string, string>> = {
 
   // product types
   'ui.ptype.MEDICINE': 'Dawa',
-  'ui.ptype.MEDICINE.hint': 'Bechi zenye tarehe ya kuisha, umbo la dawa, kundi la udhibiti',
+  'ui.ptype.MEDICINE.hint': 'Bechi zenye tarehe ya kuisha, umbo la dawa, aina ya utoaji',
   'ui.ptype.MEDICAL_EQUIPMENT': 'Vifaa tiba',
   'ui.ptype.MEDICAL_EQUIPMENT.hint':
     'Viti vya magurudumu, vipima presha — namba za utambulisho na dhamana',
