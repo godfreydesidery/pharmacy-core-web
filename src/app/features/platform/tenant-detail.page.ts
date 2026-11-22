@@ -53,9 +53,17 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
         />
         @if (t.status === 'SUSPENDED') {
           <div class="notice tone-red mb">
-            <app-icon name="alert" /> {{ 'platform.suspended' | t
-            }}{{ t.statusReason ? ': ' + t.statusReason : ''
-            }}{{ 'platform.itsUsersCannotSignIn' | t }}
+            <app-icon name="alert" /> {{ 'platform.suspended' | t }}
+            @if (t.suspensionKind) {
+              <b>({{ 'susp.kind.' + t.suspensionKind | t }})</b>
+            }
+            {{ t.statusReason ? ': ' + t.statusReason : ''
+            }}{{
+              (t.suspensionKind === 'UNPAID'
+                ? 'susp.unpaidEffect'
+                : 'platform.itsUsersCannotSignIn'
+              ) | t
+            }}
           </div>
         }
         <div class="grid two">
@@ -174,6 +182,15 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
           {{ 'platform.itsUsersWillNoLonger' | t }}
         </p>
         <div class="field">
+          <label>{{ 'susp.kind' | t }}</label>
+          <select class="select" #kind data-testid="suspension-kind">
+            @for (k of kinds; track k) {
+              <option [value]="k">{{ 'susp.kind.' + k | t }}</option>
+            }
+          </select>
+          <span class="hint">{{ 'susp.kindHint' | t }}</span>
+        </div>
+        <div class="field">
           <label>{{ 'platform.reason' | t }}</label
           ><textarea
             class="input"
@@ -190,7 +207,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
           class="btn danger"
           type="button"
           [disabled]="busy()"
-          (click)="suspend(reason.value)"
+          (click)="suspend(reason.value, kind.value)"
         >
           {{ 'platform.suspend' | t }}
         </button>
@@ -229,10 +246,13 @@ export default class TenantDetailPage {
     void this.router.navigate(['/dashboard']);
   }
 
-  protected async suspend(reason: string): Promise<void> {
+  /** Why a pharmacy is suspended: unpaid keeps its admins read-only, a dispute is a legal hold. */
+  protected readonly kinds = ['OTHER', 'DISPUTE', 'ABUSE', 'UNPAID'] as const;
+
+  protected async suspend(reason: string, kind: string): Promise<void> {
     await this.change(
       `/platform/tenants/${this.uid()}/suspend`,
-      { reason },
+      { reason, kind },
       this.translations.t('toast.pharmacySuspended'),
     );
     this.suspending.set(false);
