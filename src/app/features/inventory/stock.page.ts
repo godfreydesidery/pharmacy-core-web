@@ -144,6 +144,13 @@ import { Translations } from '../../core/i18n/translations.store';
             }
             <div class="spacer"></div>
             <app-export [list]="list" />
+            <app-import
+              path="/stock/opening/import"
+              permission="inventory.adjust"
+              title="ui.import.openingStock"
+              step2="ui.import.step2Stock"
+              (imported)="reloadAll()"
+            />
           </div>
           <div class="table-wrap">
             <table class="table">
@@ -570,6 +577,11 @@ export default class StockPage {
       product?.trackingMode ?? (product ? defaultTracking(product.productType) : 'BATCH_EXPIRY'),
     );
     this.syncSerialCount();
+  }
+
+  /** After an opening-stock import: the list and the totals. */
+  protected async reloadAll(): Promise<void> {
+    await Promise.all([this.list.reload(), this.summary.reload()]);
   }
 
   protected async saveOpening(): Promise<void> {

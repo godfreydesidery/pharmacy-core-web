@@ -135,6 +135,14 @@ interface PromotionDraft {
                     <td class="muted">{{ l.validFrom ?? '…' }} – {{ l.validTo ?? '…' }}</td>
                     <td class="right">
                       @if (canEdit()) {
+                        <app-import
+                          [path]="'/price-lists/' + l.uid + '/import'"
+                          permission="catalogue.manage"
+                          title="ui.import.priceList"
+                          step2="ui.import.step2PriceList"
+                          [small]="true"
+                          (imported)="lists.reload()"
+                        />
                         <button class="btn sm" type="button" (click)="editList(l)">
                           {{ 'pricing.edit' | t }}
                         </button>

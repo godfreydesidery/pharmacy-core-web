@@ -25,6 +25,12 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
         </div>
         <div class="actions">
           <app-export [list]="list" />
+          <app-import
+            path="/suppliers/import"
+            permission="partners.manage"
+            title="ui.import.suppliers"
+            (imported)="list.reload()"
+          />
           @if (session.can('partners.manage')) {
             <button class="btn primary" type="button" (click)="edit(null)">
               <app-icon name="plus" [size]="16" /> {{ 'partners.addSupplier' | t }}
