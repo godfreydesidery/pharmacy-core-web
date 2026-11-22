@@ -93,13 +93,7 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
             </tbody>
           </table>
         </div>
-        <app-pager
-          [count]="list.items().length"
-          [total]="list.total()"
-          [hasMore]="list.hasMore()"
-          [loading]="list.loading()"
-          (more)="list.more()"
-        />
+        <app-pager [list]="list" />
       </div>
     </div>
     <app-modal

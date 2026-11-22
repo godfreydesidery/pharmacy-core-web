@@ -136,13 +136,7 @@ interface RegisterLine {
                   </tbody>
                 </table>
               </div>
-              <app-pager
-                [count]="register.items().length"
-                [total]="register.total()"
-                [hasMore]="register.hasMore()"
-                [loading]="register.loading()"
-                (more)="register.more()"
-              />
+              <app-pager [list]="register" />
             } @else {
               <div class="empty card-pad">{{ 'controlled.pick' | t }}</div>
             }

@@ -148,13 +148,7 @@ import { signInLabel } from '../../core/session/sign-in-label';
             </tbody>
           </table>
         </div>
-        <app-pager
-          [count]="list.items().length"
-          [total]="list.total()"
-          [hasMore]="list.hasMore()"
-          [loading]="list.loading()"
-          (more)="list.more()"
-        />
+        <app-pager [list]="list" />
       </div>
       <app-invitations-panel />
     </div>

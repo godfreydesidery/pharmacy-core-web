@@ -160,13 +160,7 @@ import { SessionStore } from '../../core/session/session.store';
               </tbody>
             </table>
           </div>
-          <app-pager
-            [count]="accounts.items().length"
-            [total]="accounts.total()"
-            [hasMore]="accounts.hasMore()"
-            [loading]="accounts.loading()"
-            (more)="accounts.more()"
-          />
+          <app-pager [list]="accounts" />
         } @else {
           <div class="table-wrap">
             <table class="table">

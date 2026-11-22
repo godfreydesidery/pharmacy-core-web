@@ -147,13 +147,7 @@ interface RateCard {
             </tbody>
           </table>
         </div>
-        <app-pager
-          [count]="list.items().length"
-          [total]="list.total()"
-          [hasMore]="list.hasMore()"
-          [loading]="list.loading()"
-          (more)="list.more()"
-        />
+        <app-pager [list]="list" />
       </div>
     </div>
 

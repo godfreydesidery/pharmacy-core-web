@@ -291,13 +291,7 @@ type Tab = 'templates' | 'deliveries' | 'providers';
               </tbody>
             </table>
           </div>
-          @if (deliveries.hasMore()) {
-            <div class="more">
-              <button class="btn" type="button" (click)="deliveries.more()">
-                {{ 'admin.loadMore' | t }}
-              </button>
-            </div>
-          }
+          <app-pager [list]="deliveries" />
         </div>
       }
     </div>

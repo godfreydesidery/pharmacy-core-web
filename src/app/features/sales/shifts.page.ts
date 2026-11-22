@@ -1,5 +1,5 @@
 import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
@@ -36,7 +36,7 @@ import { ShiftView } from '../pos/shift-bar.component';
                 </tr>
               </thead>
               <tbody>
-                @for (s of shifts.value() ?? []; track s.uid) {
+                @for (s of shifts.items(); track s.uid) {
                   <tr>
                     <td>{{ s.cashierName ?? s.cashier }}</td>
                     <td class="muted">{{ s.openedAt | when }}</td>
@@ -64,6 +64,7 @@ import { ShiftView } from '../pos/shift-bar.component';
               </tbody>
             </table>
           </div>
+          <app-pager [list]="shifts" />
         </div>
       }
     </div>
@@ -71,7 +72,7 @@ import { ShiftView } from '../pos/shift-bar.component';
 })
 export default class ShiftsPage {
   protected readonly session = inject(SessionStore);
-  protected readonly shifts = loaded<ShiftView[]>(() =>
+  protected readonly shifts = pagedList<ShiftView>(() =>
     this.session.branch() ? { path: '/shifts' } : null,
   );
 }

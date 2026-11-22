@@ -17,7 +17,8 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { IconComponent } from '../../core/ui/icon.component';
 import { ModalComponent } from '../../core/ui/overlay.components';
 import { ToastService } from '../../core/ui/toast.service';
-import { StatusBadgeComponent } from '../../core/ui/widgets';
+import { PagerComponent, StatusBadgeComponent } from '../../core/ui/widgets';
+import { pagedList } from '../../core/data/data';
 import { Translations } from '../../core/i18n/translations.store';
 
 /**
@@ -32,6 +33,7 @@ import { Translations } from '../../core/i18n/translations.store';
     IconComponent,
     ModalComponent,
     StatusBadgeComponent,
+    PagerComponent,
     DatePipe,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -103,6 +105,7 @@ import { Translations } from '../../core/i18n/translations.store';
           </tbody>
         </table>
       </div>
+      <app-pager [list]="invitations" />
     </div>
 
     <app-modal [open]="open()" [title]="'admin.inviteByEmail' | t" (closed)="open.set(false)">
@@ -198,12 +201,15 @@ export class InvitationsPanelComponent implements OnInit {
   private readonly toasts = inject(ToastService);
 
   private readonly translations = inject(Translations);
-  protected readonly invitations = signal<Invitation[]>([]);
   /** Pending invitations by default; accepted, revoked and expired ones on request. */
   protected readonly showAll = signal(false);
-  protected readonly shown = computed(() =>
-    this.showAll() ? this.invitations() : this.invitations().filter((i) => i.status === 'PENDING'),
-  );
+  /** One page of them, filtered by the API. */
+  protected readonly invitations = pagedList<Invitation>(() => ({
+    path: '/users/invitations',
+    query: { pending: this.showAll() ? '' : 'true' },
+    options: { silent: true, noBranch: true },
+  }));
+  protected readonly shown = computed(() => this.invitations.items());
   protected readonly roles = signal<Role[]>([]);
   protected readonly branches = signal<Branch[]>([]);
   protected readonly selected = signal(new Set<string>());
@@ -217,12 +223,12 @@ export class InvitationsPanelComponent implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    await this.load();
+    // pagedList loads by itself; nothing more to do on start.
   }
 
   /** Re-reads the invitations, e.g. after the users page sent one. */
   reload(): Promise<void> {
-    return this.load();
+    return this.invitations.reload();
   }
 
   protected err(name: 'name' | 'email'): string | null {
@@ -293,16 +299,7 @@ export class InvitationsPanelComponent implements OnInit {
     }
   }
 
-  private async load(): Promise<void> {
-    try {
-      this.invitations.set(
-        await this.api.get<Invitation[]>('/users/invitations', undefined, {
-          silent: true,
-          noBranch: true,
-        }),
-      );
-    } catch {
-      this.invitations.set([]);
-    }
+  private load(): Promise<void> {
+    return this.invitations.reload();
   }
 }

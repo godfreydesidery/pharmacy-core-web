@@ -2,7 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { Manufacturer } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
@@ -40,7 +40,7 @@ import { Translations } from '../../core/i18n/translations.store';
               </tr>
             </thead>
             <tbody>
-              @for (m of list.value() ?? []; track m.uid) {
+              @for (m of list.items(); track m.uid) {
                 <tr>
                   <td>
                     <div class="cell-main">
@@ -71,6 +71,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </tbody>
           </table>
         </div>
+        <app-pager [list]="list" />
       </div>
     </div>
     <app-modal
@@ -107,7 +108,7 @@ export default class ManufacturersPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
-  protected readonly list = loaded<Manufacturer[]>(() => ({
+  protected readonly list = pagedList<Manufacturer>(() => ({
     path: '/manufacturers',
     options: { noBranch: true },
   }));

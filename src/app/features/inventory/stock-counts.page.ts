@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Api } from '../../core/api/api.service';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
@@ -164,7 +164,7 @@ export function sheetOrder(count: StockCount): StockCount {
               </tr>
             </thead>
             <tbody>
-              @for (c of counts.value() ?? []; track c.uid) {
+              @for (c of counts.items(); track c.uid) {
                 <tr class="clickable" (click)="openCount(c.uid)">
                   <td class="mono strong">{{ c.number }}</td>
                   <td class="muted">{{ c.createdAt | when }}</td>
@@ -180,6 +180,7 @@ export function sheetOrder(count: StockCount): StockCount {
             </tbody>
           </table>
         </div>
+        <app-pager [list]="counts" />
       }
     </div>
   `,
@@ -193,7 +194,7 @@ export default class StockCountsPage {
   protected readonly busy = signal(false);
   protected readonly current = signal<StockCount | null>(null);
   protected readonly entries = signal<Record<string, number | null>>({});
-  protected readonly counts = loaded<StockCount[]>(() =>
+  protected readonly counts = pagedList<StockCount>(() =>
     this.session.branch() && !this.current() ? { path: '/stock-counts' } : null,
   );
 

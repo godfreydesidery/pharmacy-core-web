@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Api } from '../../core/api/api.service';
 import { Voucher } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
@@ -43,7 +43,7 @@ import { ToastService } from '../../core/ui/toast.service';
             </tr>
           </thead>
           <tbody>
-            @for (v of vouchers.value() ?? []; track v.uid) {
+            @for (v of vouchers.items(); track v.uid) {
               <tr>
                 <td class="mono strong">{{ v.code }}</td>
                 <td>{{ v.holderName ?? '—' }}</td>
@@ -67,6 +67,7 @@ import { ToastService } from '../../core/ui/toast.service';
           </tbody>
         </table>
       </div>
+      <app-pager [list]="vouchers" />
     </div>
 
     <app-modal [open]="open()" [title]="'vouchers.sell' | t" (closed)="open.set(false)">
@@ -121,7 +122,7 @@ export default class VouchersPage {
   protected readonly paidByOptions = ['CASH', 'MOBILE_MONEY', 'CARD', 'BANK_TRANSFER'];
   protected readonly open = signal(false);
   protected readonly busy = signal(false);
-  protected readonly vouchers = loaded<Voucher[]>(() => ({ path: '/vouchers' }));
+  protected readonly vouchers = pagedList<Voucher>(() => ({ path: '/vouchers' }));
 
   protected async issue(
     value: number,

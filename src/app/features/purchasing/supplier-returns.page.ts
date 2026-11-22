@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Api } from '../../core/api/api.service';
 import { Batch, GoodsReceipt, Product, Supplier } from '../../core/api/models';
-import { loaded } from '../../core/data/data';
+import { pagedList } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
@@ -160,7 +160,7 @@ interface DraftLine {
                 </tr>
               </thead>
               <tbody>
-                @for (r of returns.value() ?? []; track r.uid) {
+                @for (r of returns.items(); track r.uid) {
                   <tr class="clickable" (click)="current.set(r)">
                     <td class="mono strong">{{ r.number }}</td>
                     <td class="muted">{{ r.createdAt | when }}</td>
@@ -183,6 +183,7 @@ interface DraftLine {
               </tbody>
             </table>
           </div>
+          <app-pager [list]="returns" />
         </div>
       }
     </div>
@@ -291,7 +292,7 @@ export default class SupplierReturnsPage {
   protected readonly reason = signal('');
   protected readonly note = signal('');
   protected readonly lines = signal<DraftLine[]>([]);
-  protected readonly returns = loaded<SupplierReturn[]>(() =>
+  protected readonly returns = pagedList<SupplierReturn>(() =>
     this.session.branch() ? { path: '/supplier-returns' } : null,
   );
 
