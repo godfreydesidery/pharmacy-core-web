@@ -130,6 +130,16 @@ export interface Settings {
   pricesIncludeTax: boolean;
   /** How the app looks for everyone in the pharmacy. */
   look: 'PREMIUM' | 'CLASSIC';
+  /** Minutes without use that sign a person out of this pharmacy (5 to 60). */
+  idleMinutes: number;
+}
+
+/** `POST /auth/activity`: the session's inactivity limit after the person used the app. */
+export interface SessionActivity {
+  /** Null when the server has no inactivity limit (the simulated world). */
+  idleMinutes: number | null;
+  idleEndsAt: IsoDateTime | null;
+  expiresAt: IsoDateTime;
 }
 
 export interface Member {

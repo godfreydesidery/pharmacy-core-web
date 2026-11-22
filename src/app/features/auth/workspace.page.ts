@@ -11,7 +11,9 @@ import { Api } from '../../core/api/api.service';
 import { Branch, BranchRef, Me, Membership, Page, Tenant } from '../../core/api/models';
 import { LogoComponent } from '../../core/layout/logo.component';
 import { firstAllowedPath } from '../../core/layout/nav';
+import { usableReturnUrl } from '../../core/session/guards';
 import { SessionStore, WorkspaceTenant } from '../../core/session/session.store';
+import { SignOutService } from '../../core/session/sign-out';
 import { IconComponent } from '../../core/ui/icon.component';
 import { StatusBadgeComponent } from '../../core/ui/widgets';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -265,6 +267,7 @@ export default class WorkspacePage implements OnInit {
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
+  private readonly signOuts = inject(SignOutService);
 
   protected readonly pending = signal<Pending | null>(null);
   /**
@@ -289,12 +292,24 @@ export default class WorkspacePage implements OnInit {
       /* the stored session is used as it is */
     }
     try {
-      if (this.session.isRoot()) {
+      const memberships = this.session.memberships();
+      const returnUrl = usableReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+      if (this.session.isRoot() && returnUrl?.startsWith('/platform')) {
+        // Back to the platform page the root administrator was on (signed out after inactivity).
+        this.entering = true;
+        await this.router.navigateByUrl(returnUrl);
+        if (this.router.url.startsWith('/workspace')) {
+          this.entering = false;
+          this.deciding.set(false);
+          await this.loadTenants();
+        }
+      } else if (this.session.isRoot()) {
         this.deciding.set(false);
         await this.loadTenants();
-      } else if (this.session.memberships().length === 1 && !this.session.tenant()) {
-        // One pharmacy: straight in, and straight to its branch when there is only one.
-        await this.pickMembership(this.session.memberships()[0]);
+      } else if (memberships.length === 1 && memberships[0].tenantStatus !== 'SUSPENDED') {
+        // One pharmacy: straight in, also on a reload of this page, as there is nothing to choose,
+        // and straight to its branch when there is only one. A suspended one stays listed, disabled.
+        await this.pickMembership(memberships[0]);
       }
     } finally {
       if (!this.entering) {
@@ -327,7 +342,7 @@ export default class WorkspacePage implements OnInit {
       allowAll: membership.allBranches && branches.length > 1,
     };
     if (branches.length === 1) {
-      this.enter(pending, branches[0]);
+      await this.enter(pending, branches[0]);
     } else {
       this.pending.set(pending);
     }
@@ -343,7 +358,7 @@ export default class WorkspacePage implements OnInit {
     });
   }
 
-  protected enter(pending: Pending, branch: BranchRef | null): void {
+  protected async enter(pending: Pending, branch: BranchRef | null): Promise<void> {
     // Keep "Opening…" on screen while the first page loads, rather than the chooser.
     this.entering = true;
     this.deciding.set(true);
@@ -352,14 +367,22 @@ export default class WorkspacePage implements OnInit {
     } else {
       this.session.enterAsRoot(pending.tenant, pending.branches, branch);
     }
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
-    void this.router.navigateByUrl(returnUrl ?? firstAllowedPath((p) => this.session.can(p)));
+    const returnUrl = usableReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+    try {
+      await this.router.navigateByUrl(returnUrl ?? firstAllowedPath((p) => this.session.can(p)));
+    } catch {
+      /* a failed navigation is handled below, like one that stays here */
+    }
+    // Still on this page (the navigation failed, or led back here): show the choices again
+    // rather than "Opening your pharmacy…" for ever.
+    if (this.router.url.split(/[?#]/)[0] === '/workspace') {
+      this.entering = false;
+      this.deciding.set(false);
+    }
   }
 
   protected signOut(): void {
-    void this.api.post('/auth/sign-out', {}, { silent: true }).catch(() => undefined);
-    this.session.signOut();
-    void this.router.navigate(['/sign-in']);
+    void this.signOuts.end('user');
   }
 
   private async loadTenants(): Promise<void> {

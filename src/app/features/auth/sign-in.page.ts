@@ -8,6 +8,7 @@ import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
 import { Session } from '../../core/api/models';
 import { LogoComponent } from '../../core/layout/logo.component';
+import { usableReturnUrl } from '../../core/session/guards';
 import { SessionStore } from '../../core/session/session.store';
 import { controlError, validate } from '../../core/ui/forms';
 import { IconComponent } from '../../core/ui/icon.component';
@@ -69,7 +70,11 @@ const DEV_ACCOUNTS = [
             </div>
             <h1>{{ 'auth.welcome' | t }}</h1>
             <p class="muted">{{ 'auth.subtitle' | t }}</p>
-            @if (expired) {
+            @if (idle) {
+              <div class="notice tone-amber">
+                <app-icon name="clock" /> {{ 'idle.signedOut' | t }}
+              </div>
+            } @else if (expired) {
               <div class="notice tone-amber">
                 <app-icon name="clock" /> {{ 'auth.expired' | t }}
               </div>
@@ -295,6 +300,7 @@ export default class SignInPage {
   protected readonly accounts = DEV_ACCOUNTS;
   protected readonly year = new Date().getFullYear();
   protected readonly expired = this.route.snapshot.queryParamMap.has('expired');
+  protected readonly idle = this.route.snapshot.queryParamMap.has('idle');
   protected readonly busy = signal(false);
   protected readonly failure = signal<string | null>(null);
   protected readonly showPassword = signal(false);
@@ -370,11 +376,9 @@ export default class SignInPage {
       await this.router.navigateByUrl('/account?setup=2fa');
       return;
     }
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    const returnUrl = usableReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
     await this.router.navigateByUrl(
-      returnUrl && returnUrl !== '/'
-        ? `/workspace?returnUrl=${encodeURIComponent(returnUrl)}`
-        : '/workspace',
+      returnUrl ? `/workspace?returnUrl=${encodeURIComponent(returnUrl)}` : '/workspace',
     );
   }
 

@@ -21,6 +21,7 @@ import { TranslatePipe } from '../i18n/t.pipe';
 import { Translations } from '../i18n/translations.store';
 import { LeaveGuard } from '../session/leave-guard';
 import { SessionStore } from '../session/session.store';
+import { SignOutService } from '../session/sign-out';
 import { IconComponent } from '../ui/icon.component';
 import { LookService } from '../ui/look.service';
 import { ThemeService } from '../ui/theme.service';
@@ -63,6 +64,7 @@ export class ShellComponent {
   private readonly toast = inject(ToastService);
   private readonly translations = inject(Translations);
   private readonly leave = inject(LeaveGuard);
+  private readonly signOuts = inject(SignOutService);
 
   protected readonly collapsed = signal(false);
   protected readonly mobileOpen = signal(false);
@@ -252,15 +254,6 @@ export class ShellComponent {
 
   protected async signOut(): Promise<void> {
     this.userMenu.set(false);
-    if (!(await this.leave.canLeave())) {
-      return;
-    }
-    try {
-      await this.api.post('/auth/sign-out', {}, { silent: true });
-    } catch {
-      /* the session is dropped locally either way */
-    }
-    this.session.signOut();
-    await this.router.navigate(['/sign-in']);
+    await this.signOuts.end('user');
   }
 }

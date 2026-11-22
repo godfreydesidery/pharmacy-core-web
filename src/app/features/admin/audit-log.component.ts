@@ -333,6 +333,11 @@ export class AuditLogComponent {
         .join(' · ');
       return text.charAt(0).toUpperCase() + text.slice(1);
     }
+    if (entry.action === 'SIGN_OUT' && entry.after?.['reason'] === 'IDLE') {
+      return this.translations.t('idle.audit', {
+        minutes: String(entry.after['idleMinutes'] ?? ''),
+      });
+    }
     const keys = Object.keys(entry.after ?? entry.before ?? {});
     if (!keys.length) {
       return '';
