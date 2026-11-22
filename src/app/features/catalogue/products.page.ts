@@ -65,21 +65,21 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
           <table class="table">
             <thead>
               <tr>
-                <th>{{ 'catalogue.product' | t }}</th>
                 <th>{{ 'catalogue.code' | t }}</th>
+                <th>{{ 'catalogue.product' | t }}</th>
                 <th>{{ 'catalogue.category' | t }}</th>
                 <th>{{ 'catalogue.formModel' | t }}</th>
                 <th>{{ 'catalogue.manufacturer' | t }}</th>
                 <th>{{ 'catalogue.schedule' | t }}</th>
                 <th class="right">{{ 'catalogue.cost' | t }}</th>
                 <th class="right">{{ 'catalogue.price' | t }}</th>
-                <th class="right">{{ 'catalogue.margin' | t }}</th>
                 <th>{{ 'catalogue.status' | t }}</th>
               </tr>
             </thead>
             <tbody>
               @for (p of list.items(); track p.uid) {
                 <tr class="clickable" [routerLink]="[p.uid]">
+                  <td class="mono">{{ p.sku ?? '—' }}</td>
                   <td>
                     <div class="cell-main">
                       <span
@@ -101,7 +101,6 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                       }
                     </div>
                   </td>
-                  <td class="mono">{{ p.sku ?? '—' }}</td>
                   <td>{{ p.categoryName ?? '—' }}</td>
                   <td class="muted">
                     @if (p.productType === 'MEDICINE' || !p.productType) {
@@ -119,12 +118,11 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                   <td><app-status [value]="p.schedule" /></td>
                   <td class="right">{{ p.costPrice | money }}</td>
                   <td class="right strong">{{ p.sellingPrice | money }}</td>
-                  <td class="right">{{ margin(p) }}</td>
                   <td><app-status [value]="p.active ? 'ACTIVE' : 'INACTIVE'" /></td>
                 </tr>
               } @empty {
                 <tr>
-                  <td colspan="10">
+                  <td colspan="9">
                     <app-empty
                       [loading]="list.loading()"
                       icon="pill"
@@ -164,11 +162,5 @@ export default class ProductsPage {
 
   protected typeOf(p: Product) {
     return productTypeOf(p.productType);
-  }
-
-  protected margin(p: Product): string {
-    return p.sellingPrice > 0
-      ? `${Math.round(((p.sellingPrice - p.costPrice) / p.sellingPrice) * 100)}%`
-      : '—';
   }
 }
