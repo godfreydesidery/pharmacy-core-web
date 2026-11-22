@@ -76,28 +76,6 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
       </div>
 
       <form [formGroup]="form" class="stack" (ngSubmit)="save()">
-        <fieldset class="card card-pad stack" [disabled]="!canEdit()">
-          <h3>{{ 'catalogue.whatIsIt' | t }}</h3>
-          <div class="type-grid" role="radiogroup" [attr.aria-label]="'catalogue.productType' | t">
-            @for (t of types; track t.code) {
-              <button
-                type="button"
-                class="type-card"
-                role="radio"
-                [attr.aria-checked]="type() === t.code"
-                [class.on]="type() === t.code"
-                (click)="chooseType(t.code)"
-              >
-                <span class="bubble tone-{{ t.tone }}"
-                  ><app-icon [name]="t.icon" [size]="20"
-                /></span>
-                <b>{{ 'ui.ptype.' + t.code | t: null : t.label }}</b>
-                <small>{{ 'ui.ptype.' + t.code + '.hint' | t: null : t.hint }}</small>
-              </button>
-            }
-          </div>
-        </fieldset>
-
         <div class="grid two">
           <fieldset class="card card-pad stack" [disabled]="!canEdit()">
             <h3>{{ 'catalogue.identity' | t }}</h3>
@@ -439,6 +417,8 @@ export default class ProductFormPage implements OnInit {
   readonly uid = input<string | undefined>();
   protected readonly schedules = SCHEDULES;
   protected readonly storage = STORAGE;
+  // The "What is it?" type cards are hidden (owner's choice, 22 Nov 2026): a new product is a
+  // medicine, and an existing one keeps its type. The types and chooseType stay for their return.
   protected readonly types = PRODUCT_TYPES;
   protected readonly trackingModes = TRACKING_MODES;
   protected readonly units = UNITS;
