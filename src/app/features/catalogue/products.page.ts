@@ -3,7 +3,7 @@ import { Category, Product } from '../../core/api/models';
 import { debounced, loaded, pagedList } from '../../core/data/data';
 import { downloadCsv } from '../../core/format/format';
 import { SHARED } from '../../core/shared';
-import { PRODUCT_TYPES, productTypeOf } from '../../core/ui/product-types';
+import { productTypeOf } from '../../core/ui/product-types';
 import { SessionStore } from '../../core/session/session.store';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 
@@ -48,31 +48,6 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               }
             </select>
           }
-          <div
-            class="chips type-chips"
-            role="group"
-            [attr.aria-label]="'catalogue.productType' | t"
-          >
-            <button
-              type="button"
-              class="chip"
-              [class.active]="!productType()"
-              (click)="productType.set('')"
-            >
-              {{ 'catalogue.all' | t }}
-            </button>
-            @for (t of types; track t.code) {
-              <button
-                type="button"
-                class="chip"
-                [class.on]="productType() === t.code"
-                (click)="productType.set(t.code)"
-              >
-                <app-icon [name]="t.icon" [size]="14" />
-                {{ 'ui.ptype.' + t.code | t: null : t.label }}
-              </button>
-            }
-          </div>
           <select
             class="select"
             style="width:auto"
@@ -173,8 +148,6 @@ export default class ProductsPage {
   protected readonly q = signal('');
   protected readonly categoryUid = signal('');
   protected readonly active = signal('');
-  protected readonly productType = signal('');
-  protected readonly types = PRODUCT_TYPES;
   private readonly query = debounced(this.q);
   protected readonly categories = loaded<Category[]>(() => ({
     path: '/categories',
@@ -186,7 +159,6 @@ export default class ProductsPage {
       q: this.query(),
       categoryUid: this.categoryUid(),
       active: this.active(),
-      productType: this.productType(),
     },
     options: { noBranch: true },
   }));
