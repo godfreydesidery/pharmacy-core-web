@@ -29,6 +29,17 @@ export const authGuard: CanActivateFn = (_route, state) => {
   });
 };
 
+/**
+ * A staff login on the temporary password its pharmacy gave chooses its own first: every page
+ * but that one sends it there.
+ */
+export const passwordChosenGuard: CanActivateFn = () => {
+  const session = inject(SessionStore);
+  return session.user()?.passwordChangeRequired
+    ? inject(Router).createUrlTree(['/choose-password'])
+    : true;
+};
+
 /** Only for someone signed out, such as the sign-in page. */
 export const guestGuard: CanActivateFn = () => {
   const session = inject(SessionStore);

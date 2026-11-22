@@ -38,6 +38,16 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.two_factor_setup_required':
     'Set up two-step verification on your account before using the platform.',
   'errors.invitation_not_open': 'This invitation was already used, revoked or has expired.',
+  'errors.password_change_required':
+    'Choose your own password before you start: yours was set by your pharmacy.',
+  'errors.same_password': 'Choose a new password of your own, not the one you were given.',
+  'errors.username_taken': 'This username is already used in this pharmacy.',
+  'errors.invalid_username':
+    'A username is 2 to 32 letters or digits, and may use . - or _ (such as juma or mary.k).',
+  'errors.not_managed':
+    'This person signs in with their own account; only they can change its password.',
+  'errors.direct_creation_disabled':
+    'This pharmacy invites people by email; it does not create logins for them.',
 
   // workspace
   'errors.tenant_suspended': "This pharmacy's account is suspended.",

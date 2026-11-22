@@ -34,6 +34,16 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.two_factor_setup_required':
     'Weka uthibitisho wa hatua mbili kwenye akaunti yako kabla ya kutumia jukwaa.',
   'errors.invitation_not_open': 'Mwaliko huu umeshatumika, umefutwa au muda wake umeisha.',
+  'errors.password_change_required':
+    'Chagua nenosiri lako mwenyewe kabla ya kuanza: hili uliwekewa na duka lako la dawa.',
+  'errors.same_password': 'Chagua nenosiri jipya lako mwenyewe, si lile ulilopewa.',
+  'errors.username_taken': 'Jina hili la mtumiaji tayari linatumika katika duka hili.',
+  'errors.invalid_username':
+    'Jina la mtumiaji ni herufi au tarakimu 2 hadi 32, na linaweza kuwa na . - au _ (mfano juma au mary.k).',
+  'errors.not_managed':
+    'Mtu huyu huingia kwa akaunti yake mwenyewe; ni yeye tu anayeweza kubadilisha nenosiri lake.',
+  'errors.direct_creation_disabled':
+    'Duka hili hualika watu kwa barua pepe; halitengenezi akaunti za kuingia kwa ajili yao.',
 
   // workspace
   'errors.tenant_suspended': 'Akaunti ya duka hili la dawa imesimamishwa.',

@@ -1,5 +1,6 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
 import { BranchRef, Membership, Session, SessionUser, TenantStatus, Uid } from '../api/models';
+import { signInLabel } from './sign-in-label';
 
 /** The tenant the session works in, from a membership or picked by the root administrator. */
 export interface WorkspaceTenant {
@@ -65,6 +66,8 @@ export class SessionStore {
   readonly session = this.state.asReadonly();
   readonly token = computed(() => this.state()?.token ?? null);
   readonly user = computed(() => this.state()?.user ?? null);
+  /** The user's sign-in as people type it: an email, or a staff login such as juma@DAWA. */
+  readonly signInName = computed(() => signInLabel(this.state()?.user?.email));
   readonly memberships = computed(() => this.state()?.memberships ?? []);
   readonly workspace = computed(() => this.state()?.workspace ?? null);
   readonly tenant = computed(() => this.workspace()?.tenant ?? null);

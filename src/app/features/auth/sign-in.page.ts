@@ -83,11 +83,15 @@ const DEV_ACCOUNTS = [
               <div class="notice tone-red"><app-icon name="alert" /> {{ failure() }}</div>
             }
             <div class="field">
-              <label for="email">{{ 'auth.email' | t }}</label>
+              <label for="email">{{ 'logins.signInLabel' | t }}</label>
               <input
                 id="email"
                 class="input lg"
-                type="email"
+                type="text"
+                inputmode="email"
+                autocapitalize="none"
+                spellcheck="false"
+                [placeholder]="'logins.signInPlaceholder' | t"
                 formControlName="email"
                 autocomplete="username"
                 [class.invalid]="error('email')"
@@ -308,7 +312,8 @@ export default class SignInPage {
   protected readonly passkeys = passkeysSupported();
 
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    email: ['', [Validators.required, Validators.email]],
+    // An email, or a pharmacy's staff login such as juma@DAWA.
+    email: ['', Validators.required],
     password: ['', Validators.required],
   });
 
@@ -372,6 +377,13 @@ export default class SignInPage {
 
   protected async enter(session: Session): Promise<void> {
     this.session.signIn(session);
+    if (session.user.passwordChangeRequired) {
+      // A staff login on its pharmacy's temporary password: the one just typed comes along.
+      await this.router.navigateByUrl('/choose-password', {
+        state: { temporary: this.form.getRawValue().password },
+      });
+      return;
+    }
     if (session.user.twoFactorSetupRequired) {
       await this.router.navigateByUrl('/account?setup=2fa');
       return;

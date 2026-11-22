@@ -34,7 +34,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
       <div class="page-head">
         <div>
           <h1>{{ 'ui.account.title' | t }}</h1>
-          <p class="sub">{{ session.user()?.name }} · {{ session.user()?.email }}</p>
+          <p class="sub">{{ session.user()?.name }} · {{ session.signInName() }}</p>
         </div>
       </div>
       <app-profile-section />

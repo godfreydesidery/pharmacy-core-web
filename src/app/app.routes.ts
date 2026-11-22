@@ -4,6 +4,7 @@ import { firstAllowedPath } from './core/layout/nav';
 import {
   authGuard,
   guestGuard,
+  passwordChosenGuard,
   permissionGuard,
   rootGuard,
   workspaceGuard,
@@ -38,14 +39,20 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/accept-invitation.page'),
   },
   {
-    path: 'workspace',
+    path: 'choose-password',
     canActivate: [authGuard],
+    title: 'Choose your password · Pharmacy Core',
+    loadComponent: () => import('./features/auth/choose-password.page'),
+  },
+  {
+    path: 'workspace',
+    canActivate: [authGuard, passwordChosenGuard],
     title: 'Choose workspace · Pharmacy Core',
     loadComponent: () => import('./features/auth/workspace.page'),
   },
   {
     path: '',
-    canActivate: [authGuard],
+    canActivate: [authGuard, passwordChosenGuard],
     loadComponent: () => import('./core/layout/shell.component').then((m) => m.ShellComponent),
     children: [
       {
