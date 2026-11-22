@@ -113,7 +113,7 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.invalid_quantity_change': 'Mabadiliko ya kiasi yasiwe sifuri.',
 
   // catalogue
-  'errors.duplicate_sku': 'Bidhaa nyingine tayari ina SKU hii.',
+  'errors.duplicate_sku': 'Bidhaa nyingine tayari ina msimbo huu.',
   'errors.duplicate_gtin': 'Bidhaa nyingine tayari ina msimbopau (GTIN) huu.',
   'errors.invalid_gtin': 'Msimbopau (GTIN) uwe na tarakimu 8 hadi 14.',
   'errors.invalid_atc_code': 'Huu si msimbo wa ATC wa WHO, kama N02BE01.',

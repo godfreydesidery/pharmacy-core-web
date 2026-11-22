@@ -38,7 +38,7 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.saveAndCompleteSale': 'Save and complete sale',
   'pos.scanOrTypeASerialNumber': 'Scan or type a serial number, then Enter',
   'pos.scanTheSerialNumberAtSale': 'Scan the serial number at sale',
-  'pos.searchNameGenericSkuOrScan': 'Search name, generic, SKU or scan a barcode…',
+  'pos.searchNameGenericSkuOrScan': 'Search name, generic, code or scan a barcode…',
   'pos.split': '+ Split',
   'pos.subtotal': 'Subtotal',
   'pos.tax': 'Tax',

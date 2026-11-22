@@ -613,7 +613,7 @@ export default class StockPage {
         'Product',
         'Type',
         'Generic',
-        'SKU',
+        'Code',
         'Category',
         'On hand',
         'Reorder',

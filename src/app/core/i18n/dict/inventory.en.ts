@@ -69,7 +69,7 @@ export const INVENTORY_EN: Readonly<Record<string, string>> = {
   'inventory.recordAdjustment': 'Record adjustment',
   'inventory.reference': 'Reference',
   'inventory.reorder': 'Reorder',
-  'inventory.searchProductGenericOrSku': 'Search product, generic or SKU…',
+  'inventory.searchProductGenericOrSku': 'Search product, generic or code…',
   'inventory.searchProducts': 'Search products…',
   'inventory.searchStockAtThisBranch': 'Search stock at this branch…',
   'inventory.sendStockToAnotherBranchIt':

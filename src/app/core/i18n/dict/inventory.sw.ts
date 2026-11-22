@@ -69,7 +69,7 @@ export const INVENTORY_SW: Readonly<Record<string, string>> = {
   'inventory.recordAdjustment': 'Rekodi marekebisho',
   'inventory.reference': 'Kumbukumbu',
   'inventory.reorder': 'Agiza tena',
-  'inventory.searchProductGenericOrSku': 'Tafuta bidhaa, jina la kisayansi au SKU…',
+  'inventory.searchProductGenericOrSku': 'Tafuta bidhaa, jina la kisayansi au msimbo…',
   'inventory.searchProducts': 'Tafuta bidhaa…',
   'inventory.searchStockAtThisBranch': 'Tafuta stoo ya tawi hili…',
   'inventory.sendStockToAnotherBranchIt':
