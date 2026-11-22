@@ -62,4 +62,11 @@ export const LOGINS_SW: Readonly<Record<string, string>> = {
     'Ingia kwa akaunti yako ili ujiunge. Inaweza kutumia barua pepe tofauti na hii; duka litaona ipi.',
   'join.signInAndJoin': 'Ingia na ujiunge',
   'join.joined': 'Sasa unafanya kazi {{pharmacy}}.',
+  // Kile duka huona kwa mtu anayefanya kazi pia kwingine
+  'apart.lastActive': 'Alifanya kazi hapa mwisho',
+  'apart.lastActiveHint':
+    'Mara ya mwisho alipofanya kazi katika duka hili. Kazi yake kwingine haionyeshwi kamwe.',
+  'apart.asWhenLeft': 'Taarifa kama zilivyokuwa alipoondoka',
+  'apart.ownLock':
+    'Imefungwa hadi {{time}}. Hii ni akaunti yake mwenyewe: hufunguka yenyewe, au mara tu anapoweka nenosiri jipya.',
 };

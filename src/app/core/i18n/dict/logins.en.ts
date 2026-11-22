@@ -62,4 +62,11 @@ export const LOGINS_EN: Readonly<Record<string, string>> = {
     'Sign in with your account to join. It may use another email than this one; the pharmacy will see which.',
   'join.signInAndJoin': 'Sign in and join',
   'join.joined': 'You now work at {{pharmacy}}.',
+  // What a pharmacy sees of someone who also works elsewhere
+  'apart.lastActive': 'Last active here',
+  'apart.lastActiveHint':
+    'When they last worked in this pharmacy. Their work elsewhere is never shown.',
+  'apart.asWhenLeft': 'Details as when they left',
+  'apart.ownLock':
+    'Locked until {{time}}. This is their own account: it unlocks by itself, or as soon as they reset their password.',
 };

@@ -70,7 +70,7 @@ import { signInLabel } from '../../core/session/sign-in-label';
                 <th>{{ 'ui.users.user' | t }}</th>
                 <th>{{ 'ui.users.role' | t }}</th>
                 <th>{{ 'ui.users.branches' | t }}</th>
-                <th>{{ 'ui.users.lastSignIn' | t }}</th>
+                <th [title]="'apart.lastActiveHint' | t">{{ 'apart.lastActive' | t }}</th>
                 <th>{{ 'ui.users.status' | t }}</th>
                 <th></th>
               </tr>
@@ -92,6 +92,9 @@ import { signInLabel } from '../../core/session/sign-in-label';
                             <span class="badge amber">{{ 'logins.awaitingChange' | t }}</span>
                           }
                         }
+                        @if (!m.active && !m.managed) {
+                          <span class="former">{{ 'apart.asWhenLeft' | t }}</span>
+                        }
                       </div>
                     </div>
                   </td>
@@ -101,19 +104,22 @@ import { signInLabel } from '../../core/session/sign-in-label';
                   <td>
                     {{ m.allBranches ? ('common.allBranches' | t) : branchNames(m.branchUids) }}
                   </td>
-                  <td class="muted">{{ m.lastSignInAt | when }}</td>
+                  <td class="muted">{{ m.lastActiveAt | when }}</td>
                   <td>
                     <app-status [value]="m.active ? 'ACTIVE' : 'INACTIVE'" />
                     @if (lockedUntil(m.membershipUid); as until) {
                       <span
                         class="badge red locked"
-                        [title]="'security2.lockedUntil' | t: { time: (until | when) }"
+                        [title]="
+                          (m.managed ? 'security2.lockedUntil' : 'apart.ownLock')
+                            | t: { time: (until | when) }
+                        "
                         ><app-icon name="lock" [size]="12" /> {{ 'security2.locked' | t }}</span
                       >
                     }
                   </td>
                   <td class="right">
-                    @if (lockedUntil(m.membershipUid)) {
+                    @if (m.managed && lockedUntil(m.membershipUid)) {
                       <button class="btn sm" type="button" [disabled]="busy()" (click)="unlock(m)">
                         <app-icon name="lock" [size]="14" /> {{ 'security2.unlock' | t }}
                       </button>
@@ -315,6 +321,12 @@ import { signInLabel } from '../../core/session/sign-in-label';
     </app-modal>
   `,
   styles: `
+    .former {
+      display: block;
+      font-size: 12px;
+      color: var(--muted);
+      font-style: italic;
+    }
     .suffixed {
       display: flex;
       align-items: stretch;

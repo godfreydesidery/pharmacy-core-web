@@ -159,7 +159,8 @@ export interface Member {
   allBranches: boolean;
   branchUids: Uid[];
   active: boolean;
-  lastSignInAt: IsoDateTime | null;
+  /** When they last worked in this pharmacy (activity elsewhere is never shown). */
+  lastActiveAt: IsoDateTime | null;
   createdAt: IsoDateTime;
   phone?: string | null;
   /** A login the pharmacy created: `email` is then its sign-in, username@code. */
