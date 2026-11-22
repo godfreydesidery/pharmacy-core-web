@@ -113,4 +113,6 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.walkInNote':
     'Mteja wa kawaida. Tafuta hapo juu kumuunganisha kwa mkopo, bima au historia yake.',
   'pos.vatIncluded': 'VAT imejumuishwa',
+  'pos.saleUncertain':
+    'Mauzo hayajapata jibu la uhakika na huenda yamekamilika. Bonyeza Kamilisha mauzo tena: kama yalikamilika utapata risiti yake, na hayatozwi mara mbili.',
 };

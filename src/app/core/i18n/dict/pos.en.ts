@@ -112,4 +112,6 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.walkInNote':
     'Walk-in customer. Search above to attach one for credit, insurance or their history.',
   'pos.vatIncluded': 'VAT included',
+  'pos.saleUncertain':
+    'The sale got no clear answer and may have gone through. Press Complete sale again: if it went through you get its receipt, and it is never charged twice.',
 };
