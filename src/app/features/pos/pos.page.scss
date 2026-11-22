@@ -719,3 +719,12 @@ kbd {
     padding: 10px 8px;
   }
 }
+
+.plan-pick {
+  margin-top: 8px;
+}
+.unpriced {
+  display: block;
+  color: var(--red, #c0262d);
+  font-weight: 600;
+}

@@ -110,6 +110,31 @@
                 (picked)="pickCustomer($event)"
               />
             }
+            @if (tillPlans(); as tp) {
+              <div class="field plan-pick">
+                <label for="pos-price-plan">{{ 'pos.pricePlan' | t }}</label>
+                <select
+                  id="pos-price-plan"
+                  class="select"
+                  data-testid="pos-price-plan"
+                  [disabled]="!tp.canChange"
+                  [value]="planValue()"
+                  (change)="pickPlan($any($event.target).value)"
+                >
+                  @for (p of tp.plans; track p.uid) {
+                    <option
+                      [value]="p.uid ?? 'NORMAL'"
+                      [selected]="(p.uid ?? 'NORMAL') === planValue()"
+                    >
+                      {{ p.uid ? p.name : ('plans.normal' | t) }}
+                    </option>
+                  }
+                </select>
+                @if (!tp.canChange && tp.defaultPlan.uid) {
+                  <span class="hint">{{ 'pos.pricePlanLocked' | t }}</span>
+                }
+              </div>
+            }
             @if (customer(); as c) {
               <div class="who">
                 <span class="initials">{{ c.name.slice(0, 2).toUpperCase() }}</span>
@@ -658,7 +683,14 @@
                       </button>
                     </div>
                   </td>
-                  <td class="r num">{{ priceOf(line) | money }}</td>
+                  <td class="r num">
+                    {{ priceOf(line) | money }}
+                    @if (unpriced(line)) {
+                      <small class="unpriced" data-testid="pos-unpriced">
+                        {{ 'pos.unpriced' | t: { plan: planName() } }}
+                      </small>
+                    }
+                  </td>
                   <td class="r num muted">{{ lineDiscount(line) | money }}</td>
                   <td class="r num">
                     <b>{{ priceOf(line) * line.quantity - lineDiscount(line) | money }}</b>

@@ -31,6 +31,11 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         {{ 'ui.t.customer' | t: { name: sale().customerName ?? ('ui.l.walkInCustomer' | t) } }} ·
         {{ 'ui.t.cashier' | t: { name: sale().cashierName } }}
       </div>
+      @if (sale().priceListName && sale().priceListName !== 'Normal Sale') {
+        <div class="small muted" data-testid="receipt-plan">
+          {{ 'receipt.pricePlan' | t }}: {{ sale().priceListName }}
+        </div>
+      }
       <table>
         <thead>
           <tr>

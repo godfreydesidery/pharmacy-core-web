@@ -146,6 +146,7 @@ export const TENANT_NAV: NavItem[] = [
     icon: 'pill',
     children: [
       { label: 'Products', path: '/catalogue/products', permission: 'catalogue.view' },
+      { label: 'Pricing plans', path: '/catalogue/pricing-plans', permission: 'catalogue.view' },
       { label: 'Pricing', path: '/catalogue/pricing', permission: 'catalogue.view' },
       { label: 'Categories', path: '/catalogue/categories', permission: 'catalogue.view' },
       { label: 'Manufacturers', path: '/catalogue/manufacturers', permission: 'catalogue.view' },

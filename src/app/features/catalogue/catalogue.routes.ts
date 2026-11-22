@@ -5,6 +5,11 @@ export default [
   { path: 'products', title: 'Products', loadComponent: () => import('./products.page') },
   { path: 'pricing', title: 'Pricing', loadComponent: () => import('./pricing.page') },
   {
+    path: 'pricing-plans',
+    title: 'Pricing plans',
+    loadComponent: () => import('./pricing-plans.page'),
+  },
+  {
     path: 'products/new',
     title: 'New product',
     data: { permission: 'catalogue.manage' },
