@@ -74,6 +74,9 @@ export const UI_SW: Readonly<Record<string, string>> = {
     'Chagua faili: linakaguliwa kwanza na hakuna kinachohifadhiwa mpaka kila safu iwe sahihi.',
   'ui.import.step2Stock':
     'Safu moja kwa kila bechi, bidhaa ikitajwa kwa Msimbo wake; kila safu inaongeza stoku kwenye tawi hili.',
+  'ui.import.priceList': 'Leta bei kwenye orodha hii',
+  'ui.import.step2PriceList':
+    'Safu moja kwa kila bidhaa na idadi ya chini: kilichopo kinabadilishwa bei, kipya kinaongezwa, vingine vinabaki. Kiolezo kina orodha ilivyo sasa.',
   'ui.import.template': 'Kiolezo',
   'ui.import.choose': 'Chagua faili',
   'ui.import.checking': 'Inakagua faili…',

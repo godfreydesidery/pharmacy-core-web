@@ -48,8 +48,8 @@ export interface ImportReport {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (allowed()) {
-      <button class="btn" type="button" (click)="show()">
-        <app-icon name="upload" [size]="16" /> {{ 'ui.import.button' | t }}
+      <button class="btn" [class.sm]="small()" type="button" (click)="show()">
+        <app-icon name="upload" [size]="small() ? 14 : 16" /> {{ 'ui.import.button' | t }}
       </button>
       <app-modal [open]="open()" [title]="title() | t" [wide]="true" (closed)="close()">
         <ol class="steps">
@@ -138,6 +138,16 @@ export interface ImportReport {
     }
   `,
   styles: `
+    /* Opened from a table row, the dialog must not take the cell's alignment or no-wrap. */
+    app-modal {
+      text-align: left;
+      white-space: normal;
+      font-weight: normal;
+    }
+    .problems th,
+    .problems td {
+      text-align: left;
+    }
     .steps {
       margin: 0 0 14px;
       padding-left: 20px;
@@ -186,6 +196,8 @@ export class ImportComponent {
   readonly title = input('ui.import.title');
   /** What one row is, a dictionary key. */
   readonly step2 = input('ui.import.step2');
+  /** A small button, for a table row. */
+  readonly small = input(false);
   /** After rows were saved, so the list can reload. */
   readonly imported = output<ImportReport>();
 

@@ -72,6 +72,9 @@ export const UI_EN: Readonly<Record<string, string>> = {
     'Choose the file: it is checked first and nothing is saved until every row is right.',
   'ui.import.step2Stock':
     'One row per batch, the product named by its Code; each row adds stock at this branch.',
+  'ui.import.priceList': 'Import prices into this list',
+  'ui.import.step2PriceList':
+    'One row per product and minimum quantity: an item on the list is repriced, a new one is added, the rest stay. The template holds the list as it is now.',
   'ui.import.template': 'Template',
   'ui.import.choose': 'Choose file',
   'ui.import.checking': 'Checking the file…',
