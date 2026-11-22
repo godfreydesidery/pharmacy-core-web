@@ -965,6 +965,45 @@ export interface PricingPlan {
   payerName: string | null;
 }
 
+/** A plan's card: who it is for, its rule and how many medicines it prices; uid null is Normal Sale. */
+export interface PlanCard {
+  uid: Uid | null;
+  name: string;
+  customerType: string | null;
+  customerUid: Uid | null;
+  customerName: string | null;
+  payerUid: Uid | null;
+  payerName: string | null;
+  rulePercent: number | null;
+  active: boolean;
+  validFrom: string | null;
+  validTo: string | null;
+  priced: number;
+}
+
+/** One row of a plan's page; price null: not priced in the plan. */
+export interface PlanItemRow {
+  productUid: Uid;
+  code: string;
+  name: string;
+  barcode: string | null;
+  category: string | null;
+  costPrice: number | null;
+  normalPrice: number;
+  minQuantity: number;
+  price: number | null;
+}
+
+/** A medicine's price in one plan: set (PRICE), by its rule (RULE) or not sold (BLOCKED). */
+export interface PlanPriceView {
+  planUid: Uid | null;
+  planName: string;
+  price: number | null;
+  basis: 'PRICE' | 'RULE' | 'BLOCKED';
+  breaks: { minQuantity: number; price: number }[];
+  active: boolean;
+}
+
 export interface PricingGridRow {
   productUid: Uid;
   code: string;

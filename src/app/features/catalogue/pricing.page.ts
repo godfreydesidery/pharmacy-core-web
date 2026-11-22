@@ -595,8 +595,9 @@ export default class PricingPage {
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   private readonly confirm = inject(ConfirmService);
-  protected readonly tabs: Tab[] = ['lists', 'branch', 'promotions'];
-  protected readonly tab = signal<Tab>('lists');
+  // Price lists (pricing plans) are managed on the Pricing plans page.
+  protected readonly tabs: Tab[] = ['branch', 'promotions'];
+  protected readonly tab = signal<Tab>('branch');
   protected readonly busy = signal(false);
   protected readonly customerTypes = CUSTOMER_TYPES;
   protected readonly canEdit = () => this.session.can('catalogue.manage');

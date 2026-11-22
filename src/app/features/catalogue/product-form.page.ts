@@ -21,6 +21,8 @@ import {
   Storage,
   TrackingMode,
   UnitOfMeasure,
+  PlanPriceView,
+  PriceChange,
 } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
@@ -342,9 +344,75 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
           }
         </fieldset>
       </form>
+      @if (editing()) {
+        <div class="card mt" data-testid="prices-in-plans">
+          <div class="card-head">
+            <h3>{{ 'plans.inPlans' | t }}</h3>
+            <a class="btn ghost sm" routerLink="/catalogue/pricing-plans">{{
+              'plans.title' | t
+            }}</a>
+          </div>
+          <div class="table-wrap">
+            <table class="table compact">
+              <tbody>
+                @for (pp of planPrices.value() ?? []; track pp.planUid) {
+                  <tr [class.off]="!pp.active">
+                    <td>
+                      <b>{{ pp.planUid ? pp.planName : ('plans.normal' | t) }}</b>
+                    </td>
+                    <td class="muted">{{ 'plans.basis.' + pp.basis | t }}</td>
+                    <td class="right">
+                      {{ pp.price === null ? '—' : (pp.price | money) }}
+                      @for (b of pp.breaks; track b.minQuantity) {
+                        <small class="muted block"
+                          >≥ {{ b.minQuantity }}: {{ b.price | money }}</small
+                        >
+                      }
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+          <h4 class="history-title">{{ 'plans.history' | t }}</h4>
+          <div class="table-wrap">
+            <table class="table compact">
+              <tbody>
+                @for (h of priceHistory.value() ?? []; track $index) {
+                  <tr>
+                    <td>{{ h.planName === 'Normal Sale' ? ('plans.normal' | t) : h.planName }}</td>
+                    <td class="right">
+                      {{ h.oldPrice === null ? '—' : (h.oldPrice | money) }} →
+                      <b>{{ h.newPrice === null ? '—' : (h.newPrice | money) }}</b>
+                    </td>
+                    <td class="muted small">
+                      {{ 'plans.source.' + h.source | t }} · {{ h.changedBy }}
+                    </td>
+                    <td class="muted small right">{{ h.changedAt | when }}</td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td class="muted">{{ 'plans.noHistory' | t }}</td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+        </div>
+      }
     </div>
   `,
   styles: `
+    .history-title {
+      padding: 12px 16px 0;
+      margin: 0;
+    }
+    tr.off {
+      opacity: 0.55;
+    }
+    .block {
+      display: block;
+    }
     fieldset {
       border: 1px solid var(--border);
       margin: 0;
@@ -455,6 +523,17 @@ export default class ProductFormPage implements OnInit {
   protected readonly unitsHeld = signal(0);
   protected readonly editing = computed(() => !!this.uid() && this.uid() !== 'new');
   protected readonly canEdit = computed(() => this.session.can('catalogue.manage'));
+  /** The medicine's price in Normal Sale and every plan, and its price history. */
+  protected readonly planPrices = loaded<PlanPriceView[]>(() =>
+    this.editing()
+      ? { path: `/products/${this.uid()}/plan-prices`, options: { noBranch: true, silent: true } }
+      : null,
+  );
+  protected readonly priceHistory = loaded<PriceChange[]>(() =>
+    this.editing()
+      ? { path: `/products/${this.uid()}/price-history`, options: { noBranch: true, silent: true } }
+      : null,
+  );
   protected readonly categories = loaded<Category[]>(() => ({
     path: '/categories',
     options: { noBranch: true },
