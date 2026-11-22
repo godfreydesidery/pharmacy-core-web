@@ -14,6 +14,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
+import type { ApiError } from '../../core/api/api-error';
 import {
   Batch,
   Category,
@@ -1282,9 +1283,21 @@ export default class PosPage {
     };
     this.busy.set(true);
     try {
-      const sale = await this.api.post<Sale>('/sales', request, {
-        headers: { 'Idempotency-Key': this.idempotencyKey },
-      });
+      let sale: Sale;
+      try {
+        sale = await this.api.post<Sale>('/sales', request, {
+          headers: { 'Idempotency-Key': this.idempotencyKey },
+          silent: true,
+        });
+      } catch (failure) {
+        // No clear answer (no connection, a server error, a clash): the sale may have gone through.
+        // The key stays, so pressing Complete again returns that sale instead of charging twice.
+        const error = failure as ApiError;
+        const unsure =
+          error?.reason === 'network_error' || error?.status >= 500 || error?.status === 409;
+        this.toasts.error(unsure ? this.translations.t('pos.saleUncertain') : error?.message);
+        throw failure;
+      }
       this.receipt.set(sale);
       void this.attachPrescription(sale.uid, this.prescriptionFile());
       this.toasts.success(this.translations.t('toast.saleCompleted', { number: sale.number }));
