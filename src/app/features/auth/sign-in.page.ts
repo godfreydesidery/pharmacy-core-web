@@ -8,6 +8,7 @@ import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
 import { Session } from '../../core/api/models';
 import { LogoComponent } from '../../core/layout/logo.component';
+import { usableReturnUrl } from '../../core/session/guards';
 import { SessionStore } from '../../core/session/session.store';
 import { controlError, validate } from '../../core/ui/forms';
 import { IconComponent } from '../../core/ui/icon.component';
@@ -370,11 +371,9 @@ export default class SignInPage {
       await this.router.navigateByUrl('/account?setup=2fa');
       return;
     }
-    const returnUrl = this.route.snapshot.queryParamMap.get('returnUrl');
+    const returnUrl = usableReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
     await this.router.navigateByUrl(
-      returnUrl && returnUrl !== '/'
-        ? `/workspace?returnUrl=${encodeURIComponent(returnUrl)}`
-        : '/workspace',
+      returnUrl ? `/workspace?returnUrl=${encodeURIComponent(returnUrl)}` : '/workspace',
     );
   }
 

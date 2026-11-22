@@ -3,12 +3,30 @@ import { CanActivateFn, Router } from '@angular/router';
 import { firstAllowedPath } from '../layout/nav';
 import { SessionStore } from './session.store';
 
+/**
+ * A page worth returning to after signing in, or null. The workspace chooser and the sign-in pages
+ * are not: returning to the chooser from the chooser is a navigation to the page already open,
+ * which Angular reuses, so the "Opening your pharmacy…" screen never went away.
+ */
+export function usableReturnUrl(url: string | null | undefined): string | null {
+  if (!url || !url.startsWith('/')) {
+    return null;
+  }
+  const path = url.split(/[?#]/)[0];
+  const skipped = ['/', '/workspace', '/sign-in', '/forgot-password', '/reset-password'];
+  return skipped.includes(path) ? null : url;
+}
+
 /** Signed in, or back to sign-in with the page to return to. */
 export const authGuard: CanActivateFn = (_route, state) => {
   const session = inject(SessionStore);
-  return session.signedIn()
-    ? true
-    : inject(Router).createUrlTree(['/sign-in'], { queryParams: { returnUrl: state.url } });
+  if (session.signedIn()) {
+    return true;
+  }
+  const returnUrl = usableReturnUrl(state.url);
+  return inject(Router).createUrlTree(['/sign-in'], {
+    queryParams: returnUrl ? { returnUrl } : {},
+  });
 };
 
 /** Only for someone signed out, such as the sign-in page. */
