@@ -46,6 +46,10 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
     'A username is 2 to 32 letters or digits, and may use . - or _ (such as juma or mary.k).',
   'errors.not_managed':
     'This person signs in with their own account; only they can change its password.',
+  'errors.account_exists':
+    'This email already has an account: sign in, then accept the invitation.',
+  'errors.managed_login_cannot_join':
+    "A pharmacy's staff login works only in that pharmacy. Sign in with your own account, or create one, to accept this invitation.",
   'errors.direct_creation_disabled':
     'This pharmacy invites people by email; it does not create logins for them.',
 

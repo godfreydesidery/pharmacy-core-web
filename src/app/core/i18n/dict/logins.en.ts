@@ -45,4 +45,21 @@ export const LOGINS_EN: Readonly<Record<string, string>> = {
   'logins.newPasswordHint': 'At least 8 characters. Avoid one others could guess.',
   'logins.save': 'Save and continue',
   'logins.chosen': 'Your password is set.',
+
+  // Joining by invitation
+  'join.inviteHint':
+    'They get an email and join when they accept: with a new account, or signed in with the one they already have. Their account keeps its own name, phone and password.',
+  'join.invited': 'Invitation sent to {{email}}.',
+  'join.acceptedAs': 'Accepted as {{who}}',
+  'join.adminInvited':
+    '{{email}} already has an account, so it was sent an invitation: they become administrator when they accept.',
+  'join.signedInAs': 'You are signed in as {{who}}.',
+  'join.as': 'Join as {{who}}',
+  'join.notYou': 'Not you? Sign out',
+  'join.haveAccount': 'I already have an account',
+  'join.newHere': 'I am new here: create my account',
+  'join.signInToJoin':
+    'Sign in with your account to join. It may use another email than this one; the pharmacy will see which.',
+  'join.signInAndJoin': 'Sign in and join',
+  'join.joined': 'You now work at {{pharmacy}}.',
 };

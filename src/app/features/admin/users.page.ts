@@ -40,16 +40,17 @@ import { signInLabel } from '../../core/session/sign-in-label';
           <a class="btn" routerLink="/admin/roles"
             ><app-icon name="shield" [size]="16" /> {{ 'ui.users.roles' | t }}</a
           >
+          <button
+            class="btn"
+            [class.primary]="!canCreateLogins()"
+            type="button"
+            (click)="edit(null)"
+          >
+            <app-icon name="mail" [size]="16" /> {{ 'logins.invite' | t }}
+          </button>
           @if (canCreateLogins()) {
-            <button class="btn" type="button" (click)="edit(null)">
-              <app-icon name="plus" [size]="16" /> {{ 'ui.users.add' | t }}
-            </button>
             <button class="btn primary" type="button" (click)="createLogin()">
               <app-icon name="plus" [size]="16" /> {{ 'logins.create' | t }}
-            </button>
-          } @else {
-            <button class="btn primary" type="button" (click)="edit(null)">
-              <app-icon name="plus" [size]="16" /> {{ 'logins.invite' | t }}
             </button>
           }
         </div>
@@ -158,9 +159,7 @@ import { signInLabel } from '../../core/session/sign-in-label';
           ? ('ui.users.editTitle' | t: { name: current()!.name })
           : managedMode()
             ? ('logins.createTitle' | t)
-            : canCreateLogins()
-              ? ('ui.users.add' | t)
-              : ('logins.invite' | t)
+            : ('logins.invite' | t)
       "
       (closed)="open.set(false)"
     >
@@ -168,8 +167,8 @@ import { signInLabel } from '../../core/session/sign-in-label';
         @if (managedMode() && !current()) {
           <p class="hint full">{{ 'logins.createHint' | t }}</p>
         }
-        @if (!current() && !managedMode() && !canCreateLogins()) {
-          <p class="hint full">{{ 'logins.inviteOnlyHint' | t }}</p>
+        @if (!current() && !managedMode()) {
+          <p class="hint full">{{ 'join.inviteHint' | t }}</p>
         }
         @if (!current() || current()!.managed) {
           <div class="field">
@@ -220,27 +219,15 @@ import { signInLabel } from '../../core/session/sign-in-label';
             }
           </div>
         }
-        <div class="field">
-          <label>{{ 'admin2.phone' | t }}</label
-          ><input class="input" type="tel" formControlName="phone" placeholder="+255754000111" />
-          <span class="hint">{{
-            (managedMode() || current()?.managed ? 'logins.phoneHint' : 'admin2.phoneAdminHint') | t
-          }}</span>
-          @if (err('phone'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        @if (!current() && !managedMode() && canCreateLogins()) {
-          <div class="field full">
-            <label>{{ 'ui.users.password' | t }}</label
-            ><input
-              class="input"
-              type="password"
-              formControlName="password"
-              autocomplete="new-password"
-            />
-            <span class="hint">{{ 'ui.users.passwordHint' | t }}</span>
-            @if (err('password'); as m) {
+        @if (current() || managedMode()) {
+          <div class="field">
+            <label>{{ 'admin2.phone' | t }}</label
+            ><input class="input" type="tel" formControlName="phone" placeholder="+255754000111" />
+            <span class="hint">{{
+              (managedMode() || current()?.managed ? 'logins.phoneHint' : 'admin2.phoneAdminHint')
+                | t
+            }}</span>
+            @if (err('phone'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
@@ -289,7 +276,10 @@ import { signInLabel } from '../../core/session/sign-in-label';
           {{ 'common.cancel' | t }}
         </button>
         <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
-          {{ (managedMode() && !current() ? 'logins.create' : 'common.save') | t }}
+          {{
+            (current() ? 'common.save' : managedMode() ? 'logins.create' : 'admin.sendInvitation')
+              | t
+          }}
         </button>
       </ng-container>
     </app-modal>
@@ -432,7 +422,6 @@ export default class UsersPage {
     name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
     phone: [''],
-    password: ['', [Validators.required, Validators.minLength(8)]],
     username: ['', [Validators.required, Validators.pattern(/^[A-Za-z0-9][A-Za-z0-9._-]{1,31}$/)]],
     contactEmail: ['', Validators.email],
     roleUid: ['', Validators.required],
@@ -477,7 +466,6 @@ export default class UsersPage {
       name: member?.name ?? '',
       email: member?.email ?? '',
       phone: member?.phone ?? '',
-      password: '',
       username: '',
       contactEmail: member?.contactEmail ?? '',
       roleUid: member?.roleUid ?? '',
@@ -489,12 +477,11 @@ export default class UsersPage {
       // A managed login's name is the pharmacy's to keep; a person's own is theirs.
       name: !member || !!member.managed,
       email: !member && !managed,
-      // Where the pharmacy may only invite, an admin never sets an email account's password.
-      password: !member && !managed && this.canCreateLogins(),
       username: !member && managed,
       contactEmail: managed || !!member?.managed,
-      // A person who has a phone edits it on their own account; a managed login's is the pharmacy's.
-      phone: !member?.phone || !!member.managed,
+      // A person's phone is theirs (an invitation carries none); a managed login's is the
+      // pharmacy's; an admin may fill in a phone only where a member has none yet.
+      phone: managed || !!member?.managed || (!!member && !member.phone),
     };
     for (const [name, on] of Object.entries(enabled)) {
       const control = this.form.get(name)!;
@@ -601,23 +588,16 @@ export default class UsersPage {
         await this.list.reload();
         return;
       } else {
-        const added = await this.api.post<{ invited?: boolean }>(
+        // Always an invitation: the person joins when they accept.
+        await this.api.post(
           '/users',
-          {
-            name: v.name,
-            email: v.email,
-            password: this.canCreateLogins() ? v.password : null,
-            ...access,
-          },
+          { name: v.name, email: v.email, ...access },
           { silent: true, noBranch: true },
         );
-        if (added?.invited) {
-          // The email already has an account: they join only by accepting the invitation.
-          this.toasts.success(this.translations.t('security2.invitationSentInstead'));
-          this.open.set(false);
-          await this.invitationsPanel()?.reload();
-          return;
-        }
+        this.toasts.success(this.translations.t('join.invited', { email: v.email }));
+        this.open.set(false);
+        await this.invitationsPanel()?.reload();
+        return;
       }
       this.toasts.success(this.translations.t('toast.userSaved'));
       this.open.set(false);
