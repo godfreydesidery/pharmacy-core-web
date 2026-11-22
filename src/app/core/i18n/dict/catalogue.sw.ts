@@ -25,6 +25,7 @@ export const CATALOGUE_SW: Readonly<Record<string, string>> = {
   'catalogue.export': 'Hamisha',
   'catalogue.formModel': 'Aina / modeli',
   'catalogue.genericNameInn': 'Jina la kisayansi (INN)',
+  'catalogue.code': 'Msimbo',
   'catalogue.gtinBarcode': 'GTIN (msimbopau)',
   'catalogue.identity': 'Utambulisho',
   'catalogue.inactive': 'Si hai',
