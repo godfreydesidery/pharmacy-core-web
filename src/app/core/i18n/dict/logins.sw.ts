@@ -45,4 +45,21 @@ export const LOGINS_SW: Readonly<Record<string, string>> = {
   'logins.newPasswordHint': 'Angalau herufi 8. Epuka linaloweza kubashiriwa na wengine.',
   'logins.save': 'Hifadhi na uendelee',
   'logins.chosen': 'Nenosiri lako limewekwa.',
+
+  // Kujiunga kwa mwaliko
+  'join.inviteHint':
+    'Atapokea barua pepe na kujiunga akikubali: kwa akaunti mpya, au akiingia kwa akaunti aliyonayo. Akaunti yake hubaki na jina, simu na nenosiri lake.',
+  'join.invited': 'Mwaliko umetumwa kwa {{email}}.',
+  'join.acceptedAs': 'Amekubali kama {{who}}',
+  'join.adminInvited':
+    '{{email}} tayari ana akaunti, kwa hiyo ametumiwa mwaliko: atakuwa msimamizi akikubali.',
+  'join.signedInAs': 'Umeingia kama {{who}}.',
+  'join.as': 'Jiunge kama {{who}}',
+  'join.notYou': 'Si wewe? Toka',
+  'join.haveAccount': 'Tayari nina akaunti',
+  'join.newHere': 'Mimi ni mgeni: nifungulie akaunti',
+  'join.signInToJoin':
+    'Ingia kwa akaunti yako ili ujiunge. Inaweza kutumia barua pepe tofauti na hii; duka litaona ipi.',
+  'join.signInAndJoin': 'Ingia na ujiunge',
+  'join.joined': 'Sasa unafanya kazi {{pharmacy}}.',
 };

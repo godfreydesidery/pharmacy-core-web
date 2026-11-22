@@ -77,6 +77,11 @@ import { Translations } from '../../core/i18n/translations.store';
                 <td>
                   <b>{{ invitation.name }}</b>
                   <div class="muted small">{{ invitation.email }}</div>
+                  @if (invitation.acceptedAs && invitation.acceptedAs !== invitation.email) {
+                    <div class="small accepted-as">
+                      {{ 'join.acceptedAs' | t: { who: invitation.acceptedAs } }}
+                    </div>
+                  }
                 </td>
                 <td>{{ invitation.roleName }}</td>
                 <td><app-status [value]="invitation.status" /></td>
@@ -155,6 +160,9 @@ import { Translations } from '../../core/i18n/translations.store';
   styles: `
     .invitations {
       margin-top: 18px;
+    }
+    .accepted-as {
+      color: var(--green);
     }
     .card-head {
       display: flex;
