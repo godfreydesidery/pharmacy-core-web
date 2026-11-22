@@ -14,6 +14,21 @@ export interface SecurityOverview {
   recoveryCodesLeft: number;
   passkeys: number;
   twoFactorRequired: boolean;
+  email: string;
+  phone: string | null;
+  phoneVerified: boolean;
+  managed: boolean;
+  /** A new sign-in email waiting for its mailbox to confirm it. */
+  pendingEmail: string | null;
+}
+
+/** One entry of the person's own security history. */
+export interface SecurityEvent {
+  uid: string;
+  at: IsoDateTime;
+  action: string;
+  ip: string | null;
+  device: string | null;
 }
 
 export interface TwoFactorSetup {

@@ -104,6 +104,9 @@ export interface User {
   active?: boolean;
   phone?: string | null;
   lastSignInAt?: IsoDateTime | null;
+  /** A staff login a pharmacy created (signs in as username@CODE). */
+  managed?: boolean;
+  phoneVerified?: boolean;
 }
 
 /* ---------- tenant administration ---------- */
