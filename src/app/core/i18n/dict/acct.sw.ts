@@ -103,4 +103,18 @@ export const ACCT_SW: Readonly<Record<string, string>> = {
   'acct.reason': 'Ulivyohakikisha ni nani',
   'acct.recoveryStarted':
     'Urejeshaji umeanzishwa: kiungo kwenda {{email}} kinafanya kazi kuanzia {{time}}.',
+  'link.title': 'Akaunti ya mfanyakazi ya famasia',
+  'link.hint':
+    'Je, famasia imekupa akaunti ya mfanyakazi kama juma@DAWA? Iunganishe na akaunti hii uingie kila mahali kwa barua pepe yako.',
+  'link.start': 'Unganisha akaunti ya mfanyakazi',
+  'link.signIn': 'Akaunti ya mfanyakazi (jina@FAMASIA)',
+  'link.loginPassword': 'Nenosiri lake',
+  'link.password': 'Nenosiri lako mwenyewe',
+  'link.warning':
+    'Famasia itakuona kwa akaunti hii (jina na barua pepe yako). Akaunti ya mfanyakazi itaacha kufanya kazi; ulichofanya nayo kinabaki kwenye kumbukumbu za famasia.',
+  'link.submit': 'Unganisha',
+  'link.done': 'Imeunganishwa: sasa unaingia famasia hiyo kwa akaunti yako.',
+  'errors.invalid_login': 'Akaunti ya mfanyakazi au nenosiri lake si sahihi.',
+  'errors.login_linked':
+    'Akaunti hii ya mfanyakazi sasa ni sehemu ya akaunti yako: ingia kwa barua pepe yako.',
 };

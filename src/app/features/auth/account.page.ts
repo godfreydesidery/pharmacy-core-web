@@ -9,6 +9,7 @@ import { LanguageSwitchComponent } from '../../core/i18n/language-switch.compone
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { NotificationPreferencesComponent } from '../../core/notifications/notification-preferences.component';
 import { AccountContactsComponent } from './account-contacts.component';
+import { LinkLoginComponent } from './link-login.component';
 import { AccountSecurityComponent } from './account-security.component';
 import { SecurityHistoryComponent } from './security-history.component';
 import { ProfileSectionComponent } from './profile-section.component';
@@ -30,6 +31,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
     NotificationPreferencesComponent,
     AccountSecurityComponent,
     AccountContactsComponent,
+    LinkLoginComponent,
     SecurityHistoryComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -43,6 +45,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
       </div>
       <app-profile-section />
       <app-account-contacts />
+      <app-link-login />
       <div class="card card-pad stack language-card" style="max-width:520px;margin-bottom:18px">
         <h3>{{ 'account.language' | t }}</h3>
         <p class="muted">{{ 'account.languageHint' | t }}</p>
