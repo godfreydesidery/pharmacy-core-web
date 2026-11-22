@@ -594,6 +594,8 @@ export interface Prescription {
 export interface CheckoutRequest {
   idempotencyKey: string;
   customerUid: Uid | null;
+  /** NORMAL or a pricing plan's uid; null for the customer's own plan. */
+  pricePlan?: string | null;
   discountPercent: number;
   lines: { productUid: Uid; quantity: number; serialNumbers?: string[] }[];
   payments: SalePayment[];
@@ -644,6 +646,8 @@ export interface SaleLine {
 export interface Sale {
   uid: Uid;
   number: string;
+  /** The pricing plan it was priced under, as named then (null before pricing plans). */
+  priceListName?: string | null;
   branchUid: Uid;
   branchName: string;
   customerUid: Uid | null;
@@ -921,6 +925,8 @@ export interface PricedLine {
   source: PriceSource;
   label: string | null;
   belowCost: boolean;
+  /** The chosen plan has no price and no rule for it: the sale is refused. */
+  unpriced?: boolean;
 }
 
 export interface PriceListItem {
@@ -936,11 +942,76 @@ export interface PriceList {
   customerType: CustomerType | null;
   customerUid: Uid | null;
   customerName: string | null;
-  adjustmentPercent: number;
+  /** For a medicine the plan has no price for: null blocks it, 0 is Normal Sale, else ±%. */
+  adjustmentPercent: number | null;
   validFrom: string | null;
   validTo: string | null;
   active: boolean;
   items: PriceListItem[];
+  /** An insurer's plan: the default for its members' sales. */
+  payerUid?: Uid | null;
+  payerName?: string | null;
+}
+
+/** A pricing plan; uid null is Normal Sale. rulePercent null: no rule (blocks). */
+export interface PricingPlan {
+  uid: Uid | null;
+  name: string;
+  rulePercent: number | null;
+  customerType: string | null;
+  customerUid: Uid | null;
+  customerName: string | null;
+  payerUid: Uid | null;
+  payerName: string | null;
+}
+
+export interface PricingGridRow {
+  productUid: Uid;
+  code: string;
+  name: string;
+  barcode: string | null;
+  category: string | null;
+  costPrice: number | null;
+  normalPrice: number;
+  /** Plan uid → its price from quantity 1, where set. */
+  prices: Record<string, number>;
+}
+
+export interface PriceChange {
+  planUid: Uid | null;
+  planName: string;
+  minQuantity: number;
+  oldPrice: number | null;
+  newPrice: number | null;
+  source: 'MANUAL' | 'IMPORT' | 'PRODUCT' | 'BULK';
+  changedBy: string;
+  changedAt: string;
+}
+
+export interface TillPlans {
+  defaultPlan: PricingPlan;
+  plans: PricingPlan[];
+  canChange: boolean;
+}
+
+export interface BulkResult {
+  planName: string;
+  lines: {
+    productUid: Uid;
+    code: string;
+    name: string;
+    oldPrice: number | null;
+    newPrice: number;
+  }[];
+  applied: boolean;
+}
+
+export interface PlanSales {
+  plan: string;
+  sales: number;
+  total: number;
+  normalTotal: number | null;
+  belowNormal: number | null;
 }
 
 export interface BranchPrice {

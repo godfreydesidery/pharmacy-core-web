@@ -34,11 +34,15 @@ const CUSTOMER_TYPES: CustomerType[] = [
 interface ListDraft {
   uid: string | null;
   name: string;
-  target: 'type' | 'customer';
+  target: 'type' | 'customer' | 'insurer';
   customerType: CustomerType | '';
   customerUid: string | null;
   customerName: string | null;
+  /** Whether medicines without a price take Normal ± adjustmentPercent (else they are blocked). */
+  rule: boolean;
   adjustmentPercent: number;
+  payerUid: string | null;
+  payerName: string | null;
   validFrom: string;
   validTo: string;
   active: boolean;
@@ -130,7 +134,13 @@ interface PromotionDraft {
                           (l.customerType ? ('enum.' + l.customerType | t) : ('pricing.nobody' | t))
                       }}
                     </td>
-                    <td class="right">{{ l.adjustmentPercent }}%</td>
+                    <td class="right">
+                      {{
+                        l.adjustmentPercent === null
+                          ? ('pricing.blocks' | t)
+                          : l.adjustmentPercent + '%'
+                      }}
+                    </td>
                     <td class="right">{{ l.items.length }}</td>
                     <td class="muted">{{ l.validFrom ?? '…' }} – {{ l.validTo ?? '…' }}</td>
                     <td class="right">
@@ -300,9 +310,26 @@ interface PromotionDraft {
             >
               <option value="type">{{ 'pricing.aCustomerType' | t }}</option>
               <option value="customer">{{ 'pricing.oneCustomer' | t }}</option>
+              <option value="insurer">{{ 'pricing.anInsurer' | t }}</option>
             </select>
           </div>
-          @if (l.target === 'type') {
+          @if (l.target === 'insurer') {
+            <div class="field">
+              <label>{{ 'pricing.insurer' | t }}</label>
+              <select
+                class="select"
+                data-testid="plan-insurer"
+                [value]="l.payerUid ?? ''"
+                (change)="pickPayer(l, $any($event.target).value)"
+              >
+                <option value="">—</option>
+                @for (p of payers.value() ?? []; track p.uid) {
+                  <option [value]="p.uid" [selected]="p.uid === l.payerUid">{{ p.name }}</option>
+                }
+              </select>
+              <span class="hint">{{ 'pricing.insurerHint' | t }}</span>
+            </div>
+          } @else if (l.target === 'type') {
             <div class="field">
               <label>{{ 'pricing.customerType' | t }}</label>
               <select
@@ -332,16 +359,32 @@ interface PromotionDraft {
             </div>
           }
           <div class="field">
-            <label>{{ 'pricing.adjustment' | t }}</label>
-            <input
-              class="input"
-              type="number"
-              step="any"
-              [value]="l.adjustmentPercent"
-              (input)="l.adjustmentPercent = +$any($event.target).value"
-            />
-            <span class="hint">{{ 'pricing.adjustmentHint' | t }}</span>
+            <label>{{ 'pricing.noPrice' | t }}</label>
+            <select
+              class="select"
+              data-testid="plan-rule"
+              [value]="l.rule ? 'rule' : 'block'"
+              (change)="l.rule = $any($event.target).value === 'rule'; list.set({ ...l })"
+            >
+              <option value="block" [selected]="!l.rule">{{ 'pricing.noPrice.block' | t }}</option>
+              <option value="rule" [selected]="l.rule">{{ 'pricing.noPrice.rule' | t }}</option>
+            </select>
+            <span class="hint">{{ 'pricing.noPriceHint' | t }}</span>
           </div>
+          @if (l.rule) {
+            <div class="field">
+              <label>{{ 'pricing.adjustment' | t }}</label>
+              <input
+                class="input"
+                type="number"
+                step="any"
+                data-testid="plan-percent"
+                [value]="l.adjustmentPercent"
+                (input)="l.adjustmentPercent = +$any($event.target).value"
+              />
+              <span class="hint">{{ 'pricing.adjustmentHint' | t }}</span>
+            </div>
+          }
           <div class="field">
             <label>{{ 'pricing.validFrom' | t }}</label>
             <input
@@ -567,6 +610,10 @@ export default class PricingPage {
   protected readonly promotions = pagedList<Promotion>(() =>
     this.tab() === 'promotions' ? { path: '/promotions', options: { noBranch: true } } : null,
   );
+  /** Insurers, for an insurer's plan (loaded when the plan form opens). */
+  protected readonly payers = loaded<{ uid: string; name: string }[]>(() =>
+    this.list() ? { path: '/insurance/payers', options: { noBranch: true, silent: true } } : null,
+  );
   protected readonly categories = loaded<Category[]>(() =>
     this.tab() === 'promotions' ? { path: '/categories', options: { noBranch: true } } : null,
   );
@@ -586,11 +633,14 @@ export default class PricingPage {
     this.list.set({
       uid: l?.uid ?? null,
       name: l?.name ?? '',
-      target: l?.customerUid ? 'customer' : 'type',
+      target: l?.payerUid ? 'insurer' : l?.customerUid ? 'customer' : 'type',
       customerType: l?.customerType ?? '',
       customerUid: l?.customerUid ?? null,
       customerName: l?.customerName ?? null,
+      rule: l ? l.adjustmentPercent !== null : false,
       adjustmentPercent: l?.adjustmentPercent ?? 0,
+      payerUid: l?.payerUid ?? null,
+      payerName: l?.payerName ?? null,
       validFrom: l?.validFrom ?? '',
       validTo: l?.validTo ?? '',
       active: l?.active ?? true,
@@ -603,14 +653,26 @@ export default class PricingPage {
     });
   }
 
-  protected setTarget(l: ListDraft, target: 'type' | 'customer'): void {
+  protected setTarget(l: ListDraft, target: 'type' | 'customer' | 'insurer'): void {
     l.target = target;
-    if (target === 'type') {
+    if (target !== 'customer') {
       l.customerUid = null;
       l.customerName = null;
-    } else {
+    }
+    if (target !== 'type') {
       l.customerType = '';
     }
+    if (target !== 'insurer') {
+      l.payerUid = null;
+      l.payerName = null;
+    }
+    this.list.set({ ...l });
+  }
+
+  protected pickPayer(l: ListDraft, uid: string): void {
+    const payer = (this.payers.value() ?? []).find((p) => p.uid === uid);
+    l.payerUid = payer?.uid ?? null;
+    l.payerName = payer?.name ?? null;
     this.list.set({ ...l });
   }
 
@@ -639,7 +701,9 @@ export default class PricingPage {
         customerType: l.target === 'type' ? l.customerType || null : null,
         customerUid: l.target === 'customer' ? l.customerUid : null,
         customerName: l.target === 'customer' ? l.customerName : null,
-        adjustmentPercent: l.adjustmentPercent || 0,
+        adjustmentPercent: l.rule ? l.adjustmentPercent || 0 : null,
+        payerUid: l.target === 'insurer' ? l.payerUid : null,
+        payerName: l.target === 'insurer' ? l.payerName : null,
         validFrom: l.validFrom || null,
         validTo: l.validTo || null,
         active: l.active,

@@ -1,4 +1,10 @@
-import { LatestRate, PaymentRequest, PricedLine, TillMethod } from '../../core/api/models';
+import {
+  LatestRate,
+  PaymentRequest,
+  PricedLine,
+  TillMethod,
+  TillPlans,
+} from '../../core/api/models';
 import { formatMoney, minorUnits } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
@@ -250,6 +256,52 @@ export default class PosPage {
   protected readonly prescriptionFile = signal<File | null>(null);
   private idempotencyKey = crypto.randomUUID();
 
+  /**
+   * The pricing plans for this customer: the one the sale takes by default (the insurer's, the
+   * customer's or Normal Sale), every plan, and whether this person may switch.
+   */
+  protected readonly tillPlans = signal<TillPlans | null>(null);
+  /** The plan picked by someone allowed to switch; null keeps the default. */
+  protected readonly planPick = signal<string | null>(null);
+  protected readonly planValue = computed(
+    () => this.planPick() ?? this.tillPlans()?.defaultPlan.uid ?? 'NORMAL',
+  );
+  protected readonly planName = computed(() => {
+    const plans = this.tillPlans();
+    const value = this.planValue();
+    const plan = plans?.plans.find((p) => (p.uid ?? 'NORMAL') === value);
+    return !plan || !plan.uid ? this.translations.t('plans.normal') : plan.name;
+  });
+  private plansSeq = 0;
+  private readonly plansWatch = effect(() => {
+    const customerUid = this.customer()?.uid ?? null;
+    const memberUid = this.useInsurance() ? (this.member()?.uid ?? null) : null;
+    this.session.branch();
+    const seq = ++this.plansSeq;
+    untracked(() => this.planPick.set(null));
+    const query: Record<string, string> = {};
+    if (customerUid) query['customerUid'] = customerUid;
+    if (memberUid) query['memberUid'] = memberUid;
+    void this.api
+      .get<TillPlans>('/pos/price-plans', query, { silent: true })
+      .then((plans) => {
+        if (seq === this.plansSeq) this.tillPlans.set(plans);
+      })
+      .catch(() => {
+        if (seq === this.plansSeq) this.tillPlans.set(null);
+      });
+  });
+
+  protected pickPlan(value: string): void {
+    const fallback = this.tillPlans()?.defaultPlan.uid ?? 'NORMAL';
+    this.planPick.set(value === fallback ? null : value);
+  }
+
+  /** A line the chosen plan has no price for: the sale will be refused. */
+  protected unpriced(line: CartLine): boolean {
+    return !!this.quoted()[line.product.productUid]?.unpriced;
+  }
+
   /** Prices the server quoted for this basket and customer (lists, branch prices, promotions). */
   protected readonly quoted = signal<Record<string, PricedLine>>({});
   protected readonly priceOf = (line: CartLine): number =>
@@ -274,13 +326,19 @@ export default class PosPage {
       quantity: l.quantity,
     }));
     const customerUid = this.customer()?.uid ?? null;
+    const memberUid = this.useInsurance() ? (this.member()?.uid ?? null) : null;
+    const pricePlan = this.planPick();
     const seq = ++this.quoteSeq;
     if (!lines.length) {
       untracked(() => this.quoted.set({}));
       return;
     }
     void this.api
-      .post<PricedLine[]>('/pos/prices', { customerUid, lines }, { silent: true })
+      .post<PricedLine[]>(
+        '/pos/prices',
+        { customerUid, memberUid, pricePlan, lines },
+        { silent: true },
+      )
       .then((priced) => {
         if (seq === this.quoteSeq) {
           this.quoted.set(Object.fromEntries(priced.map((p) => [p.productUid, p])));
@@ -301,6 +359,8 @@ export default class PosPage {
   private readonly cardPriceWatch = effect(() => {
     const items = this.products.value()?.items ?? [];
     const customerUid = this.customer()?.uid ?? null;
+    const memberUid = this.useInsurance() ? (this.member()?.uid ?? null) : null;
+    const pricePlan = this.planPick();
     this.session.branch();
     const seq = ++this.cardSeq;
     if (!items.length) {
@@ -309,7 +369,11 @@ export default class PosPage {
     }
     const lines = items.map((p) => ({ productUid: p.productUid, quantity: 1 }));
     void this.api
-      .post<PricedLine[]>('/pos/prices', { customerUid, lines }, { silent: true })
+      .post<PricedLine[]>(
+        '/pos/prices',
+        { customerUid, memberUid, pricePlan, lines },
+        { silent: true },
+      )
       .then((priced) => {
         if (seq === this.cardSeq) {
           this.cardPrices.set(Object.fromEntries(priced.map((p) => [p.productUid, p])));
@@ -1267,6 +1331,7 @@ export default class PosPage {
     const request: CheckoutRequest = {
       idempotencyKey: this.idempotencyKey,
       customerUid: this.customer()?.uid ?? null,
+      pricePlan: this.planPick(),
       discountPercent: this.discountPercent(),
       lines: lines.map((l) => ({
         productUid: l.product.productUid,
