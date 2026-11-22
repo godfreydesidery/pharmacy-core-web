@@ -7,6 +7,7 @@ import { BranchRequiredComponent } from './ui/forms';
 import { IconComponent } from './ui/icon.component';
 import { DrawerComponent, ModalComponent } from './ui/overlay.components';
 import { EmptyComponent, PagerComponent, StatComponent, StatusBadgeComponent } from './ui/widgets';
+import { ExportComponent } from './ui/export.component';
 
 /** What almost every page imports. */
 export const SHARED = [
@@ -17,6 +18,7 @@ export const SHARED = [
   StatComponent,
   EmptyComponent,
   PagerComponent,
+  ExportComponent,
   ModalComponent,
   DrawerComponent,
   BranchRequiredComponent,

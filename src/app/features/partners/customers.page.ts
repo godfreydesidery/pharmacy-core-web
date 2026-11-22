@@ -32,6 +32,7 @@ const TYPES: CustomerType[] = [
           <p class="sub">{{ 'partners.patientsWholesaleBuyersAndInsuredMembers' | t }}</p>
         </div>
         <div class="actions">
+          <app-export [list]="list" />
           @if (session.can('partners.manage')) {
             <button class="btn primary" type="button" (click)="edit(null)">
               <app-icon name="plus" [size]="16" /> {{ 'partners.addCustomer' | t }}

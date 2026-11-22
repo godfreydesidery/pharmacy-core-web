@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Category, Product } from '../../core/api/models';
 import { debounced, loaded, pagedList } from '../../core/data/data';
-import { downloadCsv } from '../../core/format/format';
 import { SHARED } from '../../core/shared';
 import { productTypeOf } from '../../core/ui/product-types';
 import { SessionStore } from '../../core/session/session.store';
@@ -19,9 +18,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
           <p class="sub">{{ 'catalogue.thePharmacySCatalogueSharedBy' | t }}</p>
         </div>
         <div class="actions">
-          <button class="btn" type="button" (click)="export()">
-            <app-icon name="download" [size]="16" /> {{ 'catalogue.export' | t }}
-          </button>
+          <app-export [list]="list" />
           @if (session.can('catalogue.manage')) {
             <a class="btn primary" routerLink="new"
               ><app-icon name="plus" [size]="16" /> {{ 'catalogue.addProduct' | t }}</a
@@ -167,45 +164,5 @@ export default class ProductsPage {
     return p.sellingPrice > 0
       ? `${Math.round(((p.sellingPrice - p.costPrice) / p.sellingPrice) * 100)}%`
       : '—';
-  }
-
-  protected export(): void {
-    downloadCsv(
-      'products.csv',
-      [
-        'Name',
-        'Type',
-        'Generic',
-        'Code',
-        'GTIN',
-        'ATC',
-        'Category',
-        'Form',
-        'Strength',
-        'Dispensing class',
-        'Cost',
-        'Price',
-        'Reorder',
-        'Active',
-      ],
-      this.list
-        .items()
-        .map((p) => [
-          p.name,
-          p.productType,
-          p.genericName,
-          p.sku,
-          p.gtin,
-          p.atcCode,
-          p.categoryName,
-          p.dosageForm,
-          p.strength,
-          p.schedule,
-          p.costPrice,
-          p.sellingPrice,
-          p.reorderLevel,
-          String(p.active),
-        ]),
-    );
   }
 }

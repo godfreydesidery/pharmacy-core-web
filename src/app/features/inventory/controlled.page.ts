@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Uid } from '../../core/api/models';
 import { loaded, pagedList } from '../../core/data/data';
-import { downloadCsv } from '../../core/format/format';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
@@ -52,9 +51,7 @@ interface RegisterLine {
             <button class="btn" type="button" (click)="print()">
               <app-icon name="printer" [size]="16" /> {{ 'controlled.print' | t }}
             </button>
-            <button class="btn" type="button" (click)="export()">
-              <app-icon name="download" [size]="16" /> {{ 'controlled.export' | t }}
-            </button>
+            <app-export [list]="register" />
           </div>
         }
       </div>
@@ -190,46 +187,5 @@ export default class ControlledPage {
 
   protected print(): void {
     window.print();
-  }
-
-  protected export(): void {
-    const s = this.selected();
-    if (!s) {
-      return;
-    }
-    const t = (k: string) => this.translations.t(k);
-    downloadCsv(
-      `controlled-register-${s.name.replace(/\W+/g, '-').toLowerCase()}.csv`,
-      [
-        t('controlled.date'),
-        t('controlled.entry'),
-        t('controlled.reference'),
-        t('controlled.batch'),
-        t('controlled.in'),
-        t('controlled.out'),
-        t('controlled.balanceCol'),
-        t('controlled.patient'),
-        t('controlled.prescriber'),
-        t('controlled.registration'),
-        t('controlled.rxReference'),
-        t('controlled.by'),
-      ],
-      this.register
-        .items()
-        .map((r) => [
-          r.at,
-          r.type,
-          r.reference ?? '',
-          r.batchNumber ?? '',
-          r.quantityIn,
-          r.quantityOut,
-          r.balance,
-          r.patientName ?? '',
-          r.prescriberName ?? '',
-          r.prescriberRegistration ?? '',
-          r.prescriptionReference ?? '',
-          r.recordedBy,
-        ]),
-    );
   }
 }

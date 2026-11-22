@@ -12,7 +12,7 @@ import {
   TrackingMode,
 } from '../../core/api/models';
 import { debounced, loaded, pagedList } from '../../core/data/data';
-import { downloadCsv, isoDay } from '../../core/format/format';
+import { isoDay } from '../../core/format/format';
 import { SHARED } from '../../core/shared';
 import {
   PRODUCT_TYPES,
@@ -143,9 +143,7 @@ import { Translations } from '../../core/i18n/translations.store';
               </select>
             }
             <div class="spacer"></div>
-            <button class="btn" type="button" (click)="export()">
-              <app-icon name="download" [size]="16" /> {{ 'inventory.export' | t }}
-            </button>
+            <app-export [list]="list" />
           </div>
           <div class="table-wrap">
             <table class="table">
@@ -604,39 +602,5 @@ export default class StockPage {
     } finally {
       this.busy.set(false);
     }
-  }
-
-  protected export(): void {
-    downloadCsv(
-      'stock.csv',
-      [
-        'Product',
-        'Type',
-        'Generic',
-        'Code',
-        'Category',
-        'On hand',
-        'Reorder',
-        'Nearest expiry',
-        'Price',
-        'Cost value',
-        'Status',
-      ],
-      this.list
-        .items()
-        .map((i) => [
-          i.productName,
-          i.productType,
-          i.genericName,
-          i.sku,
-          i.categoryName,
-          i.quantity,
-          i.reorderLevel,
-          i.nearestExpiry,
-          i.sellingPrice,
-          i.costValue,
-          i.status,
-        ]),
-    );
   }
 }
