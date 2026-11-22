@@ -9,6 +9,11 @@ export default [
     title: 'Root administrators',
     loadComponent: () => import('./root-admins.page'),
   },
+  {
+    path: 'accounts',
+    title: 'Account recovery',
+    loadComponent: () => import('./account-recovery.page'),
+  },
   { path: 'audit', title: 'Platform audit', loadComponent: () => import('./audit.page') },
   { path: 'plans', title: 'Plans', loadComponent: () => import('./plans.page') },
   {

@@ -7,7 +7,10 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
 
-/** The signed-in person's name and phone; the phone lets SMS and WhatsApp alerts reach them. */
+/**
+ * The signed-in person's name, and a staff login's contact phone. A person's own phone is verified
+ * by SMS in the sign-in email and phone card instead.
+ */
 @Component({
   selector: 'app-profile-section',
   imports: [...SHARED],
@@ -27,20 +30,22 @@ import { Translations } from '../../core/i18n/translations.store';
           <span class="error">{{ m }}</span>
         }
       </div>
-      <div class="field">
-        <label for="profile-phone">{{ 'admin2.phone' | t }}</label
-        ><input
-          id="profile-phone"
-          class="input"
-          type="tel"
-          formControlName="phone"
-          placeholder="+255754000111"
-        />
-        <span class="hint">{{ 'admin2.phoneHint' | t }}</span>
-        @if (err('phone'); as m) {
-          <span class="error">{{ m }}</span>
-        }
-      </div>
+      @if (managed()) {
+        <div class="field">
+          <label for="profile-phone">{{ 'admin2.phone' | t }}</label
+          ><input
+            id="profile-phone"
+            class="input"
+            type="tel"
+            formControlName="phone"
+            placeholder="+255754000111"
+          />
+          <span class="hint">{{ 'admin2.phoneHint' | t }}</span>
+          @if (err('phone'); as m) {
+            <span class="error">{{ m }}</span>
+          }
+        </div>
+      }
       <div>
         <button class="btn primary" type="submit" [disabled]="busy()">
           <app-icon name="check" [size]="16" /> {{ 'common.save' | t }}
@@ -54,6 +59,8 @@ export class ProfileSectionComponent implements OnInit {
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   protected readonly busy = signal(false);
+  /** A staff login keeps a contact phone here; a person verifies theirs by SMS (below). */
+  protected readonly managed = signal(false);
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
     phone: ['', Validators.pattern(/^\s*(\+[\d\s-]{8,20})?\s*$/)],
@@ -64,6 +71,7 @@ export class ProfileSectionComponent implements OnInit {
       noBranch: true,
       silent: true,
     });
+    this.managed.set(!!me.managed);
     this.form.reset({ name: me.name, phone: me.phone ?? '' });
   }
 
@@ -84,7 +92,9 @@ export class ProfileSectionComponent implements OnInit {
       const v = this.form.getRawValue();
       const me = await this.api.put<User>(
         '/auth/profile',
-        { name: v.name.trim(), phone: v.phone.trim() || null },
+        this.managed()
+          ? { name: v.name.trim(), phone: v.phone.trim() || null }
+          : { name: v.name.trim() },
         { noBranch: true, silent: true },
       );
       this.form.reset({ name: me.name, phone: me.phone ?? '' });

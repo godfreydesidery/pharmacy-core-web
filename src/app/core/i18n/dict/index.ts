@@ -68,6 +68,8 @@ import { PURCHASING_SW } from './purchasing.sw';
 import { SALES_EN } from './sales.en';
 import { IDLE_EN } from './idle.en';
 import { IDLE_SW } from './idle.sw';
+import { ACCT_EN } from './acct.en';
+import { ACCT_SW } from './acct.sw';
 import { LOGINS_EN } from './logins.en';
 import { LOGINS_SW } from './logins.sw';
 import { SECURITY2_EN } from './security2.en';
@@ -84,6 +86,7 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...SECURITY2_EN,
   ...IDLE_EN,
   ...LOGINS_EN,
+  ...ACCT_EN,
   ...FINANCE_EN,
   ...REPORTS_EN,
   ...RECEIVABLES_EN,
@@ -124,6 +127,7 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...SECURITY2_SW,
   ...IDLE_SW,
   ...LOGINS_SW,
+  ...ACCT_SW,
   ...FINANCE_SW,
   ...REPORTS_SW,
   ...RECEIVABLES_SW,

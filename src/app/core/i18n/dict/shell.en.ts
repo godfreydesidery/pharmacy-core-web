@@ -4,6 +4,8 @@ export const SHELL_EN: Readonly<Record<string, string>> = {
   'nav.insurance': 'Insurance',
   'nav.platform.tenants': 'Tenants',
   'nav.platform.root-admins': 'Root administrators',
+  'nav.platform.accounts': 'Account recovery',
+  'nav.platform-accounts': 'Account recovery',
   'nav.platform.audit': 'Audit log',
   'nav.finance.supplier-payments': 'Supplier payments',
   'nav.finance.exchange-rates': 'Exchange rates',

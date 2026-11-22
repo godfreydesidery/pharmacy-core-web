@@ -4,6 +4,8 @@ export const SHELL_SW: Readonly<Record<string, string>> = {
   'nav.insurance': 'Bima',
   'nav.platform.tenants': 'Wapangaji',
   'nav.platform.root-admins': 'Wasimamizi wakuu',
+  'nav.platform.accounts': 'Urejeshaji wa akaunti',
+  'nav.platform-accounts': 'Urejeshaji wa akaunti',
   'nav.platform.audit': 'Kumbukumbu za ukaguzi',
   'nav.finance.supplier-payments': 'Malipo kwa wasambazaji',
   'nav.finance.exchange-rates': 'Viwango vya kubadilisha fedha',

@@ -45,6 +45,13 @@ export const PLATFORM_NAV: NavItem[] = [
     rootOnly: true,
   },
   {
+    id: 'platform-accounts',
+    label: 'Account recovery',
+    icon: 'shield',
+    path: '/platform/accounts',
+    rootOnly: true,
+  },
+  {
     id: 'platform-providers',
     label: 'Message providers',
     icon: 'bell',

@@ -34,6 +34,16 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/reset-password.page'),
   },
   {
+    path: 'confirm-email',
+    title: 'Confirm your email · Pharmacy Core',
+    loadComponent: () => import('./features/auth/confirm-email.page'),
+  },
+  {
+    path: 'cancel-recovery',
+    title: 'Cancel account recovery · Pharmacy Core',
+    loadComponent: () => import('./features/auth/cancel-recovery.page'),
+  },
+  {
     path: 'accept-invitation',
     title: 'Accept invitation · Pharmacy Core',
     loadComponent: () => import('./features/auth/accept-invitation.page'),

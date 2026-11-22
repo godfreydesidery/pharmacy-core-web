@@ -8,7 +8,9 @@ import { ToastService } from '../../core/ui/toast.service';
 import { LanguageSwitchComponent } from '../../core/i18n/language-switch.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { NotificationPreferencesComponent } from '../../core/notifications/notification-preferences.component';
+import { AccountContactsComponent } from './account-contacts.component';
 import { AccountSecurityComponent } from './account-security.component';
+import { SecurityHistoryComponent } from './security-history.component';
 import { ProfileSectionComponent } from './profile-section.component';
 import { Translations } from '../../core/i18n/translations.store';
 
@@ -27,6 +29,8 @@ function matching(group: AbstractControl): ValidationErrors | null {
     TranslatePipe,
     NotificationPreferencesComponent,
     AccountSecurityComponent,
+    AccountContactsComponent,
+    SecurityHistoryComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
@@ -38,6 +42,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
         </div>
       </div>
       <app-profile-section />
+      <app-account-contacts />
       <div class="card card-pad stack language-card" style="max-width:520px;margin-bottom:18px">
         <h3>{{ 'account.language' | t }}</h3>
         <p class="muted">{{ 'account.languageHint' | t }}</p>
@@ -94,6 +99,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
         </div>
       </form>
       <app-account-security />
+      <app-security-history />
       <app-notification-preferences />
     </div>
   `,
