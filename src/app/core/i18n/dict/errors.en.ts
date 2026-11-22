@@ -118,7 +118,7 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.invalid_quantity_change': 'The quantity change must not be zero.',
 
   // catalogue
-  'errors.duplicate_sku': 'Another product already has this SKU.',
+  'errors.duplicate_sku': 'Another product already has this code.',
   'errors.duplicate_gtin': 'Another product already has this barcode (GTIN).',
   'errors.invalid_gtin': 'The barcode (GTIN) must be 8 to 14 digits.',
   'errors.invalid_atc_code': 'This is not a WHO ATC code, such as N02BE01.',

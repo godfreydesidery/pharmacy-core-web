@@ -38,7 +38,7 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.saveAndCompleteSale': 'Hifadhi na kamilisha mauzo',
   'pos.scanOrTypeASerialNumber': 'Skani au andika namba ya utambulisho, kisha bonyeza Enter',
   'pos.scanTheSerialNumberAtSale': 'Skani namba ya utambulisho wakati wa kuuza',
-  'pos.searchNameGenericSkuOrScan': 'Tafuta jina, jina la kisayansi, SKU au skani msimbopau…',
+  'pos.searchNameGenericSkuOrScan': 'Tafuta jina, jina la kisayansi, msimbo au skani msimbopau…',
   'pos.split': '+ Gawanya',
   'pos.subtotal': 'Jumla ndogo',
   'pos.tax': 'Kodi',

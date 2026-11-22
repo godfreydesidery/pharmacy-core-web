@@ -176,7 +176,7 @@ export default class ProductsPage {
         'Name',
         'Type',
         'Generic',
-        'SKU',
+        'Code',
         'GTIN',
         'ATC',
         'Category',

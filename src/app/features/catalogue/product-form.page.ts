@@ -114,7 +114,13 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                 }
               </div>
               <div class="field">
-                <label>SKU</label><input class="input" formControlName="sku" />
+                <label>{{ 'catalogue.code' | t }}</label
+                ><input
+                  class="input"
+                  formControlName="sku"
+                  [placeholder]="'catalogue.codeAuto' | t"
+                />
+                <span class="hint">{{ 'catalogue.codeHint' | t }}</span>
                 @if (err('sku'); as m) {
                   <span class="error">{{ m }}</span>
                 }
