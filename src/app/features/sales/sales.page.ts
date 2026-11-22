@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { SaleSummary } from '../../core/api/models';
 import { debounced, pagedList } from '../../core/data/data';
-import { downloadCsv } from '../../core/format/format';
 import { enumLabel } from '../../core/format/pipes';
 import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
@@ -79,9 +78,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               />
             }
             <div class="spacer"></div>
-            <button class="btn" type="button" (click)="export()">
-              <app-icon name="download" [size]="16" /> {{ 'sales.export' | t }}
-            </button>
+            <app-export [list]="list" />
           </div>
           <div class="table-wrap">
             <table class="table">
@@ -170,22 +167,5 @@ export default class SalesPage {
   /** The sale's payment methods in the current language. */
   protected methods(sale: SaleSummary): string {
     return sale.paymentMethods.map((m) => enumLabel(this.translations, m)).join(', ');
-  }
-
-  protected export(): void {
-    downloadCsv(
-      'sales.csv',
-      ['Invoice', 'Customer', 'Date', 'Cashier', 'Payment', 'Items', 'Total', 'Status'],
-      this.shown().map((s) => [
-        s.number,
-        s.customerName ?? 'Walk-in',
-        s.createdAt,
-        s.cashierName,
-        this.methods(s),
-        s.itemCount,
-        s.total,
-        s.status,
-      ]),
-    );
   }
 }

@@ -1,7 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { ExpiringBatch } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
-import { downloadCsv } from '../../core/format/format';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -27,9 +26,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               </button>
             }
           </div>
-          <button class="btn" type="button" (click)="export()">
-            <app-icon name="download" [size]="16" /> {{ 'inventory.export' | t }}
-          </button>
+          <app-export [list]="list" />
         </div>
       </div>
       @if (!session.branch()) {
@@ -120,22 +117,5 @@ export default class ExpiryPage {
 
   protected tone(daysLeft: number): string {
     return `thumb ${daysLeft <= 30 ? 'tone-red' : daysLeft <= 90 ? 'tone-amber' : 'tone-green'}`;
-  }
-
-  protected export(): void {
-    downloadCsv(
-      'expiry.csv',
-      ['Medicine', 'Batch', 'Expiry', 'Days left', 'Quantity', 'Cost value'],
-      this.list
-        .items()
-        .map((b) => [
-          b.productName,
-          b.batchNumber,
-          b.expiryDate,
-          b.daysLeft,
-          b.quantity,
-          b.costValue,
-        ]),
-    );
   }
 }

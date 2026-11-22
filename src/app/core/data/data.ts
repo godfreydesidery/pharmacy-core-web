@@ -22,6 +22,8 @@ export interface PagedList<T> {
   readonly size: Signal<number>;
   /** How many pages the list has (at least 1). */
   readonly pages: Signal<number>;
+  /** The request the list shows (its path and filters), such as for an export of it. */
+  readonly request: Signal<ListRequest | null>;
   readonly hasMore: Signal<boolean>;
   reload(): Promise<void>;
   /** Shows page {@code page} (kept between 1 and the last). */
@@ -63,6 +65,7 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
   const pages = computed(() => Math.max(1, Math.ceil((total() ?? 0) / size())));
   let generation = 0;
   let current: ListRequest | null = null;
+  const shown = signal<ListRequest | null>(null);
 
   async function fetch(wanted: number): Promise<void> {
     if (!current) {
@@ -108,6 +111,7 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
     const next = request();
     untracked(() => {
       current = next;
+      shown.set(next);
       if (next) {
         void fetch(1);
       } else {
@@ -128,6 +132,7 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
     page,
     size,
     pages,
+    request: shown,
     hasMore: computed(() => page() < pages()),
     reload: () => fetch(page()),
     goTo,

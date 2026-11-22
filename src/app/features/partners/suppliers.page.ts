@@ -24,6 +24,7 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
           <p class="sub">{{ 'partners.wholesalersAndDistributorsYouBuyFrom' | t }}</p>
         </div>
         <div class="actions">
+          <app-export [list]="list" />
           @if (session.can('partners.manage')) {
             <button class="btn primary" type="button" (click)="edit(null)">
               <app-icon name="plus" [size]="16" /> {{ 'partners.addSupplier' | t }}
