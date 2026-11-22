@@ -66,6 +66,8 @@ export interface Tenant {
   timezone: string;
   status: TenantStatus;
   statusReason: string | null;
+  /** Why it is suspended: UNPAID (admins read-only), DISPUTE (legal hold), ABUSE, OTHER. */
+  suspensionKind?: 'UNPAID' | 'DISPUTE' | 'ABUSE' | 'OTHER' | null;
   branchCount: number;
   createdAt: IsoDateTime;
   contactName?: string | null;

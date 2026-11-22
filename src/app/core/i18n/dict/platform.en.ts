@@ -68,4 +68,15 @@ export const PLATFORM_EN: Readonly<Record<string, string>> = {
   'platform.phone': 'Phone',
   'platform.firstAdministrator': 'First administrator',
   'platform.register': 'Register',
+  // suspension kinds
+  'susp.kind': 'Kind',
+  'susp.kindHint':
+    'Unpaid: its admins can still read and export, not change anything. Dispute: a legal hold — nobody works in it and its data cannot be erased. Abuse or other: blocked.',
+  'susp.kind.UNPAID': 'Unpaid subscription',
+  'susp.kind.DISPUTE': 'Dispute (legal hold)',
+  'susp.kind.ABUSE': 'Abuse',
+  'susp.kind.OTHER': 'Other',
+  'susp.unpaidEffect': ' Its admins can still read and export its data, but not change it.',
+  'errors.tenant_suspended_read_only':
+    'This pharmacy’s subscription is unpaid: you can still see and export its data, but not change it, until it is paid.',
 };

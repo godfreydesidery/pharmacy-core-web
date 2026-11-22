@@ -68,4 +68,15 @@ export const PLATFORM_SW: Readonly<Record<string, string>> = {
   'platform.phone': 'Simu',
   'platform.firstAdministrator': 'Msimamizi wa kwanza',
   'platform.register': 'Sajili',
+  'susp.kind': 'Aina',
+  'susp.kindHint':
+    'Haijalipwa: wasimamizi wake bado wanaweza kusoma na kuhamisha data, si kubadilisha. Mgogoro: zuio la kisheria — hakuna anayefanya kazi na data haiwezi kufutwa. Matumizi mabaya au mengine: imezuiwa.',
+  'susp.kind.UNPAID': 'Usajili haujalipwa',
+  'susp.kind.DISPUTE': 'Mgogoro (zuio la kisheria)',
+  'susp.kind.ABUSE': 'Matumizi mabaya',
+  'susp.kind.OTHER': 'Mengine',
+  'susp.unpaidEffect':
+    ' Wasimamizi wake bado wanaweza kusoma na kuhamisha data yake, lakini si kuibadilisha.',
+  'errors.tenant_suspended_read_only':
+    'Usajili wa famasia hii haujalipwa: bado unaweza kuona na kuhamisha data yake, lakini si kuibadilisha, mpaka ulipwe.',
 };
