@@ -108,7 +108,7 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'controlled.noLonger': 'haidhibitiwi tena',
   'openShift.title': 'Fungua zamu yako',
   'openShift.text':
-    'Duka hili linaunganisha fedha za kila droo na keshia. Hesabu fedha zilizo kwenye droo ili kuanza zamu yako; kisha mauzo yanaendelea.',
+    'Duka hili linaunganisha fedha za kila droo na keshia. Hesabu fedha zilizo kwenye droo ili kuanza zamu yako, kisha endelea.',
   'openShift.float': 'Fedha zilizo kwenye droo',
   'openShift.hintLast':
     'Zilizohesabiwa wakati wa kufunga mwisho: {{amount}}. Badilisha kama droo ina kiasi kingine.',

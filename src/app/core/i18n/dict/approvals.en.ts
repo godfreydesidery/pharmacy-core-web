@@ -108,7 +108,7 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
   'controlled.noLonger': 'no longer controlled',
   'openShift.title': 'Open your shift',
   'openShift.text':
-    'This pharmacy ties the cash in each till to a cashier. Count the cash in the drawer to start your shift; the sale then goes on.',
+    'This pharmacy ties the cash in each till to a cashier. Count the cash in the drawer to start your shift, then carry on.',
   'openShift.float': 'Cash in the drawer',
   'openShift.hintLast':
     'Counted at the last close: {{amount}}. Change it if the drawer holds something else.',
