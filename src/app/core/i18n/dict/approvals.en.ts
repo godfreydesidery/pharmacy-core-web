@@ -114,4 +114,45 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
     'Counted at the last close: {{amount}}. Change it if the drawer holds something else.',
   'openShift.hintNone': 'Type the cash in the drawer, or 0.',
   'openShift.open': 'Open shift and continue',
+  'data.preparing':
+    'Preparing your export. It downloads here when it is ready; keep this page open.',
+  'data.ready': 'Your export is ready and downloading.',
+  'data.expired': 'That export has expired. Start a new one.',
+  'data.stillPreparing':
+    'The export is still being prepared. Try again in a few minutes to download it.',
+  'errors.export_running': 'An export is already being prepared.',
+  'errors.export_not_found': 'That export no longer exists.',
+  'errors.file_too_large_uncompressed': 'The file is too large once unpacked (over 50 MB).',
+  'errors.file_too_compressed':
+    'The file is packed in a way that is not allowed. Save it again from your spreadsheet program.',
+  'errors.file_too_many_entries': 'The file has too many parts to be a normal spreadsheet.',
+  'errors.file_not_allowed':
+    'This kind of file is not allowed. Use .xlsx or .csv without a password.',
+  'errors.cell_too_long': 'A cell holds more than 32,767 characters.',
+  'errors.too_many_columns': 'The sheet has data beyond column 200.',
+  'providers.reenterSecret': 'The server changed: type the password again, or it will be cleared.',
+  'providers.port.587': '587 (STARTTLS, recommended)',
+  'providers.port.465': '465 (TLS)',
+  'providers.port.2525': '2525 (STARTTLS)',
+  'providers.port.2587': '2587 (STARTTLS)',
+  'providers.port.25': '25 (STARTTLS)',
+  'delivery.smsCapReached':
+    'Monthly SMS allowance used: add your own SMS provider or upgrade the plan.',
+  'webhooks.rotate': 'Rotate secret',
+  'webhooks.confirmRotate':
+    'Make a new signing secret for {{url}}? The old one keeps signing for 24 hours, so you can update your receiver.',
+  'webhooks.oldUntil': 'The old secret keeps signing until {{time}}.',
+  'webhooks.limit': 'At most 10 webhooks per pharmacy.',
+  'errors.smtp_host_not_allowed':
+    'That mail server address is not allowed. Use a public mail server name.',
+  'errors.smtp_port_not_allowed': 'Use port 587, 465, 2525, 2587 or 25.',
+  'errors.sms_cap_reached':
+    "This month's SMS allowance is used. Add your own SMS provider or upgrade the plan.",
+  'errors.webhook_limit': 'At most 10 webhooks per pharmacy.',
+  'errors.adapter_not_available': 'That payment method is not available here.',
+  'errors.payment_mismatch': 'This payment request belongs to another method or branch.',
+  'webhooks.signing':
+    'Each delivery is a POST signed the Standard Webhooks way (standardwebhooks.com): headers',
+  'webhooks.signingMore':
+    '(HMAC-SHA256 of id.timestamp.body with your secret). Reject a timestamp more than 5 minutes off. X-Pharmacy-Signature still comes for now but will be removed.',
 };

@@ -1,3 +1,4 @@
+import { PharmacyExportService } from '../ui/pharmacy-export';
 import {
   ChangeDetectionStrategy,
   DestroyRef,
@@ -10,7 +11,6 @@ import {
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
 import { filter, map } from 'rxjs';
 import { Api } from '../api/api.service';
 import { TenantLogoStore } from '../files/tenant-logo.store';
@@ -27,7 +27,6 @@ import { IconComponent } from '../ui/icon.component';
 import { LookService } from '../ui/look.service';
 import { ThemeService } from '../ui/theme.service';
 import { ToastService } from '../ui/toast.service';
-import { downloadFrom } from '../ui/export.component';
 import { LogoComponent } from './logo.component';
 import { NgTemplateOutlet } from '@angular/common';
 import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
@@ -69,21 +68,13 @@ export class ShellComponent {
   private readonly translations = inject(Translations);
   private readonly leave = inject(LeaveGuard);
   private readonly signOuts = inject(SignOutService);
-  private readonly http = inject(HttpClient);
+
+  private readonly pharmacyExport = inject(PharmacyExportService);
+  protected readonly exporting = this.pharmacyExport.busy;
 
   /** The pharmacy's admins take its data out, even while it is unpaid or closed. */
-  protected async exportData(): Promise<void> {
-    this.exporting.set(true);
-    try {
-      await downloadFrom(
-        this.http,
-        '/data-export',
-        this.toast,
-        this.translations.t('close.exportFailed'),
-      );
-    } finally {
-      this.exporting.set(false);
-    }
+  protected exportData(): Promise<void> {
+    return this.pharmacyExport.run();
   }
 
   protected readonly collapsed = signal(false);
@@ -114,7 +105,6 @@ export class ShellComponent {
     const status = this.session.tenant()?.status;
     return !!status && status !== 'ACTIVE' && !this.session.isRoot();
   });
-  protected readonly exporting = signal(false);
   protected readonly blockedBySuspension = computed(
     () => this.suspendedForMe() && !this.url().startsWith('/account'),
   );

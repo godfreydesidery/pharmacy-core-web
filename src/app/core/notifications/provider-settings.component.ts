@@ -70,7 +70,13 @@ interface Editor {
   secrets: Record<string, string>;
   /** The masked secrets saved for this provider, kept when their field is left empty. */
   saved: Record<string, string>;
+  /** The host and port as saved: changing either drops the saved password (INT-2). */
+  savedHost?: string;
+  savedPort?: string;
 }
+
+/** The mail ports the API accepts: 587 and 2525/2587 with STARTTLS, 465 with TLS, 25. */
+const SMTP_PORTS = ['587', '465', '2525', '2587', '25'];
 
 /**
  * The providers each channel sends through, several per channel: a message tries them in order and
@@ -337,16 +343,33 @@ interface Editor {
                   type="password"
                   autocomplete="new-password"
                   [placeholder]="
-                    e.saved[f.key] ? e.saved[f.key] + ' · ' + ('providers.keep' | t) : ''
+                    e.saved[f.key] && !serverMoved(e)
+                      ? e.saved[f.key] + ' · ' + ('providers.keep' | t)
+                      : ''
                   "
                   [value]="e.secrets[f.key] ?? ''"
                   (input)="e.secrets[f.key] = $any($event.target).value"
                 />
+                @if (serverMoved(e) && e.saved[f.key]) {
+                  <span class="hint text-amber">{{ 'providers.reenterSecret' | t }}</span>
+                }
+              } @else if (e.channel === 'EMAIL' && f.key === 'port') {
+                <select
+                  class="select"
+                  [value]="e.settings[f.key] ?? '587'"
+                  (change)="e.settings[f.key] = $any($event.target).value; patch({})"
+                >
+                  @for (port of smtpPorts; track port) {
+                    <option [value]="port" [selected]="(e.settings[f.key] ?? '587') === port">
+                      {{ 'providers.port.' + port | t: null : port }}
+                    </option>
+                  }
+                </select>
               } @else {
                 <input
                   class="input"
                   [value]="e.settings[f.key] ?? ''"
-                  (input)="e.settings[f.key] = $any($event.target).value"
+                  (input)="e.settings[f.key] = $any($event.target).value; patch({})"
                 />
               }
             </div>
@@ -517,7 +540,21 @@ export class ProviderSettingsComponent {
       settings: { ...p.settings },
       secrets: {},
       saved: { ...p.secrets },
+      savedHost: p.settings['host'],
+      savedPort: p.settings['port'],
     });
+  }
+
+  protected readonly smtpPorts = SMTP_PORTS;
+
+  /** An email server moved to another host or port: its saved password is dropped on save. */
+  protected serverMoved(e: Editor): boolean {
+    return (
+      !!e.uid &&
+      e.channel === 'EMAIL' &&
+      ((e.settings['host'] ?? '') !== (e.savedHost ?? '') ||
+        (e.settings['port'] ?? '') !== (e.savedPort ?? ''))
+    );
   }
 
   protected patch(change: Partial<Editor>): void {

@@ -929,6 +929,8 @@ export interface Webhook {
   active: boolean;
   secret?: string | null;
   createdAt?: IsoDateTime;
+  /** While an old secret also signs after a rotation (24 hours). */
+  previousSecretUntil?: IsoDateTime | null;
 }
 
 export interface WebhookDelivery {

@@ -53,7 +53,10 @@ interface RegisterLine {
             <button class="btn" type="button" (click)="print()">
               <app-icon name="printer" [size]="16" /> {{ 'controlled.print' | t }}
             </button>
-            <app-export [list]="register" />
+            @if (session.can('data.export')) {
+              <!-- Patients and prescribers: bulk export is its own permission (ISO-10). -->
+              <app-export [list]="register" />
+            }
           </div>
         }
       </div>
