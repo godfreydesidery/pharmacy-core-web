@@ -78,7 +78,12 @@ import { Translations } from '../../core/i18n/translations.store';
                       <button class="btn sm" type="button" (click)="showDeliveries(w)">
                         <app-icon name="activity" [size]="14" /> {{ 'admin.deliveries' | t }}
                       </button>
-                      <button class="btn sm" type="button" (click)="edit(w)">
+                      <button
+                        class="btn sm"
+                        type="button"
+                        (click)="edit(w)"
+                        [attr.aria-label]="'common.edit' | t"
+                      >
                         <app-icon name="edit" [size]="14" />
                       </button>
                       <button
@@ -90,7 +95,12 @@ import { Translations } from '../../core/i18n/translations.store';
                       >
                         <app-icon name="key" [size]="14" /> {{ 'webhooks.rotate' | t }}
                       </button>
-                      <button class="btn sm" type="button" (click)="remove(w)">
+                      <button
+                        class="btn sm"
+                        type="button"
+                        (click)="remove(w)"
+                        [attr.aria-label]="'common.delete' | t"
+                      >
                         <app-icon name="trash" [size]="14" />
                       </button>
                     </div>

@@ -41,7 +41,8 @@ export class SignOutService {
     }
     this.ending = true;
     try {
-      const mayLeave = await this.leave.canLeave();
+      // Only the person signing out can be asked; otherwise the page keeps what it can at once.
+      const mayLeave = await this.leave.canLeave(reason === 'user');
       if (!mayLeave && reason === 'user') {
         return false;
       }

@@ -68,7 +68,12 @@ const PRODUCT_TYPES = [
               <div class="actions">
                 <app-status [value]="p.active ? 'ACTIVE' : 'INACTIVE'" />
                 @if (manage()) {
-                  <button class="btn sm" type="button" (click)="editPayer(p)">
+                  <button
+                    class="btn sm"
+                    type="button"
+                    (click)="editPayer(p)"
+                    [attr.aria-label]="'common.edit' | t"
+                  >
                     <app-icon name="edit" [size]="14" />
                   </button>
                 }
@@ -93,7 +98,12 @@ const PRODUCT_TYPES = [
                   </div>
                   <app-status [value]="s.active ? 'ACTIVE' : 'INACTIVE'" />
                   @if (manage()) {
-                    <button class="btn sm" type="button" (click)="editScheme(s)">
+                    <button
+                      class="btn sm"
+                      type="button"
+                      (click)="editScheme(s)"
+                      [attr.aria-label]="'common.edit' | t"
+                    >
                       <app-icon name="edit" [size]="14" />
                     </button>
                   }

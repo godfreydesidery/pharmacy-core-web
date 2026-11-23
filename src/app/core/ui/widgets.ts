@@ -214,7 +214,7 @@ export class EmptyComponent {
     .num.on {
       background: var(--primary);
       border-color: var(--primary);
-      color: #fff;
+      color: var(--on-primary);
     }
     .gap {
       padding: 0 4px;
@@ -267,7 +267,7 @@ export class PagerComponent {
   imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="toasts" aria-live="polite">
+    <div class="toasts" aria-live="polite" data-dialog-outside>
       @for (toast of toasts.toasts(); track toast.id) {
         <div
           class="toast"

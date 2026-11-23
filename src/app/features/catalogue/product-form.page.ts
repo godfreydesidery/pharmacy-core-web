@@ -27,6 +27,7 @@ import {
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
+import { guardUnsavedWork } from '../../core/session/leave-guard';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { PRODUCT_TYPES, TRACKING_MODES, UNITS, defaultTracking } from '../../core/ui/product-types';
 import { ToastService } from '../../core/ui/toast.service';
@@ -65,16 +66,11 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
             }}
           </p>
         </div>
-        <div class="actions">
-          <a class="btn" routerLink="/catalogue/products">{{
-            canEdit() ? ('ui.l.cancel' | t) : ('ui.l.back' | t)
-          }}</a>
-          @if (canEdit()) {
-            <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
-              <app-icon name="check" [size]="16" /> {{ 'catalogue.save' | t }}
-            </button>
-          }
-        </div>
+        @if (!canEdit()) {
+          <div class="actions">
+            <a class="btn" routerLink="/catalogue/products">{{ 'ui.l.back' | t }}</a>
+          </div>
+        }
       </div>
 
       <form [formGroup]="form" class="stack" (ngSubmit)="save()">
@@ -104,70 +100,57 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
           <fieldset class="card card-pad stack" [disabled]="!canEdit()">
             <h3>{{ 'catalogue.identity' | t }}</h3>
             <div class="form-grid">
-              <div class="field full">
-                <label>{{ 'catalogue.name' | t }}</label
-                ><input
+              <app-field class="full" [label]="'catalogue.name' | t" [error]="err('name')">
+                <input
                   class="input"
                   formControlName="name"
                   [placeholder]="medicine() ? 'Paracetamol 500mg' : 'Wheelchair Standard 18&quot;'"
                 />
-                @if (err('name'); as m) {
-                  <span class="error">{{ m }}</span>
-                }
-              </div>
-              <div class="field">
-                <label>{{ 'catalogue.code' | t }}</label
-                ><input
+              </app-field>
+              <app-field
+                [label]="'catalogue.code' | t"
+                [hint]="'catalogue.codeHint' | t"
+                [error]="err('sku')"
+              >
+                <input
                   class="input"
                   formControlName="sku"
                   [placeholder]="'catalogue.codeAuto' | t"
                 />
-                <span class="hint">{{ 'catalogue.codeHint' | t }}</span>
-                @if (err('sku'); as m) {
-                  <span class="error">{{ m }}</span>
-                }
-              </div>
-              <div class="field">
-                <label>{{ 'catalogue.gtinBarcode' | t }}</label
-                ><input class="input" formControlName="gtin" inputmode="numeric" />
-                @if (err('gtin'); as m) {
-                  <span class="error">{{ m }}</span>
-                }
-              </div>
-              <div class="field">
-                <label>{{ 'catalogue.category' | t }}</label
-                ><select class="select" formControlName="categoryUid">
+              </app-field>
+              <app-field [label]="'catalogue.gtinBarcode' | t" [error]="err('gtin')">
+                <input class="input" formControlName="gtin" inputmode="numeric" />
+              </app-field>
+              <app-field [label]="'catalogue.category' | t">
+                <select class="select" formControlName="categoryUid">
                   <option value="">—</option>
                   @for (c of categoryTree(); track c.uid) {
                     <option [value]="c.uid">{{ c.indent }}{{ c.name }}</option>
                   }
                 </select>
-              </div>
-              <div class="field">
-                <label>{{ 'catalogue.manufacturer' | t }}</label
-                ><select class="select" formControlName="manufacturerUid">
+              </app-field>
+              <app-field [label]="'catalogue.manufacturer' | t">
+                <select class="select" formControlName="manufacturerUid">
                   <option value="">—</option>
                   @for (m of manufacturers.value() ?? []; track m.uid) {
                     <option [value]="m.uid">{{ m.name }}</option>
                   }
                 </select>
-              </div>
-              <div class="field">
-                <label>{{ 'catalogue.soldPer' | t }}</label
-                ><select class="select" formControlName="unitOfMeasure">
+              </app-field>
+              <app-field [label]="'catalogue.soldPer' | t">
+                <select class="select" formControlName="unitOfMeasure">
                   @for (u of units; track u) {
                     <option [value]="u">{{ u | label }}</option>
                   }
                 </select>
-              </div>
-              <div class="field">
-                <label>{{ 'catalogue.storage' | t }}</label
-                ><select class="select" formControlName="storage">
+              </app-field>
+              <app-field [label]="'catalogue.storage' | t">
+                <select class="select" formControlName="storage">
                   @for (s of storage; track s) {
                     <option [value]="s">{{ s | label }}</option>
                   }
                 </select>
-              </div>
+              </app-field>
               <div class="field full">
                 <label>{{ 'catalogue.stockTracking' | t }}</label>
                 <div class="tracking" [class.locked]="unitsHeld() > 0">
@@ -202,47 +185,32 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
             <fieldset class="card card-pad stack" [disabled]="!canEdit()">
               <h3><app-icon name="pill" [size]="18" /> {{ 'catalogue.medicineDetails' | t }}</h3>
               <div class="form-grid">
-                <div class="field">
-                  <label>{{ 'catalogue.genericNameInn' | t }}</label
-                  ><input class="input" formControlName="genericName" placeholder="Paracetamol" />
-                  @if (err('genericName'); as m) {
-                    <span class="error">{{ m }}</span>
-                  }
-                </div>
-                <div class="field">
-                  <label>{{ 'catalogue.atcCode' | t }}</label
-                  ><input class="input" formControlName="atcCode" placeholder="N02BE01" />
-                  @if (err('atcCode'); as m) {
-                    <span class="error">{{ m }}</span>
-                  }
-                </div>
-                <div class="field">
-                  <label>{{ 'catalogue.dosageForm' | t }}</label
-                  ><select class="select" formControlName="dosageForm">
+                <app-field [label]="'catalogue.genericNameInn' | t" [error]="err('genericName')">
+                  <input class="input" formControlName="genericName" placeholder="Paracetamol" />
+                </app-field>
+                <app-field [label]="'catalogue.atcCode' | t" [error]="err('atcCode')">
+                  <input class="input" formControlName="atcCode" placeholder="N02BE01" />
+                </app-field>
+                <app-field [label]="'catalogue.dosageForm' | t" [error]="err('dosageForm')">
+                  <select class="select" formControlName="dosageForm">
                     @for (f of forms.value() ?? []; track f) {
                       <option [value]="f">{{ f | label }}</option>
                     }
                   </select>
-                  @if (err('dosageForm'); as m) {
-                    <span class="error">{{ m }}</span>
-                  }
-                </div>
-                <div class="field">
-                  <label>{{ 'catalogue.strength' | t }}</label
-                  ><input class="input" formControlName="strength" placeholder="500 mg" />
-                </div>
-                <div class="field">
-                  <label>{{ 'catalogue.packSize' | t }}</label
-                  ><input class="input" formControlName="packSize" placeholder="Strip of 10" />
-                </div>
-                <div class="field">
-                  <label>{{ 'catalogue.schedule' | t }}</label
-                  ><select class="select" formControlName="schedule">
+                </app-field>
+                <app-field [label]="'catalogue.strength' | t">
+                  <input class="input" formControlName="strength" placeholder="500 mg" />
+                </app-field>
+                <app-field [label]="'catalogue.packSize' | t">
+                  <input class="input" formControlName="packSize" placeholder="Strip of 10" />
+                </app-field>
+                <app-field [label]="'catalogue.schedule' | t">
+                  <select class="select" formControlName="schedule">
                     @for (s of schedules; track s) {
                       <option [value]="s">{{ s | label }}</option>
                     }
                   </select>
-                </div>
+                </app-field>
               </div>
             </fieldset>
           } @else {
@@ -251,21 +219,17 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                 <app-icon [name]="typeIcon()" [size]="18" /> {{ 'catalogue.itemDetails' | t }}
               </h3>
               <div class="form-grid">
-                <div class="field">
-                  <label>{{ 'catalogue.brand' | t }}</label
-                  ><input class="input" formControlName="brand" placeholder="Invacare" />
-                </div>
-                <div class="field">
-                  <label>{{ 'catalogue.model' | t }}</label
-                  ><input class="input" formControlName="model" placeholder="Action 1" />
-                </div>
-                <div class="field">
-                  <label>{{ 'catalogue.packSize' | t }}</label
-                  ><input class="input" formControlName="packSize" placeholder="Box of 100" />
-                </div>
-                <div class="field">
-                  <label>{{ 'catalogue.warrantyMonths' | t }}</label
-                  ><input
+                <app-field [label]="'catalogue.brand' | t">
+                  <input class="input" formControlName="brand" placeholder="Invacare" />
+                </app-field>
+                <app-field [label]="'catalogue.model' | t">
+                  <input class="input" formControlName="model" placeholder="Action 1" />
+                </app-field>
+                <app-field [label]="'catalogue.packSize' | t">
+                  <input class="input" formControlName="packSize" placeholder="Box of 100" />
+                </app-field>
+                <app-field [label]="'catalogue.warrantyMonths' | t" [error]="err('warrantyMonths')">
+                  <input
                     class="input"
                     type="number"
                     min="0"
@@ -273,16 +237,14 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                     formControlName="warrantyMonths"
                     placeholder="12"
                   />
-                  @if (err('warrantyMonths'); as m) {
-                    <span class="error">{{ m }}</span>
-                  }
-                </div>
+                </app-field>
               </div>
               @if (tracking() === 'SERIAL') {
                 <label class="check"
                   ><input type="checkbox" formControlName="requiresSerialAtSale" />
                   {{ 'catalogue.askForTheSerialNumberAt' | t }}</label
                 >
+
                 <div class="notice tone-purple">
                   <app-icon name="barcode" />
                   {{
@@ -297,29 +259,20 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
         <fieldset class="card card-pad stack" [disabled]="!canEdit()">
           <h3>{{ 'catalogue.pricingStock' | t }}</h3>
           <div class="form-grid four">
-            <div class="field">
-              <label>{{ 'catalogue.costPrice' | t }}</label
-              ><input class="input" type="number" min="0" step="any" formControlName="costPrice" />
-              @if (err('costPrice'); as m) {
-                <span class="error">{{ m }}</span>
-              }
-            </div>
-            <div class="field">
-              <label>{{ 'catalogue.sellingPrice' | t }}</label
-              ><input
+            <app-field [label]="'catalogue.costPrice' | t" [error]="err('costPrice')">
+              <input class="input" type="number" min="0" step="any" formControlName="costPrice" />
+            </app-field>
+            <app-field [label]="'catalogue.sellingPrice' | t" [error]="err('sellingPrice')">
+              <input
                 class="input"
                 type="number"
                 min="0"
                 step="any"
                 formControlName="sellingPrice"
               />
-              @if (err('sellingPrice'); as m) {
-                <span class="error">{{ m }}</span>
-              }
-            </div>
-            <div class="field">
-              <label>{{ 'catalogue.taxRate' | t }}</label
-              ><input
+            </app-field>
+            <app-field [label]="'catalogue.taxRate' | t">
+              <input
                 class="input"
                 type="number"
                 min="0"
@@ -327,11 +280,10 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                 step="any"
                 formControlName="taxRatePercent"
               />
-            </div>
-            <div class="field">
-              <label>{{ 'catalogue.reorderLevel' | t }}</label
-              ><input class="input" type="number" min="0" formControlName="reorderLevel" />
-            </div>
+            </app-field>
+            <app-field [label]="'catalogue.reorderLevel' | t">
+              <input class="input" type="number" min="0" formControlName="reorderLevel" />
+            </app-field>
           </div>
           <div class="notice tone-blue">
             <app-icon name="trend" /> {{ 'ui.t.margin' | t: { margin: margin() } }}
@@ -343,6 +295,14 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
             >
           }
         </fieldset>
+        @if (canEdit()) {
+          <div class="sticky-actions">
+            <a class="btn" routerLink="/catalogue/products">{{ 'ui.l.cancel' | t }}</a>
+            <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
+              <app-icon name="check" [size]="16" /> {{ 'catalogue.save' | t }}
+            </button>
+          </div>
+        }
       </form>
       @if (editing()) {
         <div class="card mt" data-testid="prices-in-plans">
@@ -669,6 +629,9 @@ export default class ProductFormPage implements OnInit {
     return controlError(this.form.get(name));
   }
 
+  /** Leaving with changes not yet saved asks first (UX-4). */
+  private readonly unsaved = guardUnsavedWork(() => this.canEdit() && this.form.dirty);
+
   protected async save(): Promise<void> {
     if (!validate(this.form)) {
       return;
@@ -713,6 +676,7 @@ export default class ProductFormPage implements OnInit {
           { silent: true, noBranch: true },
         );
         this.version.set(saved.version);
+        this.form.markAsPristine();
         this.toasts.success(this.translations.t('toast.productSaved'));
       } else {
         const saved = await this.api.post<Product>('/products', body, {
@@ -720,6 +684,7 @@ export default class ProductFormPage implements OnInit {
           noBranch: true,
         });
         this.toasts.success(this.translations.t('toast.productAdded', { name: saved.name }));
+        this.form.markAsPristine();
         await this.router.navigate(['/catalogue/products', saved.uid], { replaceUrl: true });
       }
     } catch (failure) {

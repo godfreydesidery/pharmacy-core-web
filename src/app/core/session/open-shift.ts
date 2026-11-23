@@ -18,6 +18,7 @@ import { ApiError } from '../api/api-error';
 import { SILENT } from '../api/api.interceptor';
 import { SettingsStore } from '../format/settings.store';
 import { formatMoney } from '../format/format';
+import { DialogDirective } from '../ui/dialog';
 
 interface LastCount {
   countedCash: number;
@@ -93,23 +94,25 @@ export class OpenShiftService {
 
 @Component({
   selector: 'app-open-shift',
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe, DialogDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'service.open() && cancel()' },
   template: `
     @if (service.open()) {
       <div class="backdrop" (click)="cancel()">
         <form
           class="popup"
           role="dialog"
-          aria-modal="true"
+          appDialog
+          appDialogFocus="#open-shift-float"
+          (dialogEscape)="cancel()"
           aria-labelledby="open-shift-title"
+          aria-describedby="open-shift-text"
           data-testid="open-shift"
           (click)="$event.stopPropagation()"
           (ngSubmit)="submit()"
         >
           <h2 id="open-shift-title">{{ 'openShift.title' | t }}</h2>
-          <p>{{ 'openShift.text' | t }}</p>
+          <p id="open-shift-text">{{ 'openShift.text' | t }}</p>
           <div class="field">
             <label for="open-shift-float">{{ 'openShift.float' | t }}</label>
             <input
@@ -192,12 +195,10 @@ export class OpenShiftComponent {
   protected readonly hint = signal('');
   protected floatValue = 0;
   private readonly float = viewChild<ElementRef<HTMLInputElement>>('float');
-  private returnFocus: HTMLElement | null = null;
 
   constructor() {
     effect(() => {
       if (this.service.open()) {
-        this.returnFocus = document.activeElement as HTMLElement | null;
         this.floatValue = 0;
         this.error.set('');
         this.hint.set(this.translations.t('openShift.hintNone'));
@@ -243,6 +244,5 @@ export class OpenShiftComponent {
   private close(opened: boolean): void {
     const answer = this.service.open();
     answer?.(opened);
-    this.returnFocus?.focus();
   }
 }

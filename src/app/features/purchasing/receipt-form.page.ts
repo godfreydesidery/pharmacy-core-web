@@ -26,6 +26,7 @@ import {
 import { isoDay } from '../../core/format/format';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
+import { guardUnsavedWork } from '../../core/session/leave-guard';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { TRACKING_MODES, defaultTracking, parseSerials } from '../../core/ui/product-types';
@@ -63,25 +64,13 @@ type ReceiptLine = FormGroup<{
             {{ 'ui.t.receiveInto' | t: { branch: session.branch()?.name ?? '—' } }}
           </p>
         </div>
-        <div class="actions">
-          <a class="btn" routerLink="/purchasing/receipts">{{ 'purchasing.cancel' | t }}</a>
-          <button
-            class="btn primary"
-            type="button"
-            [disabled]="busy() || !session.branch()"
-            (click)="save()"
-          >
-            <app-icon name="check" [size]="16" /> {{ 'purchasing.recordReceipt' | t }}
-          </button>
-        </div>
       </div>
       @if (!session.branch()) {
         <app-branch-required [what]="'ui.what.receiving' | t" />
       } @else {
         <form [formGroup]="form" class="stack">
           <div class="card card-pad form-grid three">
-            <div class="field">
-              <label>{{ 'purchasing.supplier' | t }}</label>
+            <app-field [label]="'purchasing.supplier' | t" [error]="err('supplierUid')">
               @if (order(); as o) {
                 <input class="input" [value]="o.supplierName" disabled />
               } @else {
@@ -93,23 +82,17 @@ type ReceiptLine = FormGroup<{
                   (picked)="form.controls.supplierUid.setValue($event?.uid ?? '')"
                 />
               }
-              @if (err('supplierUid'); as m) {
-                <span class="error">{{ m }}</span>
-              }
-            </div>
-            <div class="field">
-              <label>{{ 'purchasing.supplierInvoiceNo' | t }}</label
-              ><input class="input" formControlName="supplierInvoiceNumber" />
-              @if (err('supplierInvoiceNumber'); as m) {
-                <span class="error">{{ m }}</span>
-              }
-            </div>
-            <div class="field">
-              <label>{{ 'purchasing.note' | t }}</label
-              ><input class="input" formControlName="note" />
-            </div>
-            <div class="field full">
-              <label>{{ 'purchasing.currency' | t }}</label>
+            </app-field>
+            <app-field
+              [label]="'purchasing.supplierInvoiceNo' | t"
+              [error]="err('supplierInvoiceNumber')"
+            >
+              <input class="input" formControlName="supplierInvoiceNumber" />
+            </app-field>
+            <app-field [label]="'purchasing.note' | t">
+              <input class="input" formControlName="note" />
+            </app-field>
+            <app-field class="full" [label]="'purchasing.currency' | t">
               <app-currency-rate
                 [(currency)]="currency"
                 [(rate)]="rate"
@@ -123,7 +106,7 @@ type ReceiptLine = FormGroup<{
                   }}</span>
                 }
               }
-            </div>
+            </app-field>
           </div>
           <div class="card">
             <div class="card-head">
@@ -220,7 +203,12 @@ type ReceiptLine = FormGroup<{
                         }}
                       </td>
                       <td class="right">
-                        <button class="icon-btn sm" type="button" (click)="removeLine(i)">
+                        <button
+                          class="icon-btn sm"
+                          type="button"
+                          (click)="removeLine(i)"
+                          [attr.aria-label]="'common.remove' | t"
+                        >
                           <app-icon name="trash" [size]="14" />
                         </button>
                       </td>
@@ -277,6 +265,12 @@ type ReceiptLine = FormGroup<{
                 </tfoot>
               </table>
             </div>
+          </div>
+          <div class="sticky-actions">
+            <a class="btn" routerLink="/purchasing/receipts">{{ 'purchasing.cancel' | t }}</a>
+            <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
+              <app-icon name="check" [size]="16" /> {{ 'purchasing.recordReceipt' | t }}
+            </button>
           </div>
         </form>
       }
@@ -343,6 +337,12 @@ export default class ReceiptFormPage implements OnInit {
   });
   protected readonly baseTotal = computed(() =>
     convertHalfEven(this.total(), this.rate(), this.base()),
+  );
+  /** Leaving with a receipt half typed asks first (UX-4). */
+  private readonly unsaved = guardUnsavedWork(
+    () =>
+      this.form.dirty ||
+      (!this.order() && (this.lines.length > 0 || !!this.form.controls.supplierUid.value)),
   );
   protected readonly supplierName = (s: Supplier) => s.name;
   protected readonly productName = (p: Product) => p.name;
@@ -484,6 +484,7 @@ export default class ReceiptFormPage implements OnInit {
         { silent: true },
       );
       this.toasts.success(this.translations.t('toast.receiptRecorded', { number: receipt.number }));
+      this.unsaved.done();
       await this.router.navigate(['/purchasing/receipts', receipt.uid]);
     } catch (failure) {
       if (!applyApiError(this.form, failure)) {

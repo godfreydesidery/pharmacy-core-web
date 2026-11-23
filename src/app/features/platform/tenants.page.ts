@@ -62,12 +62,13 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
             </thead>
             <tbody>
               @for (t of list.items(); track t.uid) {
-                <tr class="clickable" [routerLink]="[t.uid]">
+                <tr class="clickable" appRowLink>
                   <td>
                     <div class="cell-main">
                       <span class="thumb tone-blue strong">{{ t.code.slice(0, 2) }}</span>
                       <div>
-                        <b>{{ t.name }}</b
+                        <a class="row-link" [routerLink]="[t.uid]"
+                          ><b>{{ t.name }}</b></a
                         ><small>{{ t.code }}{{ t.legalName ? ' · ' + t.legalName : '' }}</small>
                       </div>
                     </div>

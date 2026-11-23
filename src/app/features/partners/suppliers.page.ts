@@ -109,40 +109,29 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field full">
-          <label>{{ 'partners.companyName' | t }}</label
-          ><input class="input" formControlName="name" />
-          @if (err('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'partners.contactPerson' | t }}</label
-          ><input class="input" formControlName="contactPerson" />
-        </div>
-        <div class="field">
-          <label>{{ 'partners.phone' | t }}</label
-          ><input class="input" formControlName="phone" />
-        </div>
-        <div class="field">
-          <label>{{ 'partners.email' | t }}</label
-          ><input class="input" type="email" formControlName="email" />
-          @if (err('email'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        <app-field class="full" [label]="'partners.companyName' | t" [error]="err('name')">
+          <input class="input" formControlName="name" />
+        </app-field>
+        <app-field [label]="'partners.contactPerson' | t">
+          <input class="input" formControlName="contactPerson" />
+        </app-field>
+        <app-field [label]="'partners.phone' | t">
+          <input class="input" formControlName="phone" />
+        </app-field>
+        <app-field [label]="'partners.email' | t" [error]="err('email')">
+          <input class="input" type="email" formControlName="email" />
+        </app-field>
         <div class="field"><label>TIN</label><input class="input" formControlName="tin" /></div>
-        <div class="field">
-          <label>{{ 'partners.paymentTerms' | t }}</label
-          ><select class="select" formControlName="paymentTerms">
+        <app-field [label]="'partners.paymentTerms' | t">
+          <select class="select" formControlName="paymentTerms">
             @for (t of terms; track t) {
               <option [value]="t">{{ t | label }}</option>
             }
           </select>
-        </div>
+        </app-field>
         <div class="field">
-          <label for="supplier-lead-time">{{ 'partners.leadTimeDays' | t }}</label
-          ><input
+          <label for="supplier-lead-time">{{ 'partners.leadTimeDays' | t }}</label>
+          <input
             id="supplier-lead-time"
             class="input"
             type="number"
@@ -151,10 +140,9 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
             formControlName="leadTimeDays"
           />
         </div>
-        <div class="field full">
-          <label>{{ 'partners.address' | t }}</label
-          ><textarea class="input" formControlName="address"></textarea>
-        </div>
+        <app-field class="full" [label]="'partners.address' | t">
+          <textarea class="input" formControlName="address"></textarea>
+        </app-field>
         @if (current()) {
           <label class="check full"
             ><input type="checkbox" formControlName="active" /> {{ 'partners.active' | t }}</label

@@ -163,62 +163,42 @@ const TYPES: CustomerType[] = [
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field full">
-          <label>{{ 'partners.name' | t }}</label
-          ><input class="input" formControlName="name" />
-          @if (err('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'partners.phone' | t }}</label
-          ><input class="input" formControlName="phone" placeholder="+255…" />
-          @if (err('phone'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'partners.email' | t }}</label
-          ><input class="input" type="email" formControlName="email" />
-          @if (err('email'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'partners.type' | t }}</label
-          ><select class="select" formControlName="type">
+        <app-field class="full" [label]="'partners.name' | t" [error]="err('name')">
+          <input class="input" formControlName="name" />
+        </app-field>
+        <app-field [label]="'partners.phone' | t" [error]="err('phone')">
+          <input class="input" formControlName="phone" placeholder="+255…" />
+        </app-field>
+        <app-field [label]="'partners.email' | t" [error]="err('email')">
+          <input class="input" type="email" formControlName="email" />
+        </app-field>
+        <app-field [label]="'partners.type' | t">
+          <select class="select" formControlName="type">
             @for (t of types; track t) {
               <option [value]="t">{{ t | label }}</option>
             }
           </select>
-        </div>
-        <div class="field">
-          <label>{{ 'partners.creditLimit' | t }}</label
-          ><input class="input" type="number" min="0" step="any" formControlName="creditLimit" />
-          @if (!canSetLimit()) {
-            <span class="hint">{{ 'creditLimit.notAllowed' | t }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'partners.paymentTerms' | t }}</label
-          ><select class="select" formControlName="paymentTerms">
+        </app-field>
+        <app-field [label]="'partners.creditLimit' | t" [hint]="'creditLimit.notAllowed' | t">
+          <input class="input" type="number" min="0" step="any" formControlName="creditLimit" />
+          @if (!canSetLimit()) {}
+        </app-field>
+        <app-field [label]="'partners.paymentTerms' | t">
+          <select class="select" formControlName="paymentTerms">
             @for (terms of paymentTerms; track terms) {
               <option [value]="terms">{{ terms | label: 'PaymentTerms' }}</option>
             }
           </select>
-        </div>
-        <div class="field">
-          <label>{{ 'partners.insuranceProvider' | t }}</label
-          ><input class="input" formControlName="insuranceProvider" placeholder="NHIF, Jubilee…" />
-        </div>
-        <div class="field">
-          <label>{{ 'partners.membershipNumber' | t }}</label
-          ><input class="input" formControlName="insuranceNumber" />
-        </div>
-        <div class="field full">
-          <label>{{ 'partners.address' | t }}</label
-          ><textarea class="input" formControlName="address"></textarea>
-        </div>
+        </app-field>
+        <app-field [label]="'partners.insuranceProvider' | t">
+          <input class="input" formControlName="insuranceProvider" placeholder="NHIF, Jubilee…" />
+        </app-field>
+        <app-field [label]="'partners.membershipNumber' | t">
+          <input class="input" formControlName="insuranceNumber" />
+        </app-field>
+        <app-field class="full" [label]="'partners.address' | t">
+          <textarea class="input" formControlName="address"></textarea>
+        </app-field>
         @if (current()) {
           <label class="check full"
             ><input type="checkbox" formControlName="active" /> {{ 'partners.active' | t }}</label

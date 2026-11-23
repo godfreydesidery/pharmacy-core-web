@@ -131,53 +131,41 @@ const METHODS = ['CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CARD'];
     </div>
     <app-modal [open]="open()" [title]="'finance.recordExpense' | t" (closed)="open.set(false)">
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field">
-          <label>{{ 'finance.category' | t }}</label
-          ><select class="select" formControlName="category">
+        <app-field [label]="'finance.category' | t">
+          <select class="select" formControlName="category">
             @for (c of categories; track c) {
               <option [value]="c">{{ c | label }}</option>
             }
           </select>
-        </div>
-        <div class="field">
-          <label>{{ 'finance.amount' | t }}</label
-          ><input class="input" type="number" min="0" step="any" formControlName="amount" />
-          @if (err('amount'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'finance.date' | t }}</label
-          ><input class="input" type="date" formControlName="expenseDate" [max]="today" />
-        </div>
-        <div class="field">
-          <label>{{ 'finance.paidBy' | t }}</label
-          ><select class="select" formControlName="paymentMethod">
+        </app-field>
+        <app-field [label]="'finance.amount' | t" [error]="err('amount')">
+          <input class="input" type="number" min="0" step="any" formControlName="amount" />
+        </app-field>
+        <app-field [label]="'finance.date' | t">
+          <input class="input" type="date" formControlName="expenseDate" [max]="today" />
+        </app-field>
+        <app-field [label]="'finance.paidBy' | t">
+          <select class="select" formControlName="paymentMethod">
             @for (m of methods; track m) {
               <option [value]="m">{{ m | label }}</option>
             }
           </select>
-        </div>
+        </app-field>
         <app-overdraw-warning
           class="full"
           [amount]="+form.controls.amount.value"
           [method]="form.controls.paymentMethod.value"
         />
-        <div class="field full">
-          <label>{{ 'finance.description' | t }}</label
-          ><input class="input" formControlName="description" />
-          @if (err('description'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field full">
-          <label>{{ 'finance.reference' | t }}</label
-          ><input
+        <app-field class="full" [label]="'finance.description' | t" [error]="err('description')">
+          <input class="input" formControlName="description" />
+        </app-field>
+        <app-field class="full" [label]="'finance.reference' | t">
+          <input
             class="input"
             formControlName="reference"
             [placeholder]="'finance.receiptOrTransactionNumber' | t"
           />
-        </div>
+        </app-field>
       </form>
       <ng-container footer>
         <button class="btn" type="button" (click)="open.set(false)">

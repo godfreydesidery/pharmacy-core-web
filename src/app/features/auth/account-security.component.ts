@@ -23,6 +23,7 @@ import {
 import { cancelled, createPasskey, passkeysSupported } from '../../core/security/webauthn';
 import { describeDevice, isMobile } from '../../core/ui/device';
 import { IconComponent } from '../../core/ui/icon.component';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
@@ -347,6 +348,7 @@ export class AccountSecurityComponent implements OnInit {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   private readonly route = inject(ActivatedRoute);
 
   protected readonly supported = passkeysSupported();
@@ -447,7 +449,12 @@ export class AccountSecurityComponent implements OnInit {
   }
 
   protected async removePasskey(passkey: Passkey): Promise<void> {
-    if (!confirm(this.translations.t('confirm.removePasskey', { name: passkey.name }))) {
+    const sure = await this.confirm.ask({
+      icon: 'danger',
+      title: this.translations.t('confirm.removePasskey', { name: passkey.name }),
+      confirmText: this.translations.t('common.remove'),
+    });
+    if (!sure) {
       return;
     }
     await this.run(async () => {

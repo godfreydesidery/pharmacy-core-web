@@ -1,38 +1,62 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output } from '@angular/core';
 import { TranslatePipe } from '../i18n/t.pipe';
+import { Translations } from '../i18n/translations.store';
+import { ConfirmService } from './confirm';
+import { DialogDirective, uniqueId } from './dialog';
 import { IconComponent } from './icon.component';
+
+/** Closing a dialog that holds unsaved changes asks first (the owner's rule). */
+async function mayDiscard(
+  dirty: boolean,
+  confirm: ConfirmService,
+  t: Translations,
+): Promise<boolean> {
+  if (!dirty) {
+    return true;
+  }
+  return confirm.ask({
+    icon: 'warning',
+    title: t.t('a11y.discard.title'),
+    text: t.t('a11y.discard.text'),
+    confirmText: t.t('a11y.discard.ok'),
+    cancelText: t.t('a11y.discard.keep'),
+    focus: 'cancel',
+  });
+}
 
 /**
  * A centred dialog. Shown while `open` is true; the body is projected, and the footer comes from
- * an element marked `footer`.
+ * an element marked `footer`. Focus moves in on open, stays inside and returns on close
+ * ({@link DialogDirective}). With `dirty`, closing (×, Escape, a click beside it) asks first.
  */
 @Component({
   selector: 'app-modal',
-  imports: [IconComponent, TranslatePipe],
+  imports: [IconComponent, TranslatePipe, DialogDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'open() && closed.emit()' },
   template: `
     @if (open()) {
-      <div class="backdrop" (click)="closed.emit()"></div>
+      <div class="backdrop" (click)="requestClose()"></div>
       <section
         class="modal"
         [class.wide]="wide()"
         role="dialog"
-        aria-modal="true"
-        [attr.aria-label]="title()"
+        appDialog
+        [attr.aria-labelledby]="titleId"
+        [attr.aria-describedby]="describedBy()"
+        (dialogEscape)="requestClose()"
       >
         <header>
-          <h3>{{ title() }}</h3>
+          <h3 [id]="titleId">{{ title() }}</h3>
           <button
             class="icon-btn"
             type="button"
-            (click)="closed.emit()"
+            (click)="requestClose()"
             [attr.aria-label]="'ui.close' | t"
           >
             <app-icon name="x" />
           </button>
         </header>
-        <div class="body"><ng-content /></div>
+        <div class="body" data-dialog-start><ng-content /></div>
         <footer><ng-content select="[footer]" /></footer>
       </section>
     }
@@ -104,45 +128,59 @@ import { IconComponent } from './icon.component';
   `,
 })
 export class ModalComponent {
+  private readonly confirm = inject(ConfirmService);
+  private readonly translations = inject(Translations);
   readonly open = input(false);
   readonly title = input('');
   readonly wide = input(false);
+  /** The id of an element in the body that describes the dialog (its intro text), if any. */
+  readonly describedBy = input<string | null>(null);
+  /** True while the dialog holds changes not yet saved: closing asks before they are lost. */
+  readonly dirty = input(false);
   readonly closed = output<void>();
+  protected readonly titleId = uniqueId('modal-title');
+
+  protected async requestClose(): Promise<void> {
+    if (await mayDiscard(this.dirty(), this.confirm, this.translations)) {
+      this.closed.emit();
+    }
+  }
 }
 
 /** A panel that slides in from the right, for details beside a list. */
 @Component({
   selector: 'app-drawer',
-  imports: [IconComponent, TranslatePipe],
+  imports: [IconComponent, TranslatePipe, DialogDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'open() && closed.emit()' },
   template: `
     @if (open()) {
-      <div class="backdrop" (click)="closed.emit()"></div>
+      <div class="backdrop" (click)="requestClose()"></div>
       <aside
         class="drawer"
         [class.wide]="wide()"
         role="dialog"
-        aria-modal="true"
-        [attr.aria-label]="title()"
+        appDialog
+        [attr.aria-labelledby]="titleId"
+        [attr.aria-describedby]="subtitle() ? subtitleId : null"
+        (dialogEscape)="requestClose()"
       >
         <header>
           <div>
-            <h3>{{ title() }}</h3>
+            <h3 [id]="titleId">{{ title() }}</h3>
             @if (subtitle()) {
-              <p class="muted">{{ subtitle() }}</p>
+              <p class="muted" [id]="subtitleId">{{ subtitle() }}</p>
             }
           </div>
           <button
             class="icon-btn"
             type="button"
-            (click)="closed.emit()"
+            (click)="requestClose()"
             [attr.aria-label]="'ui.close' | t"
           >
             <app-icon name="x" />
           </button>
         </header>
-        <div class="body"><ng-content /></div>
+        <div class="body" data-dialog-start><ng-content /></div>
       </aside>
     }
   `,
@@ -204,5 +242,17 @@ export class DrawerComponent {
   readonly subtitle = input('');
   /** Room for a table of four or more columns (statements). */
   readonly wide = input(false);
+  /** True while the drawer holds changes not yet saved: closing asks before they are lost. */
+  readonly dirty = input(false);
   readonly closed = output<void>();
+  private readonly confirm = inject(ConfirmService);
+  private readonly translations = inject(Translations);
+  protected readonly titleId = uniqueId('drawer-title');
+  protected readonly subtitleId = uniqueId('drawer-subtitle');
+
+  protected async requestClose(): Promise<void> {
+    if (await mayDiscard(this.dirty(), this.confirm, this.translations)) {
+      this.closed.emit();
+    }
+  }
 }

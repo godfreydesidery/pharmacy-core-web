@@ -159,8 +159,9 @@ interface Recall {
       } @else {
         <div class="card">
           <div class="card-pad">
-            <label>{{ 'recall.product' | t }}</label>
+            <label for="recall-product">{{ 'recall.product' | t }}</label>
             <app-lookup
+              inputId="recall-product"
               path="/products"
               [placeholder]="'recall.searchProduct' | t"
               (picked)="pickProduct($event)"
@@ -180,7 +181,9 @@ interface Recall {
                 <tbody>
                   @for (b of batches(); track b.uid) {
                     <tr class="clickable" (click)="openBatch(b.uid)">
-                      <td class="mono strong">{{ b.batchNumber }}</td>
+                      <td class="mono strong">
+                        <button type="button" class="row-link">{{ b.batchNumber }}</button>
+                      </td>
                       <td>{{ b.expiryDate ? (b.expiryDate | day) : '—' }}</td>
                       <td class="right">{{ b.onHand | num }}</td>
                       <td>

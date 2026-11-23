@@ -97,17 +97,15 @@ interface Row {
 
               <h4>{{ 'repack.output' | t }}</h4>
               <div class="form-grid">
-                <div class="field full">
-                  <label>{{ 'repack.product' | t }}</label>
+                <app-field class="full" [label]="'repack.product' | t">
                   <app-lookup
                     path="/products"
                     [placeholder]="output().productName || ('repack.searchProduct' | t)"
                     [display]="productName"
                     (picked)="pickOutput($event)"
                   />
-                </div>
-                <div class="field">
-                  <label>{{ 'repack.quantity' | t }}</label>
+                </app-field>
+                <app-field [label]="'repack.quantity' | t">
                   <input
                     class="input"
                     type="number"
@@ -115,42 +113,37 @@ interface Row {
                     [value]="output().quantity"
                     (input)="setOutputQuantity(+$any($event.target).value)"
                   />
-                </div>
-                <div class="field">
-                  <label>{{ 'repack.batch' | t }}</label>
+                </app-field>
+                <app-field [label]="'repack.batch' | t">
                   <input
                     class="input"
                     [value]="batchNumber()"
                     (input)="batchNumber.set($any($event.target).value)"
                     [placeholder]="'repack.batchAuto' | t"
                   />
-                </div>
-                <div class="field">
-                  <label>{{ 'repack.expiry' | t }}</label>
+                </app-field>
+                <app-field [label]="'repack.expiry' | t" [hint]="'repack.expiryHint' | t">
                   <input
                     class="input"
                     type="date"
                     [value]="expiry()"
                     (change)="expiry.set($any($event.target).value)"
                   />
-                  <span class="hint">{{ 'repack.expiryHint' | t }}</span>
-                </div>
+                </app-field>
               </div>
 
               <h4>{{ 'repack.inputs' | t }}</h4>
               @for (row of inputs(); track $index; let i = $index) {
                 <div class="row wrap" style="gap: 8px; align-items: end">
-                  <div class="field grow">
-                    <label>{{ 'repack.product' | t }}</label>
+                  <app-field class="grow" [label]="'repack.product' | t">
                     <app-lookup
                       path="/products"
                       [placeholder]="row.productName || ('repack.searchProduct' | t)"
                       [display]="productName"
                       (picked)="pickInput(i, $event)"
                     />
-                  </div>
-                  <div class="field">
-                    <label>{{ 'repack.quantity' | t }}</label>
+                  </app-field>
+                  <app-field [label]="'repack.quantity' | t">
                     <input
                       class="input"
                       type="number"
@@ -159,7 +152,7 @@ interface Row {
                       [value]="row.quantity"
                       (input)="setInputQuantity(i, +$any($event.target).value)"
                     />
-                  </div>
+                  </app-field>
                   @if (inputs().length > 1) {
                     <button
                       class="icon-btn"
@@ -177,14 +170,13 @@ interface Row {
                   <app-icon name="plus" [size]="14" /> {{ 'repack.addIngredient' | t }}
                 </button>
               }
-              <div class="field">
-                <label>{{ 'repack.note' | t }}</label>
+              <app-field [label]="'repack.note' | t">
                 <input
                   class="input"
                   [value]="note()"
                   (input)="note.set($any($event.target).value)"
                 />
-              </div>
+              </app-field>
               <div class="row" style="justify-content: flex-end">
                 <button class="btn primary" type="button" [disabled]="busy()" (click)="submit()">
                   {{ 'repack.record' | t }}
@@ -249,28 +241,25 @@ interface Row {
           @case ('packs') {
             <div class="card card-pad mb">
               <div class="row wrap" style="gap: 8px; align-items: end">
-                <div class="field grow">
-                  <label>{{ 'repack.pack' | t }}</label>
+                <app-field class="grow" [label]="'repack.pack' | t">
                   <app-lookup
                     path="/products"
                     [placeholder]="'repack.searchProduct' | t"
                     [display]="productName"
                     (picked)="linkDraft.pack = $event?.uid ?? null"
                   />
-                </div>
-                <div class="field grow">
-                  <label>{{ 'repack.unit' | t }}</label>
+                </app-field>
+                <app-field class="grow" [label]="'repack.unit' | t">
                   <app-lookup
                     path="/products"
                     [placeholder]="'repack.searchProduct' | t"
                     [display]="productName"
                     (picked)="linkDraft.unit = $event?.uid ?? null"
                   />
-                </div>
-                <div class="field">
-                  <label>{{ 'repack.unitsPerPack' | t }}</label>
+                </app-field>
+                <app-field [label]="'repack.unitsPerPack' | t">
                   <input class="input" type="number" min="2" style="width: 110px" #units />
-                </div>
+                </app-field>
                 <button class="btn primary" type="button" (click)="saveLink(+units.value)">
                   {{ 'repack.save' | t }}
                 </button>
@@ -309,21 +298,19 @@ interface Row {
           }
           @case ('formulas') {
             <div class="card card-pad stack">
-              <div class="field">
-                <label>{{ 'repack.preparation' | t }}</label>
+              <app-field [label]="'repack.preparation' | t">
                 <app-lookup
                   path="/products"
                   [placeholder]="formulaProductName() || ('repack.searchProduct' | t)"
                   [display]="productName"
                   (picked)="pickFormulaProduct($event)"
                 />
-              </div>
+              </app-field>
               @if (formulaProduct()) {
                 <p class="muted">{{ 'repack.formulaHint' | t }}</p>
                 @for (row of formula(); track $index; let i = $index) {
                   <div class="row wrap" style="gap: 8px; align-items: end">
-                    <div class="field grow">
-                      <label>{{ 'repack.ingredient' | t }}</label>
+                    <app-field class="grow" [label]="'repack.ingredient' | t">
                       <app-lookup
                         path="/products"
                         [placeholder]="row.ingredientName || ('repack.searchProduct' | t)"
@@ -333,9 +320,8 @@ interface Row {
                           row.ingredientName = $event?.name ?? ''
                         "
                       />
-                    </div>
-                    <div class="field">
-                      <label>{{ 'repack.perUnit' | t }}</label>
+                    </app-field>
+                    <app-field [label]="'repack.perUnit' | t">
                       <input
                         class="input"
                         type="number"
@@ -345,7 +331,7 @@ interface Row {
                         [value]="row.quantity"
                         (input)="row.quantity = +$any($event.target).value"
                       />
-                    </div>
+                    </app-field>
                     <button
                       class="icon-btn"
                       type="button"
@@ -393,14 +379,13 @@ interface Row {
           <div class="directions">{{ directions() || ('repack.directionsPlaceholder' | t) }}</div>
           <div class="muted small">{{ t.number }} · {{ t.createdAt | when }}</div>
         </div>
-        <div class="field no-print mt">
-          <label>{{ 'repack.directions' | t }}</label>
+        <app-field class="no-print mt" [label]="'repack.directions' | t">
           <input
             class="input"
             [value]="directions()"
             (input)="directions.set($any($event.target).value)"
           />
-        </div>
+        </app-field>
       }
       <ng-container footer>
         <button class="btn" type="button" (click)="label.set(null)">

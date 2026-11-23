@@ -3,6 +3,7 @@ import { Api } from '../api/api.service';
 import { SessionActivity } from '../api/models';
 import { Translations } from '../i18n/translations.store';
 import { ConfirmService } from '../ui/confirm';
+import { LeaveGuard } from './leave-guard';
 import { SessionStore } from './session.store';
 import { SignOutService } from './sign-out';
 
@@ -57,6 +58,7 @@ export class IdleWatch {
   private readonly signOut = inject(SignOutService);
   private readonly confirm = inject(ConfirmService);
   private readonly translations = inject(Translations);
+  private readonly leave = inject(LeaveGuard);
 
   private reported: Reported | null = readReported();
   private running = false;
@@ -176,7 +178,11 @@ export class IdleWatch {
   }
 
   private warn(seconds: number): void {
-    const text = this.translations.t('idle.text', { seconds });
+    // Unsaved work on the page (a receipt being typed) is lost on sign-out: the warning says so.
+    const unsaved = this.leave.hasUnsaved() ? this.translations.t('a11y.idle.unsaved') : '';
+    const text = [this.translations.t('idle.text', { seconds }), unsaved]
+      .filter(Boolean)
+      .join('\n');
     if (this.warning) {
       this.confirm.update(DIALOG_KEY, { text });
       return;
@@ -186,6 +192,10 @@ export class IdleWatch {
       .ask({
         key: DIALOG_KEY,
         dismissible: false,
+        // In front of any question already open, which waits (unanswered) behind it; nothing
+        // asked meanwhile can answer it.
+        urgent: true,
+        focus: 'confirm',
         icon: 'warning',
         title: this.translations.t('idle.title'),
         text,

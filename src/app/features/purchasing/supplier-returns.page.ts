@@ -162,7 +162,9 @@ interface DraftLine {
               <tbody>
                 @for (r of returns.items(); track r.uid) {
                   <tr class="clickable" (click)="current.set(r)">
-                    <td class="mono strong">{{ r.number }}</td>
+                    <td class="mono strong">
+                      <button type="button" class="row-link">{{ r.number }}</button>
+                    </td>
                     <td class="muted">{{ r.createdAt | when }}</td>
                     <td>{{ r.supplierName }}</td>
                     <td class="mono">{{ r.goodsReceiptNumber ?? '—' }}</td>
@@ -190,32 +192,29 @@ interface DraftLine {
 
     <app-modal [open]="editing()" [title]="'sret.new' | t" (closed)="editing.set(false)">
       <div class="form-grid">
-        <div class="field full">
-          <label>{{ 'sret.supplier' | t }}</label>
+        <app-field class="full" [label]="'sret.supplier' | t">
           <app-lookup
             path="/suppliers"
             [placeholder]="'sret.searchSupplier' | t"
             (picked)="pickSupplier($event)"
           />
-        </div>
-        <div class="field full">
-          <label>{{ 'sret.receipt' | t }}</label>
+        </app-field>
+        <app-field class="full" [label]="'sret.receipt' | t">
           <select class="select" [value]="receiptUid()" (change)="receiptUid.set(sel($event))">
             <option value="">{{ 'sret.noReceipt' | t }}</option>
             @for (g of receipts(); track g.uid) {
               <option [value]="g.uid">{{ g.number }} · {{ g.createdAt | day }}</option>
             }
           </select>
-        </div>
-        <div class="field full">
-          <label>{{ 'sret.reason' | t }}</label>
+        </app-field>
+        <app-field class="full" [label]="'sret.reason' | t">
           <input
             class="input"
             [value]="reason()"
             (input)="reason.set(sel($event))"
             [placeholder]="'sret.reasonHint' | t"
           />
-        </div>
+        </app-field>
         @for (line of lines(); track $index; let i = $index) {
           <div class="field full">
             <label>{{ 'sret.lineN' | t: { n: i + 1 } }}</label>
@@ -250,7 +249,12 @@ interface DraftLine {
                 (input)="patch(i, { quantity: +sel($event) })"
               />
               @if (lines().length > 1) {
-                <button class="btn ghost" type="button" (click)="removeLine(i)">
+                <button
+                  class="btn ghost"
+                  type="button"
+                  (click)="removeLine(i)"
+                  [attr.aria-label]="'common.remove' | t"
+                >
                   <app-icon name="x" [size]="16" />
                 </button>
               }
@@ -262,10 +266,9 @@ interface DraftLine {
             <app-icon name="plus" [size]="14" /> {{ 'sret.addLine' | t }}
           </button>
         </div>
-        <div class="field full">
-          <label>{{ 'sret.note' | t }}</label>
+        <app-field class="full" [label]="'sret.note' | t">
           <textarea class="input" [value]="note()" (input)="note.set(sel($event))"></textarea>
-        </div>
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="editing.set(false)">
