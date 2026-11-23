@@ -2,6 +2,8 @@ import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/
 import {
   ApplicationConfig,
   ErrorHandler,
+  inject,
+  provideAppInitializer,
   provideBrowserGlobalErrorListeners,
   provideZonelessChangeDetection,
 } from '@angular/core';
@@ -16,6 +18,7 @@ import { routes } from './app.routes';
 import { apiInterceptor } from './core/api/api.interceptor';
 import { AppErrorHandler } from './core/api/error-handler';
 import { reloadOnStaleBuild } from './core/layout/stale-build';
+import { Translations } from './core/i18n/translations.store';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -30,5 +33,7 @@ export const appConfig: ApplicationConfig = {
       withNavigationErrorHandler(reloadOnStaleBuild),
     ),
     provideHttpClient(withFetch(), withInterceptors([apiInterceptor])),
+    // The saved language's dictionary before the first render (Swahili is loaded on demand).
+    provideAppInitializer(() => inject(Translations).load()),
   ],
 };
