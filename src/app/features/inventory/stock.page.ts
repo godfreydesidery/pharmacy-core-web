@@ -219,7 +219,7 @@ import { Translations } from '../../core/i18n/translations.store';
                   <tr>
                     <td colspan="10">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="box"
                         [title]="'inventory.noStock' | t"
                         [text]="'ui.empty.stock' | t"

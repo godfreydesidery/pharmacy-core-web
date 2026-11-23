@@ -221,7 +221,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
                     <tr>
                       <td>
                         <app-empty
-                          [loading]="branches.loading()"
+                          [for]="branches"
                           icon="building"
                           [title]="'platform.noBranches' | t"
                         />
@@ -237,11 +237,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
           <app-tenant-subscription [tenantUid]="t.uid" />
         </div>
       } @else {
-        <app-empty
-          [loading]="tenant.loading()"
-          icon="building"
-          [title]="'platform.tenantNotFound' | t"
-        />
+        <app-empty [for]="tenant" icon="building" [title]="'platform.tenantNotFound' | t" />
       }
     </div>
 

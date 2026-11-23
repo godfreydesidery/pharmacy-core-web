@@ -88,7 +88,7 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'count.lossValue': 'Upungufu kwa gharama:',
   'errors.note_required': 'Andika maelezo ya sababu.',
   'errors.batch_cost_differs':
-    'Bechi hii tayari ipo kwa gharama nyingine. Iandike kama upokeaji wa bidhaa au tumia namba nyingine ya bechi.',
+    'Bechi hii tayari ipo kwa gharama ya {{batchUnitCost}} kwa kipande, na hifadhi yake ya kuanzia huingia kwa gharama hiyo. Iandike kama upokeaji wa bidhaa au tumia namba nyingine ya bechi.',
   'errors.receiver_is_sender': 'Mtu mwingine, si aliyetuma, lazima apokee.',
   'errors.schedule_downgrade':
     'Dawa ya cheti au inayodhibitiwa haiwezi kugeuzwa kuwa bidhaa ya daraja la chini.',

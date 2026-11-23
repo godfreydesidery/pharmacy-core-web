@@ -83,7 +83,7 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
                 <tr>
                   <td colspan="7">
                     <app-empty
-                      [loading]="list.loading()"
+                      [for]="list"
                       icon="building"
                       [title]="'platform.noPharmacies' | t"
                       [text]="'ui.empty.tenants' | t"

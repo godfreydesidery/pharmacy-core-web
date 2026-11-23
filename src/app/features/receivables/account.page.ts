@@ -500,11 +500,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
       </app-modal>
     } @else {
       <div class="page">
-        <app-empty
-          [loading]="account.loading()"
-          icon="wallet"
-          [title]="'receivables.noSuchAccount' | t"
-        />
+        <app-empty [for]="account" icon="wallet" [title]="'receivables.noSuchAccount' | t" />
       </div>
     }
   `,

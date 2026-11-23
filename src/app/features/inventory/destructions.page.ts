@@ -179,11 +179,7 @@ interface DraftLine {
                 } @empty {
                   <tr>
                     <td colspan="6">
-                      <app-empty
-                        [loading]="destructions.loading()"
-                        icon="trash"
-                        [title]="'dest.none' | t"
-                      />
+                      <app-empty [for]="destructions" icon="trash" [title]="'dest.none' | t" />
                     </td>
                   </tr>
                 }

@@ -146,11 +146,7 @@ import { signInLabel } from '../../core/session/sign-in-label';
               } @empty {
                 <tr>
                   <td colspan="6">
-                    <app-empty
-                      [loading]="list.loading()"
-                      icon="users"
-                      [title]="'ui.empty.noUsers' | t"
-                    />
+                    <app-empty [for]="list" icon="users" [title]="'ui.empty.noUsers' | t" />
                   </td>
                 </tr>
               }

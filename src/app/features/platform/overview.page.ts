@@ -134,7 +134,7 @@ import { DonutSegment } from '../../core/ui/charts';
                     <tr>
                       <td>
                         <app-empty
-                          [loading]="tenants.loading()"
+                          [for]="tenants"
                           icon="building"
                           [title]="'platform.noPharmaciesYet' | t"
                         />
@@ -147,11 +147,7 @@ import { DonutSegment } from '../../core/ui/charts';
           </div>
         </div>
       } @else {
-        <app-empty
-          [loading]="overview.loading()"
-          icon="globe"
-          [title]="'platform.overviewUnavailable' | t"
-        />
+        <app-empty [for]="overview" icon="globe" [title]="'platform.overviewUnavailable' | t" />
       }
     </div>
   `,

@@ -111,11 +111,7 @@ export interface SupplierStatement {
               } @empty {
                 <tr>
                   <td colspan="3">
-                    <app-empty
-                      [loading]="balances.loading()"
-                      icon="truck"
-                      [title]="'payables.none' | t"
-                    />
+                    <app-empty [for]="balances" icon="truck" [title]="'payables.none' | t" />
                   </td>
                 </tr>
               }
@@ -174,7 +170,7 @@ export interface SupplierStatement {
           <b>{{ s.balance | money }}</b>
         </div>
       } @else {
-        <app-empty [loading]="statement.loading()" icon="file" [title]="'payables.statement' | t" />
+        <app-empty [for]="statement" icon="file" [title]="'payables.statement' | t" />
       }
     </app-drawer>
   `,

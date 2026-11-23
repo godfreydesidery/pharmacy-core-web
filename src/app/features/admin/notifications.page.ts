@@ -283,7 +283,7 @@ type Tab = 'templates' | 'deliveries' | 'providers';
                   <tr>
                     <td colspan="7">
                       <app-empty
-                        [loading]="deliveries.loading()"
+                        [for]="deliveries"
                         icon="activity"
                         [title]="'admin.noMessagesYet' | t"
                       />

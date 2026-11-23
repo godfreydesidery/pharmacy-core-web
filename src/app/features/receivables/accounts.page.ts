@@ -149,7 +149,7 @@ import { SessionStore } from '../../core/session/session.store';
                   <tr>
                     <td colspan="7">
                       <app-empty
-                        [loading]="accounts.loading()"
+                        [for]="accounts"
                         icon="wallet"
                         [title]="'receivables.noCustomerAccountsYet' | t"
                         [text]="'ui.empty.receivables' | t"
@@ -190,7 +190,7 @@ import { SessionStore } from '../../core/session/session.store';
                   <tr>
                     <td colspan="6">
                       <app-empty
-                        [loading]="ageing.loading()"
+                        [for]="ageing"
                         icon="clock"
                         [title]="'receivables.nothingOwed' | t"
                       />

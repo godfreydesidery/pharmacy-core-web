@@ -13,6 +13,8 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { filter, map } from 'rxjs';
 import { Api } from '../api/api.service';
+import { ApiError } from '../api/api-error';
+import { SubscriptionStatusView } from '../api/subscription.models';
 import { TenantLogoStore } from '../files/tenant-logo.store';
 import { SettingsStore } from '../format/settings.store';
 import { SubscriptionStore } from '../subscription/subscription.store';
@@ -30,6 +32,7 @@ import { ToastService } from '../ui/toast.service';
 import { LogoComponent } from './logo.component';
 import { NgTemplateOutlet } from '@angular/common';
 import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
+import { KnownSuspension, suspensionFromProbe, suspensionView } from './suspension';
 
 @Component({
   selector: 'app-shell',
@@ -105,9 +108,43 @@ export class ShellComponent {
     const status = this.session.tenant()?.status;
     return !!status && status !== 'ACTIVE' && !this.session.isRoot();
   });
-  protected readonly blockedBySuspension = computed(
-    () => this.suspendedForMe() && !this.url().startsWith('/account'),
+  /** The API's test for who keeps reading an unpaid or closed pharmacy. */
+  private readonly pharmacyAdmin = computed(
+    () => this.session.can('settings.manage') || this.session.can('users.manage'),
   );
+  /** Why the pharmacy is suspended: from the membership, or learned by one read (see below). */
+  private readonly probed = signal<{ tenantUid: string; kind: KnownSuspension } | null>(null);
+  private readonly suspensionKind = computed<KnownSuspension>(() => {
+    const tenant = this.session.tenant();
+    if (!tenant) {
+      return null;
+    }
+    const membership = this.session.memberships().find((m) => m.tenantUid === tenant.uid);
+    const probed = this.probed();
+    return membership?.suspensionKind ?? (probed?.tenantUid === tenant.uid ? probed.kind : null);
+  });
+  /** The page a suspended or closed pharmacy shows, by its kind. */
+  protected readonly suspension = computed(() => {
+    const view = suspensionView(
+      this.session.tenant()?.status ?? 'ACTIVE',
+      this.suspensionKind(),
+      this.pharmacyAdmin(),
+    );
+    // The subscription page is for those who manage settings (its route's permission).
+    return { ...view, canPay: view.canPay && this.session.can('settings.manage') };
+  });
+  /** An unpaid pharmacy's admins still read it: its subscription (to pay) and its settings. */
+  private readonly readOnlyUnpaid = computed(
+    () => this.suspendedForMe() && this.suspension().canPay,
+  );
+  protected readonly blockedBySuspension = computed(() => {
+    const url = this.url();
+    return (
+      this.suspendedForMe() &&
+      !url.startsWith('/account') &&
+      !(this.readOnlyUnpaid() && url.startsWith('/admin/subscription'))
+    );
+  });
 
   protected readonly tenantNav = computed<NavItem[]>(() => {
     if (!this.session.tenant() || this.suspendedForMe()) {
@@ -146,8 +183,9 @@ export class ShellComponent {
     inject(DestroyRef).onDestroy(() => this.look.reset());
     effect(() => {
       const tenant = this.session.tenant();
-      // A suspended pharmacy refuses every read but the root administrator's.
-      const readable = tenant && !this.suspendedForMe() ? tenant : null;
+      // A suspended pharmacy refuses every read but the root administrator's (and, unpaid, its
+      // admins').
+      const readable = tenant && (!this.suspendedForMe() || this.readOnlyUnpaid()) ? tenant : null;
       if (readable) {
         void this.settings.load(readable.uid);
         void this.subscription.load(readable.uid);
@@ -156,6 +194,21 @@ export class ShellComponent {
         this.subscription.clear();
       }
       void this.logo.load(readable?.uid ?? null);
+    });
+    // A suspended pharmacy whose membership does not say why: one read tells (see suspensionFromProbe).
+    effect(() => {
+      const tenant = this.session.tenant();
+      const admin = this.pharmacyAdmin();
+      if (!tenant || tenant.status !== 'SUSPENDED' || this.session.isRoot()) {
+        return;
+      }
+      const membership = untracked(() =>
+        this.session.memberships().find((m) => m.tenantUid === tenant.uid),
+      );
+      if (membership?.suspensionKind) {
+        return;
+      }
+      untracked(() => void this.probeSuspension(tenant.uid, admin));
     });
     // The free trial is a notice, not a bar: a toast once per pharmacy per browser session.
     effect(() => {
@@ -178,6 +231,24 @@ export class ShellComponent {
       this.userMenu.set(false);
       this.flyout.set(null);
     });
+  }
+
+  private async probeSuspension(tenantUid: string, admin: boolean): Promise<void> {
+    let refusal: ApiError | null = null;
+    try {
+      await this.api.get<SubscriptionStatusView>('/subscription/status', undefined, {
+        silent: true,
+        noBranch: true,
+      });
+    } catch (failure) {
+      refusal = ApiError.from(failure);
+      if (refusal.status !== 403) {
+        return; // offline or failing: the page stays general
+      }
+    }
+    if (this.session.tenant()?.uid === tenantUid) {
+      this.probed.set({ tenantUid, kind: suspensionFromProbe(refusal, admin) });
+    }
   }
 
   private announceTrial(tenantUid: string, plan: string, days: number): void {

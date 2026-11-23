@@ -100,7 +100,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 <tr>
                   <td colspan="5">
                     <app-empty
-                      [loading]="admins.loading()"
+                      [for]="admins"
                       icon="key"
                       [title]="'platform.noRootAdministrators' | t"
                     />

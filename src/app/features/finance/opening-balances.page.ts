@@ -274,7 +274,7 @@ interface Row {
           </div>
         }
       } @else {
-        <app-empty [loading]="status.loading()" icon="wallet" [title]="''" />
+        <app-empty [for]="status" icon="wallet" [title]="''" />
       }
     </div>
   `,

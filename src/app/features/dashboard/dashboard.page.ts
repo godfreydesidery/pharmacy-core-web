@@ -315,7 +315,7 @@ const METHOD_COLORS: Record<string, string> = {
           }
         </div>
         <app-empty
-          [loading]="data.loading()"
+          [for]="data"
           icon="chart"
           [title]="'dashboard.unavailable' | t"
           [text]="data.error()?.message ?? ''"

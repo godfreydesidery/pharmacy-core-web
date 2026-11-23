@@ -148,7 +148,7 @@ interface Decision {
                 <tr>
                   <td colspan="8">
                     <app-empty
-                      [loading]="list.loading()"
+                      [for]="list"
                       icon="file"
                       [title]="'insurance.noClaims' | t"
                       [text]="'ui.empty.claims' | t"

@@ -41,6 +41,7 @@ import { SECURITY2_SW } from './security2.sw';
 import { SALES_SW } from './sales.sw';
 import { SHELL_SW } from './shell.sw';
 import { UI_SW } from './ui.sw';
+import { STATE_SW } from './state.sw';
 
 export const SW_AREAS: Readonly<Record<string, string>> = {
   ...SHELL_SW,
@@ -82,4 +83,5 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...APPROVALS_SW,
   ...MESSAGES_SW,
   ...UI_SW,
+  ...STATE_SW,
 };

@@ -199,23 +199,36 @@
     }
   }
 
+  @if (suspendedForMe() && !blockedBySuspension() && suspension().canPay) {
+    <div class="suspended notice tone-amber no-print" data-testid="unpaid-read-only">
+      <app-icon name="alert" /> {{ 'errors.tenant_suspended_read_only' | t }}
+    </div>
+  }
+
   <main class="content">
     @if (blockedBySuspension()) {
       <div class="page">
-        <div class="card card-pad empty suspended-page">
-          <app-icon name="lock" [size]="40" [stroke]="1.4" />
-          @if (session.tenant()?.status === 'CLOSED') {
-            <h1>{{ 'ui.closed.title' | t }}</h1>
-            <span>{{ 'ui.closed.body' | t: { pharmacy: session.tenant()?.name } }}</span>
-          } @else {
-            <h1>{{ 'ui.suspended.title' | t }}</h1>
-            <span>{{ 'ui.suspended.body' | t: { pharmacy: session.tenant()?.name } }}</span>
-            <span class="muted">{{ 'ui.suspended.contact' | t }}</span>
+        <div
+          class="card card-pad empty suspended-page"
+          data-testid="suspended-page"
+          [attr.data-state]="suspension().state"
+        >
+          <app-icon [name]="suspension().icon" [size]="40" [stroke]="1.4" />
+          <h1>{{ suspension().title | t }}</h1>
+          <span>{{ suspension().body | t: { pharmacy: session.tenant()?.name } }}</span>
+          @if (suspension().hint; as hint) {
+            <span class="muted">{{ hint | t }}</span>
           }
           <div class="row">
-            @if (session.can('settings.manage')) {
+            @if (suspension().canPay) {
+              <a class="btn primary" routerLink="/admin/subscription" data-testid="blocked-pay">
+                <app-icon name="card" [size]="16" /> {{ 'state.suspended.pay' | t }}
+              </a>
+            }
+            @if (suspension().canExport) {
               <button
-                class="btn primary"
+                class="btn"
+                [class.primary]="!suspension().canPay"
                 type="button"
                 data-testid="blocked-export"
                 [disabled]="exporting()"

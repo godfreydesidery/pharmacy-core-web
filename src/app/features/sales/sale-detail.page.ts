@@ -228,7 +228,7 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
           >
         </app-modal>
       } @else {
-        <app-empty [loading]="sale.loading()" icon="receipt" [title]="'sales.saleNotFound' | t" />
+        <app-empty [for]="sale" icon="receipt" [title]="'sales.saleNotFound' | t" />
       }
     </div>
 

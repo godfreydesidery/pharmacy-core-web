@@ -62,7 +62,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 <tr>
                   <td colspan="6">
                     <app-empty
-                      [loading]="remittances.loading()"
+                      [for]="remittances"
                       icon="cash"
                       [title]="'insurance.noRemittancesYet' | t"
                     />

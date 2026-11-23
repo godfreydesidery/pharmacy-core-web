@@ -89,11 +89,7 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
               } @empty {
                 <tr>
                   <td colspan="8">
-                    <app-empty
-                      [loading]="list.loading()"
-                      icon="truck"
-                      [title]="'partners.noSuppliers' | t"
-                    />
+                    <app-empty [for]="list" icon="truck" [title]="'partners.noSuppliers' | t" />
                   </td>
                 </tr>
               }

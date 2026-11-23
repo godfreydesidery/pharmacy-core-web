@@ -76,7 +76,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                   <tr>
                     <td colspan="7">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="download"
                         [title]="'purchasing.noGoodsReceivedYet' | t"
                       />

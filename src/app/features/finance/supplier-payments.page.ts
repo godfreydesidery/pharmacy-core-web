@@ -83,7 +83,7 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
                 <tr>
                   <td colspan="8">
                     <app-empty
-                      [loading]="list.loading()"
+                      [for]="list"
                       icon="wallet"
                       [title]="'finance.noSupplierPaymentsYet' | t"
                     />
