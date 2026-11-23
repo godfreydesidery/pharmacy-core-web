@@ -79,6 +79,7 @@ export const PRICING_SW: Readonly<Record<string, string>> = {
   'pricing.noPriceHint': '0% inaiuza kwa bei ya Mauzo ya Kawaida.',
   'plans.title': 'Mipango ya bei',
   'plans.sub': 'Mauzo ya Kawaida ni bei ya kuuza ya kila dawa; kila mpango mwingine una bei zake.',
+  'plans.allPlans': 'Mipango yote ya bei',
   'plans.choose': 'Chagua mpango kuona na kuweka bei zake.',
   'plans.notFound': 'Mpango huu haupo tena.',
   'plans.findPlan': 'Tafuta mpango',
