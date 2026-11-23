@@ -55,8 +55,12 @@ export const PLATFORM_NAV: NavItem[] = [
     id: 'platform-providers',
     label: 'Message providers',
     icon: 'bell',
-    path: '/platform/message-providers',
     rootOnly: true,
+    children: [
+      { label: 'Email', path: '/platform/message-providers/email' },
+      { label: 'SMS', path: '/platform/message-providers/sms' },
+      { label: 'WhatsApp', path: '/platform/message-providers/whatsapp' },
+    ],
   },
   {
     id: 'platform-plans',

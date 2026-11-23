@@ -16,9 +16,23 @@ export default [
   },
   { path: 'audit', title: 'Platform audit', loadComponent: () => import('./audit.page') },
   { path: 'plans', title: 'Plans', loadComponent: () => import('./plans.page') },
+  { path: 'message-providers', pathMatch: 'full', redirectTo: 'message-providers/email' },
   {
-    path: 'message-providers',
-    title: 'Message providers',
+    path: 'message-providers/email',
+    title: 'Email providers',
+    data: { channel: 'EMAIL' },
+    loadComponent: () => import('./providers.page'),
+  },
+  {
+    path: 'message-providers/sms',
+    title: 'SMS providers',
+    data: { channel: 'SMS' },
+    loadComponent: () => import('./providers.page'),
+  },
+  {
+    path: 'message-providers/whatsapp',
+    title: 'WhatsApp providers',
+    data: { channel: 'WHATSAPP' },
     loadComponent: () => import('./providers.page'),
   },
   {

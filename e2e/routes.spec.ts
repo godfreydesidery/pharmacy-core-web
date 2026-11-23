@@ -77,7 +77,9 @@ const PLATFORM_ROUTES = [
   '/platform/audit',
   '/platform/plans',
   '/platform/payment-methods',
-  '/platform/message-providers',
+  '/platform/message-providers/email',
+  '/platform/message-providers/sms',
+  '/platform/message-providers/whatsapp',
 ];
 
 type Problems = string[];

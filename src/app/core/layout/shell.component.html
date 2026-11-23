@@ -14,16 +14,7 @@
     @if (platformNav().length) {
       <div class="section">{{ 'nav.platform' | t }}</div>
       @for (item of platformNav(); track item.id) {
-        <a
-          class="item"
-          [routerLink]="item.path"
-          routerLinkActive="active"
-          [routerLinkActiveOptions]="{ exact: true }"
-          [title]="'nav.' + item.id | t: null : item.label"
-        >
-          <app-icon [name]="item.icon" />
-          <span class="label">{{ 'nav.' + item.id | t: null : item.label }}</span>
-        </a>
+        <ng-container *ngTemplateOutlet="navEntry; context: { $implicit: item, exact: true }" />
       }
     }
 
@@ -32,57 +23,58 @@
         <div class="section">{{ session.tenant()?.name }}</div>
       }
       @for (item of tenantNav(); track item.id) {
-        @if (item.children) {
-          <div
-            class="group"
-            [class.open]="isOpen(item.id)"
-            [class.flying]="flyout()?.id === item.id"
-          >
-            <button
-              #groupButton
-              class="item"
-              type="button"
-              [class.active]="isGroupActive(item) && (!isOpen(item.id) || collapsed())"
-              [attr.aria-expanded]="collapsed() ? flyout()?.id === item.id : isOpen(item.id)"
-              (click)="onGroup(item, groupButton)"
-              [title]="'nav.' + item.id | t: null : item.label"
-            >
-              <app-icon [name]="item.icon" />
-              <span class="label">{{ 'nav.' + item.id | t: null : item.label }}</span>
-              <app-icon class="chev" name="chevron" [size]="16" />
-            </button>
-            <div
-              class="sub"
-              [style.top.px]="flyout()?.id === item.id ? flyout()?.top : null"
-              [style.bottom.px]="flyout()?.id === item.id ? flyout()?.bottom : null"
-            >
-              <div class="sub-inner">
-                <div class="sub-title">{{ 'nav.' + item.id | t: null : item.label }}</div>
-                @for (link of item.children; track link.path) {
-                  <a
-                    [routerLink]="link.path"
-                    routerLinkActive="active"
-                    [routerLinkActiveOptions]="{ exact: true }"
-                    >{{ navKey(link.path) | t: null : link.label }}</a
-                  >
-                }
-              </div>
-            </div>
-          </div>
-        } @else {
-          <a
-            class="item"
-            [routerLink]="item.path"
-            routerLinkActive="active"
-            [title]="'nav.' + item.id | t: null : item.label"
-          >
-            <app-icon [name]="item.icon" />
-            <span class="label">{{ 'nav.' + item.id | t: null : item.label }}</span>
-          </a>
-        }
+        <ng-container *ngTemplateOutlet="navEntry; context: { $implicit: item, exact: false }" />
       }
     }
   </nav>
+
+  <ng-template #navEntry let-item let-exact="exact">
+    @if (item.children) {
+      <div class="group" [class.open]="isOpen(item.id)" [class.flying]="flyout()?.id === item.id">
+        <button
+          #groupButton
+          class="item"
+          type="button"
+          [class.active]="isGroupActive(item) && (!isOpen(item.id) || collapsed())"
+          [attr.aria-expanded]="collapsed() ? flyout()?.id === item.id : isOpen(item.id)"
+          (click)="onGroup(item, groupButton)"
+          [title]="'nav.' + item.id | t: null : item.label"
+        >
+          <app-icon [name]="item.icon" />
+          <span class="label">{{ 'nav.' + item.id | t: null : item.label }}</span>
+          <app-icon class="chev" name="chevron" [size]="16" />
+        </button>
+        <div
+          class="sub"
+          [style.top.px]="flyout()?.id === item.id ? flyout()?.top : null"
+          [style.bottom.px]="flyout()?.id === item.id ? flyout()?.bottom : null"
+        >
+          <div class="sub-inner">
+            <div class="sub-title">{{ 'nav.' + item.id | t: null : item.label }}</div>
+            @for (link of item.children; track link.path) {
+              <a
+                [routerLink]="link.path"
+                routerLinkActive="active"
+                [routerLinkActiveOptions]="{ exact: true }"
+                >{{ navKey(link.path) | t: null : link.label }}</a
+              >
+            }
+          </div>
+        </div>
+      </div>
+    } @else {
+      <a
+        class="item"
+        [routerLink]="item.path"
+        routerLinkActive="active"
+        [routerLinkActiveOptions]="{ exact: exact }"
+        [title]="'nav.' + item.id | t: null : item.label"
+      >
+        <app-icon [name]="item.icon" />
+        <span class="label">{{ 'nav.' + item.id | t: null : item.label }}</span>
+      </a>
+    }
+  </ng-template>
 
   <div class="promo">
     <app-logo [size]="30" />
