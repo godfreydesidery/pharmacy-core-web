@@ -1,13 +1,11 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   Injectable,
   computed,
   effect,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpContext } from '@angular/common/http';
@@ -19,6 +17,7 @@ import { ApiError } from '../api/api-error';
 import { SILENT } from '../api/api.interceptor';
 import { SettingsStore } from '../format/settings.store';
 import { formatMoney } from '../format/format';
+import { DialogDirective } from '../ui/dialog';
 
 /** What needs approving: the API's `approval_required` problem members. */
 export interface ApprovalRequest {
@@ -89,16 +88,17 @@ export class ManagerApprovalService {
 
 @Component({
   selector: 'app-manager-approval',
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe, DialogDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'service.open() && cancel()' },
   template: `
     @if (service.open(); as open) {
       <div class="backdrop" (click)="cancel()">
         <form
           class="popup"
           role="dialog"
-          aria-modal="true"
+          appDialog
+          appDialogFocus="#manager-approval-login"
+          (dialogEscape)="cancel()"
           aria-labelledby="manager-approval-title"
           aria-describedby="manager-approval-text"
           data-testid="manager-approval"
@@ -118,7 +118,6 @@ export class ManagerApprovalService {
           <div class="field">
             <label for="manager-approval-login">{{ 'approval.login' | t }}</label>
             <input
-              #login
               id="manager-approval-login"
               name="login"
               class="input"
@@ -219,8 +218,6 @@ export class ManagerApprovalComponent {
   protected readonly error = signal('');
   protected loginValue = '';
   protected passwordValue = '';
-  private readonly login = viewChild<ElementRef<HTMLInputElement>>('login');
-  private returnFocus: HTMLElement | null = null;
 
   protected readonly actionLabel = computed(() => {
     const action = this.service.open()?.request.action ?? '';
@@ -246,11 +243,9 @@ export class ManagerApprovalComponent {
   constructor() {
     effect(() => {
       if (this.service.open()) {
-        this.returnFocus = document.activeElement as HTMLElement | null;
         this.loginValue = '';
         this.passwordValue = '';
         this.error.set('');
-        setTimeout(() => this.login()?.nativeElement.focus());
       }
     });
   }
@@ -289,6 +284,5 @@ export class ManagerApprovalComponent {
     this.loginValue = '';
     this.passwordValue = '';
     open?.answer(token);
-    this.returnFocus?.focus();
   }
 }

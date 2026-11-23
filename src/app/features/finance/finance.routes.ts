@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { leaveGuard } from '../../core/session/leave-guard';
 
 export default [
   { path: '', pathMatch: 'full', redirectTo: 'expenses' },
@@ -14,6 +15,7 @@ export default [
   {
     path: 'opening-balances',
     title: 'Opening balances',
+    canDeactivate: [leaveGuard],
     loadComponent: () => import('./opening-balances.page'),
   },
   {

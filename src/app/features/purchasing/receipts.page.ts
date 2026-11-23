@@ -48,14 +48,15 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               </thead>
               <tbody>
                 @for (r of list.items(); track r.uid) {
-                  <tr class="clickable" [routerLink]="[r.uid]">
+                  <tr class="clickable" appRowLink>
                     <td>
                       <div class="cell-main">
                         <span class="thumb tone-teal"
                           ><app-icon name="download" [size]="16"
                         /></span>
                         <div>
-                          <b>{{ r.number }}</b
+                          <a class="row-link" [routerLink]="[r.uid]"
+                            ><b>{{ r.number }}</b></a
                           ><small>{{ 'ui.t.by' | t: { name: r.createdBy } }}</small>
                         </div>
                       </div>

@@ -139,6 +139,15 @@ Amounts are formatted with `Intl.NumberFormat` in the tenant's currency, which c
 - Reusable styles live in `src/styles.scss`. Component styles stay small.
 - Format with Prettier (`.prettierrc`, print width 100) and follow `.editorconfig`.
 
+### Accessibility (WCAG 2.2 AA)
+
+- **Dialogs:** put `appDialog` (`core/ui/dialog.ts`) on a dialog's panel, or use `app-modal` / `app-drawer`. Focus moves in, stays inside and goes back on close; Escape closes only the top dialog. `app-modal [dirty]` asks before closing over unsaved changes.
+- **Questions:** always `ConfirmService.ask()`, never the browser's `confirm()` (`npm run lint:dialogs`, in CI). Questions queue: one shows at a time. A danger question starts on Cancel.
+- **Fields:** `<app-field [label] [hint] [error]>` around a control ties them together (`for`/`id`, `aria-describedby`, `aria-invalid`). Older `<div class="field">` blocks are linked by `FieldLinkDirective`, and unnamed inputs in `table.table` rows are named from their column and row (`npm run a11y:labels` lists labels still not linked).
+- **Clickable rows:** `<tr class="clickable" appRowLink>` with a real `<a class="row-link">` (or `<button class="row-link">` for a row with its own `(click)`) in the main cell.
+- **Colours:** use the tokens in `styles.scss`, never a fixed `#fff` on a token colour (use `--on-primary`, `--on-green`, `--on-red`, `--on-amber`). `npm run a11y:contrast` checks them in CI.
+- **Unsaved work:** a form page calls `guardUnsavedWork(() => changed)` and its route gets `canDeactivate: [leaveGuard]`; call `done()` on the handle once saved. Long forms keep Cancel and Save in a `.sticky-actions` bar.
+
 ## Production build, end-to-end tests and QA
 
 | Command              | What it does                                                                                                                                                       |

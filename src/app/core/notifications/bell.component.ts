@@ -89,7 +89,7 @@ import { NotificationsStore } from './notifications.store';
       padding: 0 4px;
       border-radius: 999px;
       background: var(--red, #ef4444);
-      color: #fff;
+      color: var(--on-red, #fff);
       font-size: 10.5px;
       font-weight: 700;
       line-height: 17px;

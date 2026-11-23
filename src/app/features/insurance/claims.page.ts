@@ -124,7 +124,7 @@ interface Decision {
               @for (c of list.items(); track c.uid) {
                 <tr class="link-row" (click)="show(c)">
                   <td>
-                    <b class="mono">{{ c.number }}</b
+                    <button type="button" class="row-link mono strong">{{ c.number }}</button
                     ><small class="muted block"
                       >{{ c.createdAt | day
                       }}{{ c.batchNumber ? ' · ' + c.batchNumber : '' }}</small

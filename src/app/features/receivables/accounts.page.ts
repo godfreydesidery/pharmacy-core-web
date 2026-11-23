@@ -108,12 +108,13 @@ import { SessionStore } from '../../core/session/session.store';
               </thead>
               <tbody>
                 @for (a of accounts.items(); track a.customerUid) {
-                  <tr class="link-row" [routerLink]="['/receivables', a.customerUid]">
+                  <tr class="link-row" appRowLink>
                     <td>
                       <div class="cell-main">
                         <span class="avatar">{{ initials(a.customerName) }}</span>
                         <div>
-                          <b>{{ a.customerName }}</b
+                          <a class="row-link" [routerLink]="['/receivables', a.customerUid]"
+                            ><b>{{ a.customerName }}</b></a
                           ><small>{{ a.termsDays }}{{ 'receivables.dayTerms' | t }}</small>
                         </div>
                       </div>
@@ -176,9 +177,11 @@ import { SessionStore } from '../../core/session/session.store';
               </thead>
               <tbody>
                 @for (r of ageing.value() ?? []; track r.customerUid) {
-                  <tr class="link-row" [routerLink]="['/receivables', r.customerUid]">
+                  <tr class="link-row" appRowLink>
                     <td>
-                      <b>{{ r.customerName }}</b>
+                      <a class="row-link" [routerLink]="['/receivables', r.customerUid]"
+                        ><b>{{ r.customerName }}</b></a
+                      >
                     </td>
                     <td class="right">{{ r.current | money }}</td>
                     <td class="right">{{ r.d31to60 | money }}</td>

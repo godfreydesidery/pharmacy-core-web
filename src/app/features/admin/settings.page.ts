@@ -339,7 +339,7 @@ import { Translations } from '../../core/i18n/translations.store';
       height: 44px;
       border-radius: 12px;
       background: var(--primary);
-      color: #fff;
+      color: var(--on-primary);
       display: grid;
       place-items: center;
       font-weight: 700;

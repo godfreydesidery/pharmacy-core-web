@@ -72,30 +72,25 @@ import { ToastService } from '../../core/ui/toast.service';
 
     <app-modal [open]="open()" [title]="'vouchers.sell' | t" (closed)="open.set(false)">
       <div class="form-grid">
-        <div class="field">
-          <label>{{ 'vouchers.value' | t }}</label>
+        <app-field [label]="'vouchers.value' | t">
           <input class="input" type="number" min="0" step="any" #value />
-        </div>
-        <div class="field">
-          <label>{{ 'vouchers.paidBy' | t }}</label>
+        </app-field>
+        <app-field [label]="'vouchers.paidBy' | t">
           <select class="select" #paidBy>
             @for (m of paidByOptions; track m) {
               <option [value]="m">{{ 'ui.pay.' + m | t: null : m }}</option>
             }
           </select>
-        </div>
-        <div class="field">
-          <label>{{ 'vouchers.holder' | t }}</label>
+        </app-field>
+        <app-field [label]="'vouchers.holder' | t">
           <input class="input" #holder />
-        </div>
-        <div class="field">
-          <label>{{ 'vouchers.expires' | t }}</label>
+        </app-field>
+        <app-field [label]="'vouchers.expires' | t">
           <input class="input" type="date" #expires />
-        </div>
-        <div class="field full">
-          <label>{{ 'vouchers.code' | t }}</label>
+        </app-field>
+        <app-field class="full" [label]="'vouchers.code' | t">
           <input class="input mono" #code [placeholder]="'vouchers.codeAuto' | t" />
-        </div>
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="open.set(false)">

@@ -15,8 +15,11 @@
   --border-strong: #d5dbe7;
   --text: #0f172a;
   --text-2: #334155;
-  --muted: #64748b;
-  --faint: #94a3b8;
+  /* Text and UI colours meet WCAG 2.2 AA (scripts/contrast.mjs): 4.5:1 for text, 3:1 for a
+     field's border and the focus ring, on the surface, the page and the header strips. */
+  --muted: #5b6b80;
+  --faint: #627187;
+  --input-border: #838c9e;
 
   --primary: #2463eb;
   --primary-strong: #1d4ed8;
@@ -24,18 +27,22 @@
   --primary-soft-2: #dbe7ff;
   --on-primary: #ffffff;
 
-  --green: #16a34a;
+  --green: #15803d;
   --green-soft: #ecfdf3;
-  --amber: #d97706;
+  --amber: #b45309;
   --amber-soft: #fffbeb;
-  --orange: #f97316;
+  --orange: #c2410c;
   --orange-soft: #fff4ec;
-  --red: #ef4444;
+  --red: #c81e1e;
   --red-soft: #fef1f1;
   --purple: #7c3aed;
   --purple-soft: #f4efff;
-  --teal: #0891b2;
+  --teal: #0e7490;
   --teal-soft: #ecfeff;
+  /* Text on a filled green, red or amber button or badge. */
+  --on-green: #ffffff;
+  --on-red: #ffffff;
+  --on-amber: #ffffff;
 
   --radius-sm: 8px;
   --radius: 12px;
@@ -43,7 +50,7 @@
   --shadow-sm: 0 1px 2px rgba(16, 24, 40, 0.04), 0 1px 3px rgba(16, 24, 40, 0.06);
   --shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
   --shadow-lg: 0 24px 60px rgba(15, 23, 42, 0.22);
-  --ring: 0 0 0 3px rgba(36, 99, 235, 0.18);
+  --ring: 0 0 0 3px rgba(36, 99, 235, 0.78);
 
   --sidebar-w: 256px;
   --topbar-h: 64px;
@@ -61,11 +68,23 @@
   --text: #e5e9f2;
   --text-2: #cbd5e1;
   --muted: #94a3b8;
-  --faint: #64748b;
-  --primary: #4f86ff;
-  --primary-strong: #3b74f2;
+  --faint: #7a89a0;
+  --input-border: #5d6d87;
+  /* Light enough to read on the dark surfaces; filled buttons carry dark text (--on-*). */
+  --primary: #6b9bff;
+  --primary-strong: #84abff;
   --primary-soft: rgba(79, 134, 255, 0.14);
   --primary-soft-2: rgba(79, 134, 255, 0.24);
+  --on-primary: #0b1120;
+  --green: #4ade80;
+  --amber: #fbbf24;
+  --orange: #fb923c;
+  --red: #f87171;
+  --purple: #b79cfc;
+  --teal: #22d3ee;
+  --on-green: #0b1120;
+  --on-red: #0b1120;
+  --on-amber: #0b1120;
   --green-soft: rgba(22, 163, 74, 0.16);
   --amber-soft: rgba(217, 119, 6, 0.16);
   --orange-soft: rgba(249, 115, 22, 0.16);
@@ -74,7 +93,7 @@
   --teal-soft: rgba(8, 145, 178, 0.18);
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
   --shadow: 0 8px 24px rgba(0, 0, 0, 0.4);
-  --ring: 0 0 0 3px rgba(79, 134, 255, 0.3);
+  --ring: 0 0 0 3px rgba(79, 134, 255, 0.8);
   color-scheme: dark;
 }
 
@@ -267,12 +286,12 @@ span.block {
 .btn.success {
   background: var(--green);
   border-color: var(--green);
-  color: #fff;
+  color: var(--on-green);
 }
 .btn.danger {
   background: var(--red);
   border-color: var(--red);
-  color: #fff;
+  color: var(--on-red);
 }
 .btn.ghost {
   background: transparent;
@@ -346,7 +365,7 @@ textarea.input.ng-invalid.ng-touched {
 .select,
 textarea.input {
   height: 38px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--input-border);
   border-radius: 10px;
   padding: 0 12px;
   background: var(--surface);
@@ -383,7 +402,7 @@ textarea.input {
   display: flex;
   align-items: center;
   gap: 8px;
-  border: 1px solid var(--border);
+  border: 1px solid var(--input-border);
   border-radius: 10px;
   padding: 0 12px;
   height: 38px;
@@ -442,7 +461,7 @@ textarea.input {
 .switch span {
   position: absolute;
   inset: 0;
-  background: var(--border-strong);
+  background: var(--input-border);
   border-radius: 22px;
   cursor: pointer;
   transition:
@@ -686,6 +705,26 @@ textarea.input {
 .table tbody tr.clickable {
   cursor: pointer;
 }
+/* The link or button in a clickable row's main cell: Tab reaches it, Enter opens the row. It
+   looks like the text it holds. */
+.row-link {
+  display: inline;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  color: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.row-link:focus-visible {
+  outline: none;
+  box-shadow: var(--ring);
+}
+.table tbody tr:has(.row-link:focus-visible) {
+  background: var(--surface-hover);
+}
 .table tbody tr:last-child td {
   border-bottom: 0;
 }
@@ -836,6 +875,27 @@ textarea.input {
   background: var(--surface);
   color: var(--text);
   box-shadow: var(--shadow-sm);
+}
+
+/* The Cancel and Save of a long form: they stay at the bottom of the window while it scrolls. */
+.sticky-actions {
+  position: sticky;
+  bottom: 0;
+  z-index: 5;
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: 0 -6px 18px rgba(15, 23, 42, 0.08);
+}
+.sticky-actions .note {
+  margin-right: auto;
+  color: var(--muted);
+  font-size: 12.5px;
 }
 
 /* ---------- details ---------- */

@@ -30,7 +30,12 @@ import { UploadComponent } from './upload.component';
                     <img [src]="url" [alt]="file.name" loading="lazy" />
                   </a>
                 } @else {
-                  <button class="thumb doc" type="button" (click)="open(file)">
+                  <button
+                    class="thumb doc"
+                    type="button"
+                    (click)="open(file)"
+                    [attr.aria-label]="file.name"
+                  >
                     <app-icon [name]="isImage(file) ? 'image' : 'file'" [size]="26" />
                   </button>
                 }

@@ -103,26 +103,21 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field full">
-          <label>{{ 'finance.supplier' | t }}</label>
+        <app-field class="full" [label]="'finance.supplier' | t" [error]="err('supplierUid')">
           <app-lookup
             path="/suppliers"
             [placeholder]="'finance.searchSuppliers' | t"
             [display]="supplierName"
             (picked)="pickSupplier($event)"
           />
-          @if (err('supplierUid'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'finance.currency' | t }}</label>
+        </app-field>
+        <app-field [label]="'finance.currency' | t">
           <select class="select" formControlName="currency" (change)="loadRate()">
             @for (c of accepted(); track c) {
               <option [value]="c">{{ c }}</option>
             }
           </select>
-        </div>
+        </app-field>
         <div class="field">
           <label>{{ 'finance.amount2' | t }}{{ form.controls.currency.value }})</label>
           <input class="input" type="number" min="0" step="any" formControlName="amount" />
@@ -136,6 +131,7 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
               >{{ 'finance.rate2' | t }} {{ base() }} {{ 'finance.per1' | t }}
               {{ form.controls.currency.value }}</label
             >
+
             <input class="input mono" type="number" min="0" step="any" formControlName="rate" />
             @if (stale()) {
               <span class="error">{{ 'finance.theLatestRateIsOver' | t }}</span>
@@ -146,31 +142,28 @@ const METHODS = ['BANK_TRANSFER', 'CASH', 'MOBILE_MONEY', 'CARD', 'CHEQUE'];
             <div class="input readonly strong">{{ settled() | money }}</div>
           </div>
         }
-        <div class="field">
-          <label>{{ 'finance.paidBy' | t }}</label>
+        <app-field [label]="'finance.paidBy' | t">
           <select class="select" formControlName="paymentMethod">
             @for (m of methods; track m) {
               <option [value]="m">{{ m | label }}</option>
             }
           </select>
-        </div>
+        </app-field>
         <app-overdraw-warning
           class="full"
           [amount]="settled()"
           [method]="form.controls.paymentMethod.value"
         />
-        <div class="field">
-          <label>{{ 'finance.paidOn' | t }}</label>
+        <app-field [label]="'finance.paidOn' | t">
           <input class="input" type="date" formControlName="paidOn" [max]="today" />
-        </div>
-        <div class="field full">
-          <label>{{ 'finance.reference' | t }}</label>
+        </app-field>
+        <app-field class="full" [label]="'finance.reference' | t">
           <input
             class="input"
             formControlName="reference"
             [placeholder]="'finance.bankOrTransferReference' | t"
           />
-        </div>
+        </app-field>
         @if (receipts().length) {
           <div class="field full">
             <label>{{ 'finance.settlesReceipts' | t }}{{ form.controls.currency.value }})</label>

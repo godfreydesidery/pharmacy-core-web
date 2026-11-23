@@ -4,6 +4,8 @@ import { FORMAT_PIPES } from './format/pipes';
 import { TranslatePipe } from './i18n/t.pipe';
 import { CHARTS } from './ui/charts';
 import { BranchRequiredComponent } from './ui/forms';
+import { FIELDS } from './ui/field';
+import { RowLinkDirective } from './ui/rows';
 import { IconComponent } from './ui/icon.component';
 import { DrawerComponent, ModalComponent } from './ui/overlay.components';
 import { EmptyComponent, PagerComponent, StatComponent, StatusBadgeComponent } from './ui/widgets';
@@ -24,6 +26,8 @@ export const SHARED = [
   ModalComponent,
   DrawerComponent,
   BranchRequiredComponent,
+  ...FIELDS,
+  RowLinkDirective,
   ...CHARTS,
   ...FORMAT_PIPES,
   TranslatePipe,

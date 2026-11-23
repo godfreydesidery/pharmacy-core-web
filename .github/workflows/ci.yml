@@ -18,7 +18,7 @@ jobs:
       - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
       - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4
         with:
-          node-version: "22"
+          node-version: '22'
           cache: npm
       - name: Install exactly the locked versions
         run: npm ci --no-audit --no-fund
@@ -26,6 +26,10 @@ jobs:
         run: npm run format:check
       - name: Translations (English and Swahili keys match)
         run: npm run i18n:check
+      - name: No browser confirm/alert/prompt (the app's ConfirmService instead)
+        run: npm run lint:dialogs
+      - name: Colour contrast of the design tokens (WCAG 2.2 AA)
+        run: npm run a11y:contrast
       - name: Unit tests
         run: npm test
       - name: Production build
@@ -58,4 +62,4 @@ jobs:
           image-ref: pharmacy-core-web:${{ github.sha }}
           severity: CRITICAL,HIGH
           ignore-unfixed: true
-          exit-code: "1"
+          exit-code: '1'

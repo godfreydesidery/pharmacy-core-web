@@ -169,7 +169,9 @@ interface DraftLine {
               <tbody>
                 @for (d of destructions.items(); track d.uid) {
                   <tr class="clickable" (click)="current.set(d)">
-                    <td class="mono strong">{{ d.number }}</td>
+                    <td class="mono strong">
+                      <button type="button" class="row-link">{{ d.number }}</button>
+                    </td>
                     <td>{{ d.destroyedOn | day }}</td>
                     <td>{{ d.method }}</td>
                     <td>{{ d.witnessName }}</td>
@@ -193,45 +195,40 @@ interface DraftLine {
 
     <app-modal [open]="editing()" [title]="'dest.new' | t" (closed)="editing.set(false)">
       <div class="form-grid">
-        <div class="field">
-          <label>{{ 'dest.date' | t }}</label>
+        <app-field [label]="'dest.date' | t">
           <input
             class="input"
             type="date"
             [value]="destroyedOn()"
             (input)="destroyedOn.set(sel($event))"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'dest.method' | t }}</label>
+        </app-field>
+        <app-field [label]="'dest.method' | t">
           <input
             class="input"
             [value]="method()"
             (input)="method.set(sel($event))"
             [placeholder]="'dest.methodHint' | t"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'dest.witnessName' | t }}</label>
+        </app-field>
+        <app-field [label]="'dest.witnessName' | t">
           <input class="input" [value]="witnessName()" (input)="witnessName.set(sel($event))" />
-        </div>
-        <div class="field">
-          <label>{{ 'dest.witnessTitle' | t }}</label>
+        </app-field>
+        <app-field [label]="'dest.witnessTitle' | t">
           <input
             class="input"
             [value]="witnessTitle()"
             (input)="witnessTitle.set(sel($event))"
             [placeholder]="'dest.witnessTitleHint' | t"
           />
-        </div>
-        <div class="field full">
-          <label>{{ 'dest.certificateNumber' | t }}</label>
+        </app-field>
+        <app-field class="full" [label]="'dest.certificateNumber' | t">
           <input
             class="input"
             [value]="certificateNumber()"
             (input)="certificateNumber.set(sel($event))"
           />
-        </div>
+        </app-field>
         @for (line of lines(); track $index; let i = $index) {
           <div class="field full">
             <label>{{ 'dest.lineN' | t: { n: i + 1 } }}</label>
@@ -276,7 +273,12 @@ interface DraftLine {
                 (input)="patch(i, { quantity: +sel($event) })"
               />
               @if (lines().length > 1) {
-                <button class="btn ghost" type="button" (click)="removeLine(i)">
+                <button
+                  class="btn ghost"
+                  type="button"
+                  (click)="removeLine(i)"
+                  [attr.aria-label]="'common.remove' | t"
+                >
                   <app-icon name="x" [size]="16" />
                 </button>
               }
@@ -288,10 +290,9 @@ interface DraftLine {
             <app-icon name="plus" [size]="14" /> {{ 'dest.addLine' | t }}
           </button>
         </div>
-        <div class="field full">
-          <label>{{ 'dest.note' | t }}</label>
+        <app-field class="full" [label]="'dest.note' | t">
           <textarea class="input" [value]="note()" (input)="note.set(sel($event))"></textarea>
-        </div>
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="editing.set(false)">

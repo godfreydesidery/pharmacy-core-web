@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { leaveGuard } from '../../core/session/leave-guard';
 
 export default [
   { path: '', pathMatch: 'full', redirectTo: 'orders' },
@@ -7,6 +8,7 @@ export default [
     path: 'orders/new',
     title: 'New purchase order',
     data: { permission: 'purchasing.manage' },
+    canDeactivate: [leaveGuard],
     loadComponent: () => import('./order-form.page'),
   },
   {
@@ -20,6 +22,7 @@ export default [
     path: 'receipts/new',
     title: 'Receive goods',
     data: { permission: 'purchasing.receive' },
+    canDeactivate: [leaveGuard],
     loadComponent: () => import('./receipt-form.page'),
   },
   {
