@@ -15,13 +15,8 @@ import { IconComponent } from '../../core/ui/icon.component';
 import { LanguageSwitchComponent } from '../../core/i18n/language-switch.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
+import { DEV_ACCOUNTS } from './dev-accounts';
 import { retryText } from './retry';
-
-const DEV_ACCOUNTS = [
-  { label: 'Root administrator', email: 'root@pharmacy.local', password: 'Root#2026' },
-  { label: 'Afya · Administrator', email: 'admin@afya.co.tz', password: 'Afya#2026' },
-  { label: 'Afya · Cashier', email: 'cashier@afya.co.tz', password: 'Cashier#2026' },
-];
 
 @Component({
   selector: 'app-sign-in',

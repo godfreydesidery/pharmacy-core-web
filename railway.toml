@@ -6,5 +6,5 @@ dockerfilePath = "Dockerfile"
 [deploy]
 healthcheckPath = "/"
 healthcheckTimeout = 60
-restartPolicyType = "ON_FAILURE"
-restartPolicyMaxRetries = 5
+# Always restart: after a few failed tries ON_FAILURE gives up and every till loses the app.
+restartPolicyType = "ALWAYS"

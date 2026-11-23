@@ -2,7 +2,8 @@
   "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "cli": {
-    "packageManager": "npm"
+    "packageManager": "npm",
+    "analytics": false
   },
   "newProjectRoot": "projects",
   "projects": {
@@ -50,7 +51,18 @@
                   "maximumError": "16kB"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": { "minify": true, "inlineCritical": false },
+                "fonts": true
+              },
+              "fileReplacements": [
+                {
+                  "replace": "src/app/features/auth/dev-accounts.ts",
+                  "with": "src/app/features/auth/dev-accounts.prod.ts"
+                }
+              ]
             },
             "development": {
               "optimization": false,
