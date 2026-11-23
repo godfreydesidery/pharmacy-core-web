@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import { OpenShiftService } from '../../core/session/open-shift';
 import { Api } from '../../core/api/api.service';
 import { loaded } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
@@ -182,6 +183,17 @@ export class ShiftBarComponent {
   protected readonly closing = signal(false);
   protected readonly busy = signal(false);
   protected readonly report = signal<ShiftView | null>(null);
+
+  private readonly openShift = inject(OpenShiftService);
+
+  constructor() {
+    // A shift opened from the "Open shift" prompt shows here at once.
+    effect(() => {
+      if (this.openShift.opened() > 0) {
+        void this.shift.reload();
+      }
+    });
+  }
 
   /** Re-reads the open shift's figures, e.g. after the till completes a sale. */
   refresh(): void {

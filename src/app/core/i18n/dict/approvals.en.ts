@@ -106,4 +106,12 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
   'transfer.shortNote': 'What happened to the missing units?',
   'transfer.shortHint': '{{units}} units short. A large loss needs a manager to approve.',
   'controlled.noLonger': 'no longer controlled',
+  'openShift.title': 'Open your shift',
+  'openShift.text':
+    'This pharmacy ties the cash in each till to a cashier. Count the cash in the drawer to start your shift; the sale then goes on.',
+  'openShift.float': 'Cash in the drawer',
+  'openShift.hintLast':
+    'Counted at the last close: {{amount}}. Change it if the drawer holds something else.',
+  'openShift.hintNone': 'Type the cash in the drawer, or 0.',
+  'openShift.open': 'Open shift and continue',
 };

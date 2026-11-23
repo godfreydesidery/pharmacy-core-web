@@ -6,6 +6,7 @@ import { ThemeService } from './core/ui/theme.service';
 import { ConfirmDialogComponent } from './core/ui/confirm';
 import { ConfirmIdentityComponent } from './core/session/confirm-identity';
 import { ManagerApprovalComponent } from './core/session/manager-approval';
+import { OpenShiftComponent } from './core/session/open-shift';
 import { ToasterComponent } from './core/ui/widgets';
 
 @Component({
@@ -16,9 +17,10 @@ import { ToasterComponent } from './core/ui/widgets';
     ConfirmDialogComponent,
     ConfirmIdentityComponent,
     ManagerApprovalComponent,
+    OpenShiftComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<router-outlet /><app-toaster /><app-confirm /><app-confirm-identity /><app-manager-approval />`,
+  template: `<router-outlet /><app-toaster /><app-confirm /><app-confirm-identity /><app-manager-approval /><app-open-shift />`,
 })
 export class App {
   /** Created here so the saved theme applies before any page renders. */

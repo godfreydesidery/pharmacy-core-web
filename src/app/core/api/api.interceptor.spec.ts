@@ -9,6 +9,7 @@ import { Api } from './api.service';
 import { apiInterceptor } from './api.interceptor';
 import { ConfirmIdentityService } from '../session/confirm-identity';
 import { ManagerApprovalService } from '../session/manager-approval';
+import { OpenShiftService } from '../session/open-shift';
 
 describe('apiInterceptor', () => {
   let api: Api;
@@ -179,6 +180,21 @@ describe('apiInterceptor', () => {
     const again = await vi.waitFor(() => http.expectOne('/api/v1/vouchers'));
     again.flush(refusal, { status: 403, statusText: 'Forbidden' });
     await expect(result).rejects.toMatchObject({ reason: 'approval_required' });
+    expect(asked).toHaveBeenCalledOnce();
+  });
+
+  it('opens a shift at the till on shift_required, then sends the sale again', async () => {
+    const asked = vi.spyOn(TestBed.inject(OpenShiftService), 'ask').mockResolvedValue(true);
+    const result = api.post<{ number: string }>('/sales', {});
+    http
+      .expectOne('/api/v1/sales')
+      .flush(
+        { status: 409, reason: 'shift_required', detail: 'Open a till shift first.' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    const again = await vi.waitFor(() => http.expectOne('/api/v1/sales'));
+    again.flush({ success: true, data: { number: 'S-1' } });
+    expect(await result).toEqual({ number: 'S-1' });
     expect(asked).toHaveBeenCalledOnce();
   });
 

@@ -106,4 +106,12 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'transfer.shortNote': 'Nini kilitokea kwa vipande vilivyokosekana?',
   'transfer.shortHint': 'Vipande {{units}} vimepungua. Hasara kubwa inahitaji idhini ya meneja.',
   'controlled.noLonger': 'haidhibitiwi tena',
+  'openShift.title': 'Fungua zamu yako',
+  'openShift.text':
+    'Duka hili linaunganisha fedha za kila droo na keshia. Hesabu fedha zilizo kwenye droo ili kuanza zamu yako; kisha mauzo yanaendelea.',
+  'openShift.float': 'Fedha zilizo kwenye droo',
+  'openShift.hintLast':
+    'Zilizohesabiwa wakati wa kufunga mwisho: {{amount}}. Badilisha kama droo ina kiasi kingine.',
+  'openShift.hintNone': 'Andika fedha zilizo kwenye droo, au 0.',
+  'openShift.open': 'Fungua zamu na uendelee',
 };

@@ -10,6 +10,7 @@ import { Injector, inject } from '@angular/core';
 import { Observable, catchError, from, map, switchMap, throwError } from 'rxjs';
 import { ConfirmIdentityService } from '../session/confirm-identity';
 import { ManagerApprovalService } from '../session/manager-approval';
+import { OpenShiftService } from '../session/open-shift';
 import { Translations } from '../i18n/translations.store';
 import { SessionStore } from '../session/session.store';
 import { SignOutService } from '../session/sign-out';
@@ -22,6 +23,8 @@ export const SILENT = new HttpContextToken<boolean>(() => false);
 export const NO_BRANCH = new HttpContextToken<boolean>(() => false);
 /** Already sent again after the person confirmed their password: do not ask a second time. */
 const CONFIRMED = new HttpContextToken<boolean>(() => false);
+/** A shift was opened at the till for this request: do not ask again. */
+const SHIFT_OPENED = new HttpContextToken<boolean>(() => false);
 /** The actions a manager already approved for this request: never asked for twice. */
 const APPROVED = new HttpContextToken<readonly string[]>(() => []);
 
@@ -115,6 +118,16 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
             switchMap((confirmed) =>
               confirmed
                 ? send(attempt.clone({ context: attempt.context.set(CONFIRMED, true) }))
+                : throwError(() => error),
+            ),
+          );
+        }
+        if (error.reason === 'shift_required' && !attempt.context.get(SHIFT_OPENED)) {
+          // The pharmacy requires an open shift: the cashier opens one here, then it goes again.
+          return from(injector.get(OpenShiftService).ask()).pipe(
+            switchMap((opened) =>
+              opened
+                ? send(attempt.clone({ context: attempt.context.set(SHIFT_OPENED, true) }))
                 : throwError(() => error),
             ),
           );
