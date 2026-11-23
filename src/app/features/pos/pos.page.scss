@@ -728,3 +728,102 @@ kbd {
   color: var(--red, #c0262d);
   font-weight: 600;
 }
+
+/* The tenders, as one block the unconfirmed-checkout lock can make inert. */
+.pay-edit {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  min-width: 0;
+}
+/* A cart whose checkout is unconfirmed: shown as sent, not editable. */
+.locked {
+  opacity: 0.6;
+}
+/* Lasting messages in the Payment card: a problem, unpriced lines, an unconfirmed checkout. */
+.pay-alert {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  border: 1px solid currentColor;
+}
+.pay-alert .grow {
+  flex: 1;
+  min-width: 0;
+}
+.pay-alert p {
+  margin: 4px 0;
+  color: var(--text);
+}
+.pay-alert small {
+  color: var(--text);
+}
+.pay-alert:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.unpriced-list {
+  list-style: none;
+  margin: 6px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.unpriced-list li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text);
+}
+.unpriced-list .grow {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pending-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 8px;
+}
+.lookup {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 10px;
+}
+.lookup-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--text);
+  text-decoration: none;
+}
+.lookup-row .mono,
+.lookup-row .muted:not(.grow) {
+  white-space: nowrap;
+}
+.lookup-row {
+  flex-wrap: wrap;
+}
+.lookup-row.match {
+  outline: 1px solid var(--green);
+}
+.lookup-row .grow {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.lookup .btn {
+  align-self: flex-start;
+  margin-top: 4px;
+}

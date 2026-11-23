@@ -1,6 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Api } from '../api/api.service';
+import { clearParkedOf } from '../../features/pos/parked';
 import { usableReturnUrl } from './guards';
 import { LeaveGuard } from './leave-guard';
 import { SESSION_STORAGE_KEY, SessionStore } from './session.store';
@@ -52,6 +53,8 @@ export class SignOutService {
           .catch(() => undefined);
       }
       const returnUrl = reason === 'user' ? null : usableReturnUrl(this.router.url);
+      // Parked sales go with the session (an unconfirmed checkout stays, with its key).
+      clearParkedOf(storage(), this.session.user()?.uid ?? '');
       this.session.signOut();
       await this.router.navigate(['/sign-in'], {
         queryParams: {
@@ -63,5 +66,13 @@ export class SignOutService {
     } finally {
       this.ending = false;
     }
+  }
+}
+
+function storage(): Storage | null {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
   }
 }

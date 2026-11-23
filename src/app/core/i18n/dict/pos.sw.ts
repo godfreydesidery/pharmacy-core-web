@@ -72,7 +72,7 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.outOfStock': 'Imeisha',
   'pos.parkThisSale': 'Weka mauzo haya kando',
   'pos.parkedHint':
-    'Mauzo yaliyowekwa kando kwenye kaunta hii. Ukirudisha moja, yaliyo kwenye skrini yanawekwa kando badala yake.',
+    'Mauzo yaliyowekwa kando kwenye kaunta hii, yanahifadhiwa kwa saa 12. Ukirudisha moja, yaliyo kwenye skrini yanawekwa kando badala yake.',
   'pos.parkedSales': 'Orodha ya mauzo',
   'pos.payment': 'Malipo',
   'pos.price': 'Bei',
@@ -113,6 +113,41 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.walkInNote':
     'Mteja wa kawaida. Tafuta hapo juu kumuunganisha kwa mkopo, bima au historia yake.',
   'pos.vatIncluded': 'VAT imejumuishwa',
-  'pos.saleUncertain':
-    'Mauzo hayajapata jibu la uhakika na huenda yamekamilika. Bonyeza Kamilisha mauzo tena: kama yalikamilika utapata risiti yake, na hayatozwi mara mbili.',
+  'pos.statusUnconfirmed': 'Haijathibitishwa',
+  'pos.checkoutFailed': 'Mauzo hayajakamilika.',
+  'pos.dismiss': 'Funga',
+  'pos.unpricedTitle': 'Bidhaa hizi hazina bei ya {{plan}}',
+  'pos.unpricedHint':
+    'Mauzo hayawezi kukamilika hadi kila moja iondolewe au mpango mwingine wa bei uchaguliwe.',
+  'pos.unpricedBlock':
+    'Baadhi ya bidhaa hazina bei ya {{plan}}. Ziondoe au chagua mpango mwingine wa bei.',
+  'pos.changePlan': 'Badilisha mpango wa bei',
+  'pos.removeNamed': 'Ondoa {{name}}',
+  'pos.customerAttached': 'Mteja ameunganishwa',
+  'pos.parkedCustomerGone': 'Mteja wa mauzo haya hakupatikana; sasa ni mauzo ya mteja wa kawaida.',
+  'pos.parkedItemsGone': 'Bidhaa {{count}} za mauzo haya haziuzwi tena hapa na zimeachwa.',
+  'pos.uncertain.title': 'Hatukuweza kuthibitisha mauzo haya',
+  'pos.uncertain.text':
+    'Huenda yamekamilika. Kikapu kimefungwa ili yasitozwe mara mbili. Kagua tena kunatuma mauzo yaleyale kwa ufunguo uleule: kama yalikamilika utapata risiti yake, kama hayakukamilika yanakamilishwa sasa.',
+  'pos.uncertain.timeout': 'Seva haikujibu kwa wakati.',
+  'pos.uncertain.network': 'Seva haikufikiwa.',
+  'pos.uncertain.server': 'Seva ilipata tatizo wakati yakirekodiwa.',
+  'pos.uncertain.checkAgain': 'Kagua tena',
+  'pos.uncertain.checking': 'Inakagua…',
+  'pos.uncertain.lookUp': 'Yatafute',
+  'pos.uncertain.lookupHint': 'Mauzo ya tawi hili tangu dakika {{minutes}} kabla hayajatumwa:',
+  'pos.uncertain.sameTotal': 'Jumla ileile',
+  'pos.uncertain.noneFound': 'Hakuna mauzo yaliyorekodiwa katika muda huo.',
+  'pos.uncertain.noSalesView':
+    'Huwezi kufungua historia ya mauzo. Muombe meneja ayatafute, au bonyeza Kagua tena.',
+  'pos.uncertain.clear': 'Safisha kaunta',
+  'pos.uncertain.clearTitle': 'Ufute mauzo haya yasiyothibitishwa?',
+  'pos.uncertain.clearText':
+    'Fanya hivi tu baada ya kuyapata kwenye historia ya mauzo, au ukiwa na uhakika hayakurekodiwa. Kama yalirekodiwa na ukayaingiza tena, mteja atatozwa mara mbili.',
+  'pos.uncertain.clearConfirm': 'Safisha kaunta',
+  'pos.uncertain.stay': 'Kagua mauzo yasiyothibitishwa kabla ya kuondoka kwenye kaunta.',
+  'pos.uncertain.discardText':
+    'Mauzo haya hayakuthibitishwa kamwe. Yafute tu baada ya kuyapata kwenye historia ya mauzo, au ukiwa na uhakika hayakurekodiwa.',
+  'pos.parkedNotLoaded':
+    'Mauzo haya hayakuweza kupakiwa. Angalia mtandao kisha ujaribu tena; yanabaki kwenye Orodha ya mauzo.',
 };

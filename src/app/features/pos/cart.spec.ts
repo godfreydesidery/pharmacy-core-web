@@ -4,11 +4,15 @@ import {
   available,
   cartTotals,
   changeDue,
+  coveringAmount,
+  exactTender,
+  fromMinor,
   needsCustomer,
   needsPrescription,
   paidTotal,
   setQuantity,
   splitPayment,
+  toMinor,
 } from './cart';
 
 function till(code: string, kind: TillMethod['kind']): TillMethod {
@@ -171,5 +175,63 @@ describe('prices that include VAT', () => {
 
   it('adds the VAT on top when prices exclude it, as before', () => {
     expect(cartTotals([{ product: lotion, quantity: 1 }], 0).total).toBe(4177.2);
+  });
+});
+
+describe('Exact, in whole minor units', () => {
+  const cash = (amount: number) => ({ method: 'CASH' as const, amount, reference: null });
+
+  it('turns amounts into cents without float error', () => {
+    expect(toMinor(10.075, 2)).toBe(1008); // 1007.4999999999999 in floating point
+    expect(toMinor(3.34 * 3, 2)).toBe(1002); // 10.020000000000001
+    expect(toMinor(10.075, 3)).toBe(10075);
+    expect(toMinor(0.1 + 0.2, 2)).toBe(30);
+    expect(fromMinor(1002, 2)).toBe(10.02);
+  });
+
+  it('is the total itself, never a cent more', () => {
+    expect(exactTender(3.34 * 3, [cash(0)], 2)).toBe(10.02);
+    expect(exactTender(1.15 * 3, [cash(0)], 2)).toBe(3.45); // 3.4499999999999997
+    // The old way: Math.ceil on the float, a cent too much for 1.10, 2.20, 0.07 and 131 more.
+    expect(Math.ceil(1.1 * 100) / 100).toBe(1.11);
+    expect(exactTender(1.1, [cash(0)], 2)).toBe(1.1);
+    expect(exactTender(0.07, [cash(0)], 2)).toBe(0.07);
+    expect(exactTender(10.075, [cash(0)], 2)).toBe(10.08);
+    expect(exactTender(10.075, [cash(0)], 3, 3)).toBe(10.075);
+    expect(exactTender(1300, [cash(0)], 2)).toBe(1300);
+  });
+
+  it('works out every total with cents from 0.01 to 99.99 exactly', () => {
+    for (let cents = 1; cents < 10_000; cents++) {
+      const total = cents / 100;
+      expect(exactTender(total, [cash(0)], 2)).toBe(total);
+    }
+  });
+
+  it('takes the other payments off before the first', () => {
+    const payments = [cash(0), { method: 'CARD' as const, amount: 3.34, reference: null }];
+    expect(exactTender(10.02, payments, 2)).toBe(6.68);
+    expect(exactTender(3, payments, 2)).toBe(0); // already covered: nothing, not a negative
+  });
+
+  it('a foreign first payment covers what is due at its rate, rounding up to its cent', () => {
+    const usd = {
+      method: 'CASH' as const,
+      amount: 0,
+      reference: null,
+      currency: 'USD',
+      exchangeRate: 2650,
+    };
+    const amount = exactTender(10_000, [usd], 2);
+    expect(amount).toBe(3.78); // 3.77 USD is 9,990.50 TZS: short
+    expect(toMinor(amount * 2650, 2)).toBeGreaterThanOrEqual(1_000_000);
+    expect(toMinor(3.77 * 2650, 2)).toBeLessThan(1_000_000);
+  });
+
+  it('a switch of currency keeps the base value covered with the fewest units', () => {
+    expect(coveringAmount(5300, 2650, 2)).toBe(2);
+    expect(coveringAmount(5300.01, 2650, 2)).toBe(2.01);
+    expect(coveringAmount(1000, 0.7, 0)).toBe(1429); // 1428 × 0.7 is 999.60: short
+    expect(coveringAmount(10.02, null, 2)).toBe(10.02);
   });
 });
