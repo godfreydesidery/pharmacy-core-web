@@ -14,6 +14,18 @@ export interface ProblemDetail {
   retryAfterSeconds?: number;
 }
 
+const STANDARD_MEMBERS = new Set([
+  'type',
+  'title',
+  'status',
+  'detail',
+  'instance',
+  'reason',
+  'field',
+  'correlationId',
+  'retryAfterSeconds',
+]);
+
 export class ApiError extends Error {
   constructor(
     readonly status: number,
@@ -22,6 +34,8 @@ export class ApiError extends Error {
     readonly field: string | null = null,
     readonly correlationId: string | null = null,
     readonly retryAfterSeconds: number | null = null,
+    /** The problem's other members, such as `action` and `amount` on `approval_required`. */
+    readonly extras: Readonly<Record<string, unknown>> = {},
   ) {
     super(message);
     this.name = 'ApiError';
@@ -46,6 +60,12 @@ export class ApiError extends Error {
       }
       const body = error.error as Partial<ProblemDetail> | string | null;
       if (body && typeof body === 'object') {
+        const extras: Record<string, unknown> = {};
+        for (const [key, value] of Object.entries(body)) {
+          if (!STANDARD_MEMBERS.has(key)) {
+            extras[key] = value;
+          }
+        }
         return new ApiError(
           body.status ?? error.status,
           body.reason ?? 'error',
@@ -53,6 +73,7 @@ export class ApiError extends Error {
           body.field ?? null,
           body.correlationId ?? null,
           body.retryAfterSeconds ?? null,
+          extras,
         );
       }
       return new ApiError(error.status, 'error', error.statusText || 'Request failed');
@@ -88,5 +109,6 @@ export function localizeError(
     error.field,
     error.correlationId,
     error.retryAfterSeconds,
+    error.extras,
   );
 }

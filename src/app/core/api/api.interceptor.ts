@@ -1,8 +1,15 @@
 import { Router } from '@angular/router';
-import { HttpContextToken, HttpEvent, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
+import {
+  HttpContextToken,
+  HttpEvent,
+  HttpInterceptorFn,
+  HttpRequest,
+  HttpResponse,
+} from '@angular/common/http';
 import { Injector, inject } from '@angular/core';
-import { catchError, from, map, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, from, map, switchMap, throwError } from 'rxjs';
 import { ConfirmIdentityService } from '../session/confirm-identity';
+import { ManagerApprovalService } from '../session/manager-approval';
 import { Translations } from '../i18n/translations.store';
 import { SessionStore } from '../session/session.store';
 import { SignOutService } from '../session/sign-out';
@@ -17,6 +24,9 @@ export const NO_BRANCH = new HttpContextToken<boolean>(() => false);
 const CONFIRMED = new HttpContextToken<boolean>(() => false);
 
 export const API_PREFIX = '/api/';
+
+/** A manager's single-use approval of the request (see ManagerApprovalService). */
+const APPROVAL_HEADER = 'X-Approval';
 
 /**
  * The money-moving POSTs the API keeps idempotent (IETF Idempotency-Key header): each request
@@ -80,53 +90,64 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
     headers = headers.set('X-Branch-Id', branch.uid);
   }
 
-  return next(request.clone({ headers })).pipe(
-    map((event: HttpEvent<unknown>) =>
-      event instanceof HttpResponse && isEnvelope(event.body)
-        ? event.clone({ body: event.body.data })
-        : event,
-    ),
-    catchError((failure: unknown) => {
-      const error = localizeError(
-        ApiError.from(failure),
-        translations.lang(),
-        (key, params, fallback) => translations.t(key, params, fallback),
-      );
-      if (error.reason === 'reauthentication_required' && !request.context.get(CONFIRMED)) {
-        // A sensitive account change after a while: ask for the password, then send it again.
-        return from(injector.get(ConfirmIdentityService).ask()).pipe(
-          switchMap((confirmed) =>
-            confirmed
-              ? next(
-                  request.clone({ headers, context: request.context.set(CONFIRMED, true) }),
-                ).pipe(
-                  map((event: HttpEvent<unknown>) =>
-                    event instanceof HttpResponse && isEnvelope(event.body)
-                      ? event.clone({ body: event.body.data })
-                      : event,
-                  ),
-                )
-              : throwError(() => error),
-          ),
-        );
-      }
-      const signingIn = request.url.includes('/auth/sign-in');
-      const signingOut = request.url.includes('/auth/sign-out');
-      if (error.status === 401 && !signingIn) {
-        if (!signingOut) {
-          // Looked up here, not above: the service itself sends requests through this interceptor.
-          void injector
-            .get(SignOutService)
-            .end(error.reason === 'session_idle' ? 'idle' : 'expired');
-        }
-      } else if (error.reason === 'two_factor_required_by_pharmacy') {
-        // G16: this pharmacy requires a second factor; set one up, then come back.
-        toasts.error(error.message);
-        void injector.get(Router).navigateByUrl('/account?setup=2fa');
-      } else if (!request.context.get(SILENT)) {
-        toasts.error(error.message);
-      }
-      return throwError(() => error);
-    }),
+  const unwrap = map((event: HttpEvent<unknown>) =>
+    event instanceof HttpResponse && isEnvelope(event.body)
+      ? event.clone({ body: event.body.data })
+      : event,
   );
+
+  // Sends the request; after "Confirm it is you" or a manager's approval it is sent again through
+  // here, so a refusal of the second attempt is handled (and shown) like any other.
+  const send = (attempt: HttpRequest<unknown>): Observable<HttpEvent<unknown>> =>
+    next(attempt).pipe(
+      unwrap,
+      catchError((failure: unknown) => {
+        const error = localizeError(
+          ApiError.from(failure),
+          translations.lang(),
+          (key, params, fallback) => translations.t(key, params, fallback),
+        );
+        if (error.reason === 'reauthentication_required' && !attempt.context.get(CONFIRMED)) {
+          // A sensitive account change after a while: ask for the password, then send it again.
+          return from(injector.get(ConfirmIdentityService).ask()).pipe(
+            switchMap((confirmed) =>
+              confirmed
+                ? send(attempt.clone({ context: attempt.context.set(CONFIRMED, true) }))
+                : throwError(() => error),
+            ),
+          );
+        }
+        if (error.reason === 'approval_required' && !attempt.headers.has(APPROVAL_HEADER)) {
+          // Above the pharmacy's limit: a manager approves on this screen, then it goes again.
+          const action = String(error.extras['action'] ?? '');
+          const amount = Number(error.extras['amount'] ?? 0);
+          return from(injector.get(ManagerApprovalService).ask({ action, amount })).pipe(
+            switchMap((token) =>
+              token
+                ? send(attempt.clone({ headers: attempt.headers.set(APPROVAL_HEADER, token) }))
+                : throwError(() => error),
+            ),
+          );
+        }
+        const signingIn = attempt.url.includes('/auth/sign-in');
+        const signingOut = attempt.url.includes('/auth/sign-out');
+        if (error.status === 401 && !signingIn) {
+          if (!signingOut) {
+            // Looked up here, not above: the service itself sends requests through this interceptor.
+            void injector
+              .get(SignOutService)
+              .end(error.reason === 'session_idle' ? 'idle' : 'expired');
+          }
+        } else if (error.reason === 'two_factor_required_by_pharmacy') {
+          // G16: this pharmacy requires a second factor; set one up, then come back.
+          toasts.error(error.message);
+          void injector.get(Router).navigateByUrl('/account?setup=2fa');
+        } else if (!attempt.context.get(SILENT)) {
+          toasts.error(error.message);
+        }
+        return throwError(() => error);
+      }),
+    );
+
+  return send(request.clone({ headers }));
 };

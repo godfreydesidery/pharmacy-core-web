@@ -153,6 +153,12 @@ export interface Settings {
   idleMinutes: number;
   /** Everyone who works here needs an authenticator app or a passkey (G16). */
   requireTwoFactor?: boolean;
+  /** Above this amount (base currency) a refund, write-off, voucher or shift difference needs a manager. */
+  approvalLimit: number;
+  /** Days after a sale its goods may come back without a manager (0 to 365). */
+  returnWindowDays: number;
+  /** A cashier opens a till shift before selling, refunding or issuing a voucher. */
+  requireOpenShift: boolean;
 }
 
 /** `POST /auth/activity`: the session's inactivity limit after the person used the app. */

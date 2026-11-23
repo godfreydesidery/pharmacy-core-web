@@ -1,0 +1,40 @@
+/** Idhini ya meneja kwenye skrini hiyo hiyo, na udhibiti wa duka la dawa katika Mipangilio. */
+export const APPROVALS_SW: Readonly<Record<string, string>> = {
+  'approval.title': 'Idhini ya meneja',
+  'approval.text': 'Meneja lazima aidhinishe {{action}}. Mwombe meneja aingie hapa.',
+  'approval.amount': 'Kiasi',
+  'approval.login': 'Barua pepe au jina la kuingia la meneja',
+  'approval.password': 'Nenosiri la meneja',
+  'approval.hint':
+    'Ni mtu mwenye ruhusa ya kuidhinisha, si wewe, anayeweza kuidhinisha. Inatumika mara moja.',
+  'approval.approve': 'Idhinisha',
+  'approval.action.REFUND': 'marejesho haya ya fedha',
+  'approval.action.LATE_RETURN': 'kurudisha bidhaa baada ya muda wa kurudisha',
+  'approval.action.STOCK_WRITE_OFF': 'kufuta bidhaa',
+  'approval.action.CONTROLLED_WRITE_OFF': 'kufuta dawa inayodhibitiwa',
+  'approval.action.LATE_OPENING_STOCK': 'bidhaa za mwanzo katika tawi lililokwisha kuuza',
+  'approval.action.VOUCHER': 'vocha hii',
+  'approval.action.DEEP_DISCOUNT': 'punguzo zaidi ya kiwango cha juu',
+  'approval.action.DEEP_PROMOTION': 'ofa yenye punguzo zaidi ya kiwango cha juu',
+  'approval.action.PERIOD_UNLOCK': 'kufungua kipindi kilichofungwa cha hesabu',
+  'approval.action.SCHEDULE_CHANGE': 'kubadilisha daraja la utoaji wa dawa',
+  'approval.action.CREDIT_WRITE_OFF': 'kufuta deni la mteja',
+  'approval.action.SHIFT_VARIANCE': 'kufunga zamu hii yenye tofauti ya fedha',
+  'approval.action.TRANSFER_SHORTFALL': 'upungufu wa uhamisho',
+  'controls.title': 'Idhini na udhibiti',
+  'controls.approvalLimit': 'Kiwango cha idhini',
+  'controls.approvalLimitHint':
+    'Zaidi ya kiasi hiki, marejesho ya fedha, kufuta bidhaa, vocha au tofauti ya fedha wakati wa kufunga zamu vinahitaji meneja. Dawa zinazodhibitiwa, marejesho ya kuchelewa, punguzo kubwa, kufungua hesabu na kufuta madeni huhitaji meneja kila mara.',
+  'controls.returnWindow': 'Muda wa kurudisha (siku)',
+  'controls.returnWindowHint':
+    'Bidhaa zinaweza kurudishwa ndani ya siku hizi baada ya mauzo; baadaye zinahitaji meneja.',
+  'controls.requireOpenShift': 'Keshia afungue zamu kabla ya kuuza',
+  'controls.requireOpenShiftHint':
+    'Mauzo, marejesho na vocha vinahitaji zamu iliyo wazi, ili fedha za kila droo ziwe na mwenyewe.',
+  'errors.approval_required': 'Meneja lazima aidhinishe hili.',
+  'errors.approval_invalid': 'Idhini hiyo imeisha muda, imetumika au hailingani. Omba tena.',
+  'errors.approver_is_requester': 'Mtu mwingine lazima aidhinishe: huwezi kuidhinisha ombi lako.',
+  'errors.not_an_approver': 'Mtu huyo hana ruhusa ya kuidhinisha hili hapa.',
+  'errors.invalid_return_window': 'Muda wa kurudisha lazima uwe kati ya siku 0 na 365.',
+  'errors.shift_required': 'Fungua zamu ya droo kwanza.',
+};

@@ -4,9 +4,10 @@
 
 /**
  * Till shifts: opening a shift with a float, closing it with a cash count and Z-report (the POS
- * strip and Sales → Shifts). Off until the till is in use; selling never needed an open shift.
+ * strip and Sales → Shifts). On since Batch 4: a pharmacy may require an open shift to sell
+ * (Settings → Approvals and controls), on for new pharmacies.
  */
-export const TILL_SHIFTS_ENABLED = false;
+export const TILL_SHIFTS_ENABLED = true;
 
 /** The POS payment card's quick cash amounts (1,000, 2,000 …); Exact always shows. */
 export const QUICK_CASH_AMOUNTS_ENABLED = false;
