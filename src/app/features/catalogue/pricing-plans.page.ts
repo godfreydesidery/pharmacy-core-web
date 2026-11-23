@@ -58,6 +58,13 @@ interface PlanDraft {
  * Excel, bulk update, its sales, switch it off). A plan that blocks shows how many medicines it
  * does not price, as a list to add from, not as rows.
  */
+/** The plan buttons' filter, outliving the page while the app is open. */
+const PLAN_FILTER = {
+  query: signal(''),
+  kind: signal<'all' | 'type' | 'customer' | 'insurer' | 'till'>('all'),
+  inactive: signal(false),
+};
+
 @Component({
   selector: 'app-pricing-plans',
   imports: [...SHARED, LookupComponent],
@@ -73,30 +80,28 @@ interface PlanDraft {
         </div>
 
         <div class="plan-filter" role="search">
-          <div class="field grow">
-            <label for="plan-search">{{ 'plans.findPlan' | t }}</label>
+          <label class="search grow">
+            <app-icon name="search" [size]="16" />
             <input
-              id="plan-search"
               type="search"
               data-testid="plan-search"
+              [attr.aria-label]="'plans.findPlan' | t"
               [placeholder]="'plans.searchHint' | t"
               [value]="planQuery()"
               (input)="planQuery.set($any($event.target).value)"
             />
-          </div>
-          <div class="field">
-            <label for="plan-kind">{{ 'plans.whoFor' | t }}</label>
-            <select
-              id="plan-kind"
-              data-testid="plan-kind"
-              [value]="planKind()"
-              (change)="planKind.set($any($event.target).value)"
-            >
-              @for (k of planKinds; track k) {
-                <option [value]="k">{{ 'plans.kind.' + k | t }}</option>
-              }
-            </select>
-          </div>
+          </label>
+          <select
+            class="select kind"
+            data-testid="plan-kind"
+            [attr.aria-label]="'plans.whoFor' | t"
+            [value]="planKind()"
+            (change)="planKind.set($any($event.target).value)"
+          >
+            @for (k of planKinds; track k) {
+              <option [value]="k">{{ 'plans.kind.' + k | t }}</option>
+            }
+          </select>
           <label class="check">
             <input
               type="checkbox"
@@ -159,6 +164,9 @@ interface PlanDraft {
             </a>
             <h1>{{ cardName() }}</h1>
           </div>
+          <a class="btn" routerLink="/catalogue/pricing-plans" data-testid="plans-all">
+            <app-icon name="grid" [size]="16" /> {{ 'plans.allPlans' | t }}
+          </a>
         </div>
         @if (cards.value() && !card()) {
           <div class="card">
@@ -768,28 +776,16 @@ interface PlanDraft {
     .plan-filter {
       display: flex;
       flex-wrap: wrap;
-      align-items: end;
-      gap: 12px;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 6px;
     }
-    .plan-filter .field {
-      display: grid;
-      grid-template-rows: auto 38px;
-      gap: 4px;
-      min-width: 180px;
-    }
-    .plan-filter input,
-    .plan-filter select {
-      height: 38px;
-    }
     .plan-filter .grow {
-      flex: 1 1 260px;
+      flex: 1 1 280px;
     }
-    .plan-filter .check {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      padding-bottom: 8px;
+    .plan-filter .kind {
+      width: auto;
+      min-width: 200px;
     }
     a.plan-card {
       color: inherit;
@@ -953,9 +949,10 @@ export default class PricingPlansPage {
   );
   /** The page of buttons: filter by text, by who the plan is for, and inactive ones. */
   protected readonly planKinds = ['all', 'type', 'customer', 'insurer', 'till'] as const;
-  protected readonly planQuery = signal('');
-  protected readonly planKind = signal<(typeof this.planKinds)[number]>('all');
-  protected readonly showInactive = signal(false);
+  // Kept while the app is open, so coming back from a plan shows the same filtered buttons.
+  protected readonly planQuery = PLAN_FILTER.query;
+  protected readonly planKind = PLAN_FILTER.kind;
+  protected readonly showInactive = PLAN_FILTER.inactive;
   protected readonly shownCards = computed(() => {
     const words = this.planQuery().trim().toLowerCase().split(/\s+/).filter(Boolean);
     const kind = this.planKind();

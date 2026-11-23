@@ -80,6 +80,7 @@ export const PRICING_EN: Readonly<Record<string, string>> = {
   'plans.title': 'Pricing plans',
   'plans.sub':
     "Normal Sale is each medicine's own selling price; every other plan has its own prices.",
+  'plans.allPlans': 'All pricing plans',
   'plans.choose': 'Choose a plan to see and set its prices.',
   'plans.notFound': 'This plan does not exist any more.',
   'plans.findPlan': 'Find a plan',
