@@ -84,8 +84,9 @@ const security = {
   'content-security-policy': [
     "default-src 'self'",
     "script-src 'self'",
-    "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
-    "font-src 'self' https://fonts.gstatic.com",
+    // Fonts are served from this origin (self-hosted, no Google request carries the visitor's IP).
+    "style-src 'self' 'unsafe-inline'",
+    "font-src 'self'",
     `img-src 'self' data: blob:${filesOrigin}`,
     `connect-src 'self'${filesOrigin}`,
     "frame-src 'self'",
