@@ -1,6 +1,13 @@
 /** Message providers: the platform's default accounts and a pharmacy's own. */
 export const PROVIDERS_EN: Readonly<Record<string, string>> = {
   'nav.platform-providers': 'Message providers',
+  'nav.platform.message-providers.email': 'Email',
+  'nav.platform.message-providers.sms': 'SMS',
+  'nav.platform.message-providers.whatsapp': 'WhatsApp',
+  'providers.title.EMAIL': 'Email providers',
+  'providers.title.SMS': 'SMS providers',
+  'providers.title.WHATSAPP': 'WhatsApp providers',
+  'providers.col.status': 'Status',
   'providers.platformTitle': 'Message providers',
   'providers.platformSub':
     'The email, SMS and WhatsApp accounts every pharmacy sends through unless it connects its own. Secrets are stored encrypted and never shown again.',

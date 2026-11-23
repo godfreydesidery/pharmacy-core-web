@@ -1,6 +1,13 @@
 /** Watoa huduma za ujumbe: akaunti za jukwaa na akaunti binafsi za duka. */
 export const PROVIDERS_SW: Readonly<Record<string, string>> = {
   'nav.platform-providers': 'Watoa huduma za ujumbe',
+  'nav.platform.message-providers.email': 'Barua pepe',
+  'nav.platform.message-providers.sms': 'SMS',
+  'nav.platform.message-providers.whatsapp': 'WhatsApp',
+  'providers.title.EMAIL': 'Watoa huduma wa barua pepe',
+  'providers.title.SMS': 'Watoa huduma wa SMS',
+  'providers.title.WHATSAPP': 'Watoa huduma wa WhatsApp',
+  'providers.col.status': 'Hali',
   'providers.platformTitle': 'Watoa huduma za ujumbe',
   'providers.platformSub':
     'Akaunti za barua pepe, SMS na WhatsApp ambazo kila duka hutumia isipokuwa liunganishe akaunti yake. Siri huhifadhiwa zikiwa zimesimbwa na haziwezi kuonyeshwa tena.',

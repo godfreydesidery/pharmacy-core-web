@@ -29,6 +29,7 @@ import { ThemeService } from '../ui/theme.service';
 import { ToastService } from '../ui/toast.service';
 import { downloadFrom } from '../ui/export.component';
 import { LogoComponent } from './logo.component';
+import { NgTemplateOutlet } from '@angular/common';
 import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
 
 @Component({
@@ -42,6 +43,7 @@ import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
     TranslatePipe,
     LanguageSwitchComponent,
     BellComponent,
+    NgTemplateOutlet,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './shell.component.html',
@@ -177,7 +179,7 @@ export class ShellComponent {
     });
     effect(() => {
       const url = this.url();
-      const group = TENANT_NAV.find((item) =>
+      const group = [...PLATFORM_NAV, ...TENANT_NAV].find((item) =>
         item.children?.some((child) => url.startsWith(child.path)),
       );
       // One group open at a time: the current page's (none for a page outside the groups).

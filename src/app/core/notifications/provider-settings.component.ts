@@ -8,7 +8,7 @@ import { SHARED } from '../shared';
 import { ConfirmService } from '../ui/confirm';
 import { ToastService } from '../ui/toast.service';
 
-type ProviderChannel = 'EMAIL' | 'SMS' | 'WHATSAPP';
+export type ProviderChannel = 'EMAIL' | 'SMS' | 'WHATSAPP';
 
 interface FieldView {
   key: string;
@@ -108,177 +108,164 @@ interface Editor {
       <app-empty [loading]="true" />
     }
     <div class="channels">
-      @for (c of views.value() ?? []; track c.channel) {
-        <section class="card card-pad stack" [attr.data-channel]="c.channel">
-          <div class="row between">
-            <h3>{{ 'providers.channel.' + c.channel | t }}</h3>
-            <button class="btn sm" type="button" [disabled]="busy()" (click)="startAdd(c)">
-              <app-icon name="plus" [size]="14" /> {{ 'providers.add' | t }}
-            </button>
-          </div>
-          <p class="muted small chain">
-            {{ 'providers.order' | t }}:
-            @for (label of c.chain; track $index; let last = $last) {
-              <span class="mono">{{ label }}</span>
-              @if (!last) {
-                <span class="arrow">→</span>
+      @for (c of shown(); track c.channel) {
+        <section class="card" [attr.data-channel]="c.channel">
+          <div class="card-pad stack head">
+            <div class="row bar">
+              @if (!channel()) {
+                <h3>{{ 'providers.channel.' + c.channel | t }}</h3>
+              } @else {
+                <span></span>
               }
-            }
-            ({{ 'providers.source.' + c.effectiveSource | t }})
-          </p>
-          @if (scope() === 'tenant' && c.mode === 'PLATFORM') {
-            <div class="notice tone-blue small">{{ 'providers.usingPlatform' | t }}</div>
-          }
-
-          @for (p of c.providers; track p.uid; let i = $index, first = $first, last = $last) {
-            <div class="provider" [class.off]="!p.active" data-testid="provider-row">
-              <div class="pos">{{ i + 1 }}</div>
-              <div class="grow">
-                <div class="title">
-                  <b>{{ p.name }}</b>
-                  <span class="muted small">
-                    {{ 'providers.provider.' + p.provider | t: null : p.provider }}
-                  </span>
-                </div>
-                <div class="badges">
-                  <span class="badge" [class.green]="p.configured" [class.amber]="!p.configured">
-                    {{ (p.configured ? 'providers.configured' : 'providers.incomplete') | t }}
-                  </span>
-                  @if (!p.active) {
-                    <span class="badge gray">{{ 'providers.off' | t }}</span>
-                  }
-                  @if (p.tripped) {
-                    <span class="badge red" [title]="'providers.trippedHint' | t">
-                      {{ 'providers.tripped' | t }}
-                    </span>
-                  }
-                </div>
-                @if (p.secretsUnreadable) {
-                  <p class="small text-red unreadable">{{ 'providers.secretsUnreadable' | t }}</p>
-                }
-                <div class="muted small">
-                  {{ 'providers.lastSent' | t }}: {{ p.lastSentAt ? (p.lastSentAt | when) : '—' }}
-                  @if (p.lastFailedAt) {
-                    ·
-                    <span class="text-red"
-                      >{{ 'providers.lastFailure' | t }}: {{ p.lastFailedAt | when }} —
-                      {{ p.lastError }}</span
-                    >
-                  }
-                </div>
-              </div>
-              <div class="tools">
-                <button
-                  class="icon-btn"
-                  type="button"
-                  [disabled]="busy() || first"
-                  [attr.aria-label]="'providers.up' | t"
-                  (click)="move(c, i, -1)"
-                >
-                  <app-icon class="flip" name="chevron" [size]="16" />
-                </button>
-                <button
-                  class="icon-btn"
-                  type="button"
-                  [disabled]="busy() || last"
-                  [attr.aria-label]="'providers.down' | t"
-                  (click)="move(c, i, 1)"
-                >
-                  <app-icon name="chevron" [size]="16" />
-                </button>
-                <button class="btn sm" type="button" [disabled]="busy()" (click)="toggle(p)">
-                  {{ (p.active ? 'providers.turnOff' : 'providers.turnOn') | t }}
-                </button>
-                <button class="btn sm" type="button" [disabled]="busy()" (click)="startEdit(p)">
-                  {{ 'providers.edit' | t }}
-                </button>
-                <button class="btn sm" type="button" [disabled]="busy()" (click)="test(c, p)">
-                  {{ 'providers.testOne' | t }}
-                </button>
-                <button class="btn sm danger" type="button" [disabled]="busy()" (click)="remove(p)">
-                  {{ 'providers.remove' | t }}
-                </button>
-              </div>
+              <button
+                class="btn primary sm"
+                type="button"
+                [disabled]="busy()"
+                (click)="startAdd(c)"
+              >
+                <app-icon name="plus" [size]="14" /> {{ 'providers.add' | t }}
+              </button>
             </div>
-          } @empty {
-            <p class="muted small">
-              {{ (scope() === 'tenant' ? 'providers.noneOwn' : 'providers.none') | t }}
+            <p class="muted small chain">
+              {{ 'providers.order' | t }}:
+              @for (label of c.chain; track $index; let last = $last) {
+                <span class="mono">{{ label }}</span>
+                @if (!last) {
+                  <span class="arrow">→</span>
+                }
+              }
+              ({{ 'providers.source.' + c.effectiveSource | t }})
             </p>
-          }
-
-          @if (editor(); as e) {
-            @if (e.channel === c.channel) {
-              <div class="editor stack" data-testid="provider-editor">
-                <h4>{{ (e.uid ? 'providers.editTitle' : 'providers.addTitle') | t }}</h4>
-                <div class="field">
-                  <label>{{ 'providers.name' | t }}</label>
-                  <input
-                    class="input"
-                    [placeholder]="'providers.namePlaceholder' | t"
-                    [value]="e.name"
-                    (input)="patch({ name: $any($event.target).value })"
-                  />
-                </div>
-                <div class="field">
-                  <label>{{ 'providers.provider' | t }}</label>
-                  <select
-                    class="select"
-                    [value]="e.provider"
-                    (change)="
-                      patch({ provider: $any($event.target).value, secrets: {}, saved: {} })
-                    "
-                  >
-                    @for (o of c.options; track o.code) {
-                      <option [value]="o.code" [selected]="o.code === e.provider">
-                        {{ 'providers.provider.' + o.code | t: null : o.code }}
-                      </option>
-                    }
-                  </select>
-                </div>
-                @for (f of fieldsOf(c, e.provider); track f.key) {
-                  <div class="field">
-                    <label>
-                      {{ 'providers.field.' + f.key | t: null : f.key }}
-                      @if (f.required) {
-                        <span class="text-red">*</span>
-                      }
-                    </label>
-                    @if (f.secret) {
-                      <input
-                        class="input mono"
-                        type="password"
-                        autocomplete="new-password"
-                        [placeholder]="
-                          e.saved[f.key] ? e.saved[f.key] + ' · ' + ('providers.keep' | t) : ''
-                        "
-                        [value]="e.secrets[f.key] ?? ''"
-                        (input)="e.secrets[f.key] = $any($event.target).value"
-                      />
-                    } @else {
-                      <input
-                        class="input"
-                        [value]="e.settings[f.key] ?? ''"
-                        (input)="e.settings[f.key] = $any($event.target).value"
-                      />
-                    }
-                  </div>
-                }
-                @if (failure()) {
-                  <div class="notice tone-red small">{{ failure() }}</div>
-                }
-                <div class="row" style="justify-content: flex-end; gap: 8px">
-                  <button class="btn" type="button" (click)="editor.set(null)">
-                    {{ 'providers.cancel' | t }}
-                  </button>
-                  <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
-                    {{ 'providers.save' | t }}
-                  </button>
-                </div>
-              </div>
+            @if (scope() === 'tenant' && c.mode === 'PLATFORM') {
+              <div class="notice tone-blue small">{{ 'providers.usingPlatform' | t }}</div>
             }
-          }
+          </div>
 
-          <div class="test">
+          <div class="table-wrap">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th class="num">#</th>
+                  <th>{{ 'providers.name' | t }}</th>
+                  <th>{{ 'providers.provider' | t }}</th>
+                  <th>{{ 'providers.col.status' | t }}</th>
+                  <th>{{ 'providers.lastSent' | t }}</th>
+                  <th>{{ 'providers.lastFailure' | t }}</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                @for (p of c.providers; track p.uid; let i = $index, first = $first, last = $last) {
+                  <tr [class.off]="!p.active" data-testid="provider-row">
+                    <td class="num">
+                      <span class="pos">{{ i + 1 }}</span>
+                    </td>
+                    <td>
+                      <b>{{ p.name }}</b>
+                      @if (p.secretsUnreadable) {
+                        <div class="small text-red">{{ 'providers.secretsUnreadable' | t }}</div>
+                      }
+                    </td>
+                    <td>{{ 'providers.provider.' + p.provider | t: null : p.provider }}</td>
+                    <td>
+                      <div class="badges">
+                        <span
+                          class="badge"
+                          [class.green]="p.configured"
+                          [class.amber]="!p.configured"
+                        >
+                          {{ (p.configured ? 'providers.configured' : 'providers.incomplete') | t }}
+                        </span>
+                        @if (!p.active) {
+                          <span class="badge gray">{{ 'providers.off' | t }}</span>
+                        }
+                        @if (p.tripped) {
+                          <span class="badge red" [title]="'providers.trippedHint' | t">
+                            {{ 'providers.tripped' | t }}
+                          </span>
+                        }
+                      </div>
+                    </td>
+                    <td class="muted nowrap">{{ p.lastSentAt ? (p.lastSentAt | when) : '—' }}</td>
+                    <td class="small">
+                      @if (p.lastFailedAt) {
+                        <span class="text-red">{{ p.lastFailedAt | when }}</span>
+                        <div class="muted error-text" [title]="p.lastError ?? ''">
+                          {{ p.lastError }}
+                        </div>
+                      } @else {
+                        <span class="muted">—</span>
+                      }
+                    </td>
+                    <td class="right">
+                      <div class="tools">
+                        <button
+                          class="icon-btn"
+                          type="button"
+                          [disabled]="busy() || first"
+                          [attr.aria-label]="'providers.up' | t"
+                          [title]="'providers.up' | t"
+                          (click)="move(c, i, -1)"
+                        >
+                          <app-icon class="flip" name="chevron" [size]="16" />
+                        </button>
+                        <button
+                          class="icon-btn"
+                          type="button"
+                          [disabled]="busy() || last"
+                          [attr.aria-label]="'providers.down' | t"
+                          [title]="'providers.down' | t"
+                          (click)="move(c, i, 1)"
+                        >
+                          <app-icon name="chevron" [size]="16" />
+                        </button>
+                        <button
+                          class="btn sm"
+                          type="button"
+                          [disabled]="busy()"
+                          (click)="toggle(p)"
+                        >
+                          {{ (p.active ? 'providers.turnOff' : 'providers.turnOn') | t }}
+                        </button>
+                        <button
+                          class="btn sm"
+                          type="button"
+                          [disabled]="busy()"
+                          (click)="startEdit(p)"
+                        >
+                          {{ 'providers.edit' | t }}
+                        </button>
+                        <button
+                          class="btn sm"
+                          type="button"
+                          [disabled]="busy()"
+                          (click)="test(c, p)"
+                        >
+                          {{ 'providers.testOne' | t }}
+                        </button>
+                        <button
+                          class="btn sm danger"
+                          type="button"
+                          [disabled]="busy()"
+                          (click)="remove(p)"
+                        >
+                          {{ 'providers.remove' | t }}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                } @empty {
+                  <tr>
+                    <td colspan="7" class="muted small empty-row">
+                      {{ (scope() === 'tenant' ? 'providers.noneOwn' : 'providers.none') | t }}
+                    </td>
+                  </tr>
+                }
+              </tbody>
+            </table>
+          </div>
+
+          <div class="card-pad test">
             <label>{{ 'providers.testTo' | t }}</label>
             <div class="row" style="gap: 8px">
               <input
@@ -305,18 +292,99 @@ interface Editor {
         </section>
       }
     </div>
+
+    <app-modal
+      [open]="!!editor()"
+      [title]="(editor()?.uid ? 'providers.editTitle' : 'providers.addTitle') | t"
+      (closed)="editor.set(null)"
+    >
+      @if (editor(); as e) {
+        <div class="stack" data-testid="provider-editor">
+          <div class="field">
+            <label>{{ 'providers.name' | t }}</label>
+            <input
+              class="input"
+              [placeholder]="'providers.namePlaceholder' | t"
+              [value]="e.name"
+              (input)="patch({ name: $any($event.target).value })"
+            />
+          </div>
+          <div class="field">
+            <label>{{ 'providers.provider' | t }}</label>
+            <select
+              class="select"
+              [value]="e.provider"
+              (change)="patch({ provider: $any($event.target).value, secrets: {}, saved: {} })"
+            >
+              @for (o of optionsOf(e.channel); track o.code) {
+                <option [value]="o.code" [selected]="o.code === e.provider">
+                  {{ 'providers.provider.' + o.code | t: null : o.code }}
+                </option>
+              }
+            </select>
+          </div>
+          @for (f of fieldsOf(e.channel, e.provider); track f.key) {
+            <div class="field">
+              <label>
+                {{ 'providers.field.' + f.key | t: null : f.key }}
+                @if (f.required) {
+                  <span class="text-red">*</span>
+                }
+              </label>
+              @if (f.secret) {
+                <input
+                  class="input mono"
+                  type="password"
+                  autocomplete="new-password"
+                  [placeholder]="
+                    e.saved[f.key] ? e.saved[f.key] + ' · ' + ('providers.keep' | t) : ''
+                  "
+                  [value]="e.secrets[f.key] ?? ''"
+                  (input)="e.secrets[f.key] = $any($event.target).value"
+                />
+              } @else {
+                <input
+                  class="input"
+                  [value]="e.settings[f.key] ?? ''"
+                  (input)="e.settings[f.key] = $any($event.target).value"
+                />
+              }
+            </div>
+          }
+          @if (failure()) {
+            <div class="notice tone-red small">{{ failure() }}</div>
+          }
+        </div>
+      }
+      <ng-container footer>
+        <button class="btn" type="button" (click)="editor.set(null)">
+          {{ 'providers.cancel' | t }}
+        </button>
+        <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
+          {{ 'providers.save' | t }}
+        </button>
+      </ng-container>
+    </app-modal>
   `,
   styles: `
     .channels {
       display: grid;
       gap: 16px;
-      max-width: 980px;
     }
     .usage {
       display: flex;
       flex-wrap: wrap;
       gap: 16px;
       align-items: center;
+    }
+    .bar {
+      justify-content: space-between;
+    }
+    .head {
+      padding-bottom: 8px;
+    }
+    .chain {
+      margin: 0;
     }
     .chain .mono {
       font-family: var(--mono);
@@ -329,60 +397,48 @@ interface Editor {
       display: inline-flex;
       transform: rotate(180deg);
     }
-    .provider {
-      display: flex;
-      gap: 12px;
-      align-items: flex-start;
-      padding: 10px 0;
-      border-top: 1px solid var(--border);
-    }
-    .provider.off .title b {
+    tr.off td b {
       color: var(--muted);
+    }
+    .num {
+      width: 40px;
     }
     .pos {
       width: 26px;
       height: 26px;
       border-radius: 50%;
-      display: grid;
+      display: inline-grid;
       place-items: center;
       background: var(--surface-2, var(--bg));
       font-weight: 700;
       font-size: 12.5px;
-      flex-shrink: 0;
-    }
-    .grow {
-      flex: 1;
-      min-width: 0;
-      display: grid;
-      gap: 4px;
-    }
-    .title {
-      display: flex;
-      gap: 8px;
-      align-items: baseline;
-      flex-wrap: wrap;
     }
     .badges {
       display: flex;
       gap: 6px;
       flex-wrap: wrap;
     }
+    .nowrap {
+      white-space: nowrap;
+    }
+    .error-text {
+      max-width: 260px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
     .tools {
       display: flex;
       gap: 6px;
-      flex-wrap: wrap;
       justify-content: flex-end;
-      max-width: 380px;
+      align-items: center;
     }
-    .editor {
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 12px;
-      background: var(--surface-2, var(--bg));
+    .empty-row {
+      text-align: center;
+      padding: 20px;
     }
     .test {
       border-top: 1px dashed var(--border);
-      padding-top: 10px;
       display: grid;
       gap: 6px;
     }
@@ -392,23 +448,13 @@ interface Editor {
     .text-red {
       color: var(--red);
     }
-    .unreadable {
-      margin: 0;
-    }
-    @media (max-width: 720px) {
-      .provider {
-        flex-wrap: wrap;
-      }
-      .tools {
-        max-width: none;
-        justify-content: flex-start;
-      }
-    }
   `,
 })
 export class ProviderSettingsComponent {
   /** platform: the list every pharmacy uses; tenant: the current pharmacy's own list. */
   readonly scope = input<'platform' | 'tenant'>('tenant');
+  /** Show only this channel's providers (null: every channel, one table each). */
+  readonly channel = input<ProviderChannel | null>(null);
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
@@ -429,8 +475,19 @@ export class ProviderSettingsComponent {
     this.scope() === 'tenant' ? { path: '/notification-usage', options: { noBranch: true } } : null,
   );
 
-  protected fieldsOf(c: ChannelView, code: string): FieldView[] {
-    return c.options.find((o) => o.code === code)?.fields ?? [];
+  /** The channels on show: the one given, or all of them. */
+  protected readonly shown = computed(() => {
+    const only = this.channel();
+    const all = this.views.value() ?? [];
+    return only ? all.filter((c) => c.channel === only) : all;
+  });
+
+  protected optionsOf(channel: ProviderChannel): ProviderOption[] {
+    return this.views.value()?.find((c) => c.channel === channel)?.options ?? [];
+  }
+
+  protected fieldsOf(channel: ProviderChannel, code: string): FieldView[] {
+    return this.optionsOf(channel).find((o) => o.code === code)?.fields ?? [];
   }
 
   protected setTo(channel: ProviderChannel, value: string): void {
