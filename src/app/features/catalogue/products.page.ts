@@ -124,7 +124,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 <tr>
                   <td colspan="9">
                     <app-empty
-                      [loading]="list.loading()"
+                      [for]="list"
                       icon="pill"
                       [title]="'catalogue.noProducts' | t"
                       [text]="'ui.empty.products' | t"

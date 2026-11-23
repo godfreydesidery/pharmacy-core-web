@@ -347,7 +347,7 @@ const PLAN_FILTER = {
                   <tr>
                     <td [attr.colspan]="c.uid ? 6 : 3">
                       <app-empty
-                        [loading]="items.loading()"
+                        [for]="items"
                         icon="tag"
                         [title]="
                           (c.uid && !notPriced() ? 'plans.nothingPriced' : 'plans.noRows') | t

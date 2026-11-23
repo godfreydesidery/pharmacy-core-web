@@ -10,10 +10,20 @@ export interface ListRequest {
   options?: RequestOptions;
 }
 
-export interface PagedList<T> {
-  readonly items: Signal<T[]>;
+/**
+ * What a list or value read from the API shows besides its rows: loading, or the failure of its
+ * last read and a way to read it again. The shared empty widget takes one (`<app-empty [for]>`),
+ * so a list that failed to load says so, with Retry, instead of looking empty.
+ */
+export interface LoadState {
   readonly loading: Signal<boolean>;
+  /** The last read's failure, cleared when a read starts; the rows are empty meanwhile. */
   readonly error: Signal<ApiError | null>;
+  reload(): Promise<void>;
+}
+
+export interface PagedList<T> extends LoadState {
+  readonly items: Signal<T[]>;
   /** How many rows the whole list has (null until the first page arrives). */
   readonly total: Signal<number | null>;
   /** The page shown, from 1. */
@@ -25,7 +35,6 @@ export interface PagedList<T> {
   /** The request the list shows (its path and filters), such as for an export of it. */
   readonly request: Signal<ListRequest | null>;
   readonly hasMore: Signal<boolean>;
-  reload(): Promise<void>;
   /** Shows page {@code page} (kept between 1 and the last). */
   goTo(page: number): Promise<void>;
   /** Changes rows per page, back to page 1; remembered for every table. */
@@ -95,6 +104,7 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
       }
     } catch (failure) {
       if (mine === generation) {
+        // Not an empty list: the empty widget shows the failure and Retry (LoadState).
         error.set(ApiError.from(failure));
         items.set([]);
       }
@@ -149,11 +159,8 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
   };
 }
 
-export interface Loaded<T> {
+export interface Loaded<T> extends LoadState {
   readonly value: Signal<T | null>;
-  readonly loading: Signal<boolean>;
-  readonly error: Signal<ApiError | null>;
-  reload(): Promise<void>;
   set(value: T): void;
 }
 

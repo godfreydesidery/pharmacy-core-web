@@ -86,11 +86,7 @@ import { SessionStore } from '../../core/session/session.store';
           </footer>
         </article>
       } @else {
-        <app-empty
-          [loading]="statement.loading()"
-          icon="receipt"
-          [title]="'receivables.noStatement' | t"
-        />
+        <app-empty [for]="statement" icon="receipt" [title]="'receivables.noStatement' | t" />
       }
     </div>
   `,

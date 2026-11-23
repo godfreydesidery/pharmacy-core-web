@@ -13,7 +13,8 @@
     "serve:prod": "node scripts/serve-prod.mjs",
     "e2e": "playwright test",
     "e2e:headless": "playwright test --headed=false",
-    "i18n:check": "node scripts/i18n-check.mjs"
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "i18n:reasons": "node scripts/api-reasons.mjs"
   },
   "private": true,
   "packageManager": "npm@10.9.4",

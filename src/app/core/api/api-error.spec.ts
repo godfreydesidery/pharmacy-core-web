@@ -1,7 +1,7 @@
 import { EN } from '../i18n/en';
 import { SW } from '../i18n/sw';
 import { Params, translate } from '../i18n/translations.store';
-import { ApiError, localizeError } from './api-error';
+import { ApiError, errorParams, localizeError } from './api-error';
 
 const swahili = (key: string, params?: Params, fallback?: string) =>
   translate(SW, key, params, fallback);
@@ -32,8 +32,43 @@ describe('localizeError', () => {
   });
 
   it('falls back to the server detail for a reason with no line', () => {
-    const odd = new ApiError(400, 'invalid_cursor', 'cursor is not one this list returned.');
+    const odd = new ApiError(409, 'some_future_reason', 'Something the web does not know yet.');
     expect(localizeError(odd, 'sw', swahili)).toBe(odd);
+  });
+
+  it('fills the placeholders from the problem members, numbers in the language', () => {
+    const cost = new ApiError(
+      422,
+      'batch_cost_differs',
+      'Batch B-7 of Panadol is held at 1250.5 a unit; opening stock of it comes at that cost.',
+      'unitCost',
+      null,
+      null,
+      { batchUnitCost: 1250.5 },
+    );
+    const localized = localizeError(cost, 'sw', swahili);
+    expect(localized.message).toContain('1,250.5');
+    expect(localized.message).not.toContain('{{');
+    expect(localized.extras).toEqual({ batchUnitCost: 1250.5 });
+    expect(errorParams(cost, 'sw')).toEqual({ batchUnitCost: '1,250.5' });
+  });
+
+  it('passes text and flags through, and leaves out objects', () => {
+    const extras = { action: 'LATE_RETURN', amount: 0, urgent: true, nested: { a: 1 } };
+    const error = new ApiError(403, 'approval_required', 'Approve.', null, null, null, extras);
+    expect(errorParams(error, 'en')).toEqual({
+      action: 'LATE_RETURN',
+      amount: '0',
+      urgent: 'true',
+    });
+  });
+
+  it('gives an input check with no line of its own the general one', () => {
+    const check = new ApiError(422, 'invalid_batch_number', 'batchNumber is required.');
+    expect(localizeError(check, 'sw', swahili).message).toBe(SW['errors.invalid_input']);
+    expect(localizeError(check, 'en', english)).toBe(check);
+    const named = new ApiError(422, 'invalid_gtin', 'gtin must be 8 to 14 digits.');
+    expect(localizeError(named, 'sw', swahili).message).toBe(SW['errors.invalid_gtin']);
   });
 
   it('defines every Swahili reason line in English too', () => {

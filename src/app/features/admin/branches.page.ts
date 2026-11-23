@@ -66,7 +66,7 @@ import { Translations } from '../../core/i18n/translations.store';
             </button>
           </div>
         } @empty {
-          <app-empty [loading]="list.loading()" icon="building" [title]="'admin.noBranches' | t" />
+          <app-empty [for]="list" icon="building" [title]="'admin.noBranches' | t" />
         }
       </div>
     </div>

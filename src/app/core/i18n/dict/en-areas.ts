@@ -43,6 +43,7 @@ import { LOGINS_EN } from './logins.en';
 import { SECURITY2_EN } from './security2.en';
 import { SHELL_EN } from './shell.en';
 import { UI_EN } from './ui.en';
+import { STATE_EN } from './state.en';
 
 export const EN_AREAS: Readonly<Record<string, string>> = {
   ...SHELL_EN,
@@ -84,4 +85,5 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...APPROVALS_EN,
   ...MESSAGES_EN,
   ...UI_EN,
+  ...STATE_EN,
 };

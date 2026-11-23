@@ -100,7 +100,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 <tr>
                   <td colspan="4">
                     <app-empty
-                      [loading]="hooks.loading()"
+                      [for]="hooks"
                       icon="link"
                       [title]="'admin.noWebhooks' | t"
                       [text]="'ui.empty.webhooks' | t"

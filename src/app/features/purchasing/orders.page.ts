@@ -98,7 +98,7 @@ const STATUSES: PurchaseOrderStatus[] = ['ORDERED', 'PARTIALLY_RECEIVED', 'RECEI
                   <tr>
                     <td colspan="7">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="bag"
                         [title]="'purchasing.noPurchaseOrders' | t"
                       />

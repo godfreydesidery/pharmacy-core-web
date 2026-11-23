@@ -132,11 +132,7 @@ import { Translations } from '../../core/i18n/translations.store';
           [canManage]="session.can('purchasing.manage')"
         />
       } @else {
-        <app-empty
-          [loading]="order.loading()"
-          icon="bag"
-          [title]="'purchasing.purchaseOrderNotFound' | t"
-        />
+        <app-empty [for]="order" icon="bag" [title]="'purchasing.purchaseOrderNotFound' | t" />
       }
     </div>
     <app-modal

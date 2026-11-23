@@ -115,11 +115,7 @@ const METHODS = ['CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CARD'];
               } @empty {
                 <tr>
                   <td colspan="7">
-                    <app-empty
-                      [loading]="list.loading()"
-                      icon="wallet"
-                      [title]="'finance.noExpenses' | t"
-                    />
+                    <app-empty [for]="list" icon="wallet" [title]="'finance.noExpenses' | t" />
                   </td>
                 </tr>
               }

@@ -106,7 +106,7 @@ const PRODUCT_TYPES = [
         } @empty {
           <div class="card">
             <app-empty
-              [loading]="payers.loading()"
+              [for]="payers"
               icon="shield"
               [title]="'insurance.noPayersYet' | t"
               [text]="'ui.empty.payers' | t"

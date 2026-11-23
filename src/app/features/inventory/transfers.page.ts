@@ -143,7 +143,7 @@ interface DraftLine {
                   <tr>
                     <td colspan="8">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="transfer"
                         [title]="'inventory.noTransfers' | t"
                       />

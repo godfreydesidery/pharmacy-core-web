@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../core/api/api-error';
@@ -10,10 +11,13 @@ import { controlError, validate } from '../../core/ui/forms';
 import { IconComponent } from '../../core/ui/icon.component';
 import { ToastService } from '../../core/ui/toast.service';
 import { AUTH_CARD_STYLES } from './auth-card';
+import { staffLoginCode } from './staff-login';
 
 /**
  * Resets a forgotten password: by a link to the email, or by a code sent by SMS to the account's
- * verified phone. Neither answer tells whether the email or number has an account.
+ * verified phone. Neither answer tells whether the email or number has an account. A pharmacy's
+ * staff login (`juma@DAWA`) has neither: the page says to ask that pharmacy's manager, who resets
+ * it under Administration → Users.
  */
 @Component({
   selector: 'app-forgot-password',
@@ -57,11 +61,14 @@ import { AUTH_CARD_STYLES } from './auth-card';
             <form class="stack" [formGroup]="emailForm" (ngSubmit)="sendLink()" novalidate>
               <p class="muted">{{ 'security.forgotHint' | t }}</p>
               <div class="field">
-                <label for="email">{{ 'auth.email' | t }}</label>
+                <label for="email">{{ 'state.forgot.label' | t }}</label>
                 <input
                   id="email"
                   class="input lg"
-                  type="email"
+                  type="text"
+                  inputmode="email"
+                  autocapitalize="none"
+                  spellcheck="false"
                   formControlName="email"
                   autocomplete="username"
                 />
@@ -69,9 +76,19 @@ import { AUTH_CARD_STYLES } from './auth-card';
                   <span class="error">{{ message }}</span>
                 }
               </div>
-              <button class="btn primary lg block" type="submit" [disabled]="busy()">
-                {{ (busy() ? 'security.sending' : 'security.sendLink') | t }}
-              </button>
+              @if (staffCode(); as code) {
+                <div class="notice tone-blue" data-testid="staff-reset" role="status">
+                  <app-icon name="users" />
+                  <span>
+                    <b>{{ 'state.forgot.staffTitle' | t: { login: typedLogin() } }}</b>
+                    {{ 'state.forgot.staffBody' | t: { code } }}
+                  </span>
+                </div>
+              } @else {
+                <button class="btn primary lg block" type="submit" [disabled]="busy()">
+                  {{ (busy() ? 'security.sending' : 'security.sendLink') | t }}
+                </button>
+              }
             </form>
           }
         } @else if (!codeSentTo()) {
@@ -139,6 +156,9 @@ import { AUTH_CARD_STYLES } from './auth-card';
             </button>
           </form>
         }
+        @if (!staffCode()) {
+          <p class="muted small">{{ 'state.forgot.staffHint' | t }}</p>
+        }
         <a class="back" routerLink="/sign-in">{{ 'security.back' | t }}</a>
       </div>
     </div>
@@ -177,6 +197,10 @@ import { AUTH_CARD_STYLES } from './auth-card';
         display: grid;
         gap: 12px;
       }
+      .small {
+        font-size: 12.5px;
+        margin: 0;
+      }
     `,
   ],
 })
@@ -194,8 +218,17 @@ export default class ForgotPasswordPage {
   protected readonly codeSentTo = signal<string | null>(null);
   protected readonly mismatch = signal(false);
   protected readonly emailForm = this.fb.group({
-    email: ['', [Validators.required, Validators.email]],
+    // What the person typed on the sign-in page comes along (in the navigation, not the URL).
+    email: [
+      (this.router.getCurrentNavigation()?.extras.state?.['login'] as string | undefined) ?? '',
+      [Validators.required, Validators.email],
+    ],
   });
+  protected readonly typedLogin = toSignal(this.emailForm.controls.email.valueChanges, {
+    initialValue: this.emailForm.controls.email.value,
+  });
+  /** The pharmacy code when a staff login is typed: its pharmacy resets it, not an email. */
+  protected readonly staffCode = computed(() => staffLoginCode(this.typedLogin()));
   protected readonly phoneForm = this.fb.group({ phone: ['', Validators.required] });
   protected readonly resetForm = this.fb.group({
     code: ['', [Validators.required, Validators.pattern(/^\s*\d{6}\s*$/)]],
@@ -217,7 +250,7 @@ export default class ForgotPasswordPage {
   }
 
   protected async sendLink(): Promise<void> {
-    if (!validate(this.emailForm)) {
+    if (this.staffCode() || !validate(this.emailForm)) {
       return;
     }
     if (

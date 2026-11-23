@@ -136,7 +136,7 @@ interface RateCard {
                 <tr>
                   <td colspan="6">
                     <app-empty
-                      [loading]="list.loading()"
+                      [for]="list"
                       icon="trend"
                       [title]="'finance.noRatesYet' | t"
                       [text]="'ui.empty.rates' | t"

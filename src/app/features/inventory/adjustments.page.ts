@@ -80,7 +80,7 @@ const REASONS: AdjustmentReason[] = [
                   <tr>
                     <td colspan="8">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="clipboard"
                         [title]="'inventory.noAdjustments' | t"
                       />

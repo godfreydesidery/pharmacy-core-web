@@ -68,7 +68,7 @@ import { SHARED } from '../../core/shared';
           </button>
         } @empty {
           <app-empty
-            [loading]="list.loading()"
+            [for]="list"
             icon="bell"
             [title]="
               unreadOnly() ? ('ui.l.noUnreadNotifications' | t) : ('ui.l.noNotificationsYet' | t)

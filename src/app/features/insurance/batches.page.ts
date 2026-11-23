@@ -89,7 +89,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 <tr>
                   <td colspan="9">
                     <app-empty
-                      [loading]="batches.loading()"
+                      [for]="batches"
                       icon="layers"
                       [title]="'insurance.noBatchesYet' | t"
                       [text]="'ui.empty.batches' | t"

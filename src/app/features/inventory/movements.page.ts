@@ -93,7 +93,7 @@ export const MOVEMENT_TYPES: MovementType[] = [
                   <tr>
                     <td colspan="9">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="activity"
                         [title]="'inventory.noMovements' | t"
                       />

@@ -172,11 +172,7 @@ interface DraftLine {
                 } @empty {
                   <tr>
                     <td colspan="6">
-                      <app-empty
-                        [loading]="returns.loading()"
-                        icon="truck"
-                        [title]="'sret.none' | t"
-                      />
+                      <app-empty [for]="returns" icon="truck" [title]="'sret.none' | t" />
                     </td>
                   </tr>
                 }

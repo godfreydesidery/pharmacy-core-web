@@ -143,11 +143,7 @@ const TYPES: CustomerType[] = [
               } @empty {
                 <tr>
                   <td colspan="9">
-                    <app-empty
-                      [loading]="list.loading()"
-                      icon="users"
-                      [title]="'partners.noCustomers' | t"
-                    />
+                    <app-empty [for]="list" icon="users" [title]="'partners.noCustomers' | t" />
                   </td>
                 </tr>
               }

@@ -88,7 +88,7 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
   'count.lossValue': 'Shortages at cost:',
   'errors.note_required': 'Write a note saying why.',
   'errors.batch_cost_differs':
-    'This batch is already in stock at another cost. Record it as a goods receipt or use another batch number.',
+    'This batch is already in stock at {{batchUnitCost}} a unit, and opening stock of it comes at that cost. Record it as a goods receipt or use another batch number.',
   'errors.receiver_is_sender': 'Someone other than the person who sent it must receive it.',
   'errors.schedule_downgrade':
     'A prescription or controlled medicine cannot be made into a product of a lower class.',

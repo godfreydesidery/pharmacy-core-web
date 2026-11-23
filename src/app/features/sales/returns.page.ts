@@ -145,11 +145,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 } @empty {
                   <tr>
                     <td colspan="8">
-                      <app-empty
-                        [loading]="list.loading()"
-                        icon="undo"
-                        [title]="'sales.noReturns' | t"
-                      />
+                      <app-empty [for]="list" icon="undo" [title]="'sales.noReturns' | t" />
                     </td>
                   </tr>
                 }
