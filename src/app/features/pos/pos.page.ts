@@ -31,6 +31,7 @@ import {
   Prescription,
   Sale,
   SalePayment,
+  SaleSummary,
   SellableProduct,
 } from '../../core/api/models';
 import { debounced, loaded } from '../../core/data/data';
@@ -52,11 +53,23 @@ import {
   needsPrescription,
   paidTotal,
   baseValue,
+  coveringAmount,
+  exactTender,
   round2,
   setQuantity,
   splitPayment,
   withSerials,
 } from './cart';
+import {
+  CHECKOUT_TIMEOUT_MS,
+  CheckoutTimeout,
+  PushState,
+  TillPayment,
+  applyPush,
+  forApi,
+  pushWanted,
+  uncertain,
+} from './checkout';
 import { SerialPickerComponent } from './serial-picker.component';
 import { ShiftBarComponent } from './shift-bar.component';
 import { QUICK_CASH_AMOUNTS_ENABLED, TILL_SHIFTS_ENABLED } from '../../core/features';
@@ -69,7 +82,7 @@ import { AccountView, CoverageQuote, MemberView } from '../../core/api/credit.mo
 import { Translations } from '../../core/i18n/translations.store';
 import { SubscriptionStore } from '../../core/subscription/subscription.store';
 import { LineBatch, nextBatch } from './fefo';
-import { ParkedSale, park, parkedKey, readParked, unpark, writeParked } from './parked';
+import { ParkedLine, ParkedSale, park, parkedKey, readParked, unpark, writeParked } from './parked';
 
 /** How many suggestions the entry row offers under the search box. */
 const SUGGESTIONS = 8;
@@ -77,6 +90,8 @@ const SUGGESTIONS = 8;
 const MIN_SEARCH = 2;
 /** The item dropdown's height: the search field and about seven items. */
 const DROPDOWN_HEIGHT = 360;
+/** "Look it up" lists the sales made from this many minutes before an unconfirmed checkout. */
+const LOOKUP_MINUTES = 10;
 
 const METHODS: { method: PaymentMethod; label: string; icon: string }[] = [
   { method: 'CASH', label: 'Cash', icon: 'cash' },
@@ -135,10 +150,30 @@ export default class PosPage {
   protected readonly internalMethods = METHODS.filter((m) =>
     ['INSURANCE', 'CREDIT', 'ACCOUNT_CREDIT'].includes(m.method),
   );
-  /** The phone number and pending request of each payment row pushed to a phone. */
-  protected readonly push = signal<
-    Record<number, { phone: string; request: PaymentRequest | null; busy: boolean }>
-  >({});
+  /**
+   * The phone number and request of each payment row pushed to a phone, by the row's id (not its
+   * position, which changes when a row above is removed), with the sale it was sent for.
+   */
+  protected readonly push = signal<Record<string, PushState>>({});
+
+  /** The push state of a payment row, if it has one. */
+  protected pushOf(payment: TillPayment): PushState | undefined {
+    return payment.row ? this.push()[payment.row] : undefined;
+  }
+
+  /** The row's id, given to it the first time a push needs one. */
+  private rowOf(index: number): string | null {
+    const payment = this.payments()[index];
+    if (!payment) {
+      return null;
+    }
+    if (payment.row) {
+      return payment.row;
+    }
+    const row = crypto.randomUUID();
+    this.patchPayment(index, { row });
+    return row;
+  }
 
   /** The registered method of a payment row, if it was picked from the registry. */
   protected tillMethodOf(payment: SalePayment): TillMethod | undefined {
@@ -168,7 +203,11 @@ export default class PosPage {
 
   /** Picks a registry method (sets how it is booked and its channel) or an internal one. */
   protected choose(index: number, value: string): void {
+    if (this.locked()) {
+      return;
+    }
     const till = (this.tillMethods.value() ?? []).find((m) => m.code === value);
+    const row = this.payments()[index]?.row;
     this.payments.update((list) =>
       list.map((p, i) =>
         i === index
@@ -178,48 +217,102 @@ export default class PosPage {
           : p,
       ),
     );
-    this.push.update((all) => ({ ...all, [index]: { phone: '', request: null, busy: false } }));
+    if (row) {
+      // Another method: a push sent for the old one no longer belongs to this row.
+      this.push.update((all) => Object.fromEntries(Object.entries(all).filter(([r]) => r !== row)));
+    }
   }
 
   protected setPhone(index: number, phone: string): void {
+    const row = this.rowOf(index);
+    if (!row || this.locked()) {
+      return;
+    }
     this.push.update((all) => ({
       ...all,
-      [index]: { ...(all[index] ?? { request: null, busy: false }), phone },
+      [row]: { ...(all[row] ?? { request: null, busy: false, sale: null }), phone },
     }));
   }
 
-  /** Sends a payment request to the customer's phone and waits for the provider's answer. */
+  /** Waits between polls of a push; resolves at once when the page closes. */
+  private pause(ms: number): Promise<void> {
+    return new Promise((resolve) => {
+      const wake = () => {
+        clearTimeout(timer);
+        this.sleepers.delete(wake);
+        resolve();
+      };
+      const timer = setTimeout(wake, ms);
+      this.sleepers.add(wake);
+    });
+  }
+
+  /** The page has closed: polls stop and late answers are dropped. */
+  private closed = false;
+  private readonly sleepers = new Set<() => void>();
+  private readonly closeWatch = inject(DestroyRef).onDestroy(() => {
+    this.closed = true;
+    [...this.sleepers].forEach((wake) => wake());
+  });
+
+  /**
+   * Sends a payment request to the customer's phone and waits for the provider's answer. The
+   * request is bound to this sale (its cart token, also sent as `saleKey`: the sale's idempotency
+   * key) and to the row it was sent from. Polling stops when the page closes, the sale on screen
+   * changes, or the row is removed or given another method; a late answer is then dropped.
+   */
   protected async sendToPhone(index: number): Promise<void> {
-    const payment = this.payments()[index];
-    const state = this.push()[index];
-    if (!payment?.channel || !state?.phone) {
-      this.toasts.error(this.translations.t('pos.phoneNeeded'));
+    if (this.locked()) {
       return;
     }
-    this.push.update((all) => ({ ...all, [index]: { ...state, busy: true } }));
+    const payment = this.payments()[index];
+    const row = this.rowOf(index);
+    const state = row ? this.push()[row] : undefined;
+    if (!row || !payment?.channel || !state?.phone) {
+      this.problem.set(this.translations.t('pos.phoneNeeded'));
+      return;
+    }
+    const sale = this.cartId();
+    const methodCode = payment.channel;
+    const wanted = () =>
+      !this.closed && pushWanted(this.payments(), this.cartId(), sale, row, methodCode);
+    const set = (patch: Partial<PushState>) =>
+      this.push.update((all) => (all[row] ? { ...all, [row]: { ...all[row], ...patch } } : all));
+    this.push.update((all) => ({ ...all, [row]: { ...state, busy: true, sale, request: null } }));
     try {
       let request = await this.api.post<PaymentRequest>('/pos/payment-requests', {
-        methodCode: payment.channel,
+        methodCode,
         amount: payment.amount,
         currency: payment.currency ?? this.base(),
         phone: state.phone,
+        saleKey: this.idempotencyKey,
       });
-      for (let i = 0; i < 60 && request.status === 'PENDING'; i++) {
-        this.push.update((all) => ({ ...all, [index]: { ...state, request, busy: true } }));
-        await new Promise((r) => setTimeout(r, 2000));
+      for (let i = 0; i < 60 && request.status === 'PENDING' && wanted(); i++) {
+        set({ request, busy: true });
+        await this.pause(2000);
+        if (!wanted()) {
+          break;
+        }
         request = await this.api.get<PaymentRequest>(`/pos/payment-requests/${request.uid}`);
       }
-      this.push.update((all) => ({ ...all, [index]: { ...state, request, busy: false } }));
-      if (request.status === 'CONFIRMED') {
-        this.setReference(index, request.uid);
+      if (!wanted()) {
+        return; // the sale or the row is gone: the answer belongs to nothing on screen
+      }
+      set({ request, busy: false });
+      const applied =
+        request.status === 'CONFIRMED'
+          ? applyPush(this.payments(), this.cartId(), sale, row, request)
+          : null;
+      if (applied) {
+        this.payments.set(applied);
         this.toasts.success(this.translations.t('pos.paymentConfirmed'));
       } else {
-        this.toasts.error(
+        this.problem.set(
           this.translations.t('pos.paymentNotConfirmed', { status: request.status }),
         );
       }
     } catch {
-      this.push.update((all) => ({ ...all, [index]: { ...state, busy: false } }));
+      set({ busy: false });
     }
   }
   protected readonly baseValue = baseValue;
@@ -248,13 +341,41 @@ export default class PosPage {
   protected readonly lines = signal<CartLine[]>([]);
   protected readonly customer = signal<Customer | null>(null);
   protected readonly discountPercent = signal(0);
-  protected readonly payments = signal<SalePayment[]>([
+  protected readonly payments = signal<TillPayment[]>([
     { method: 'CASH', amount: 0, reference: null },
   ]);
   protected readonly prescription = signal<Prescription | null>(null);
   /** A photo or scan of the prescription, uploaded once the sale exists. */
   protected readonly prescriptionFile = signal<File | null>(null);
-  private idempotencyKey = crypto.randomUUID();
+
+  /**
+   * The sale on screen: its token (the parked sale's id; a mobile-money push is bound to it) and
+   * its idempotency key. Both stay with the cart when it is parked and resumed, and across a
+   * reload; only a new sale gets new ones.
+   */
+  protected readonly cartId = signal<string>(crypto.randomUUID());
+  private idempotencyKey: string = crypto.randomUUID();
+
+  /**
+   * A checkout that got no clear answer (see {@link uncertain}): the exact request sent, to send
+   * again byte for byte with the same key. While it is set the cart is locked: no edits, no
+   * parking, no leaving the till, until the API answers or the cashier clears the till.
+   */
+  protected readonly pending = signal<CheckoutRequest | null>(null);
+  /** When that checkout was first sent. */
+  protected readonly pendingAt = signal<string | null>(null);
+  /** Why the answer is unknown (no connection, no answer in time, a server error). */
+  protected readonly pendingWhy = signal<string | null>(null);
+  protected readonly locked = computed(() => this.pending() !== null);
+  /** A problem with the last checkout, shown in the Payment card until dismissed or retried. */
+  protected readonly problem = signal<string | null>(null);
+  /** Sales made at this branch around the unconfirmed checkout ("Look it up"). */
+  protected readonly lookup = signal<SaleSummary[] | null>(null);
+  protected readonly lookupBusy = signal(false);
+  protected readonly lookupMinutes = LOOKUP_MINUTES;
+  private readonly pendingPanel = viewChild<ElementRef<HTMLElement>>('pendingPanel');
+  /** Which checkout attempt is the latest, so an older one's answer does not settle it. */
+  private attempt = 0;
 
   /**
    * The pricing plans for this customer: the one the sale takes by default (the insurer's, the
@@ -293,6 +414,9 @@ export default class PosPage {
   });
 
   protected pickPlan(value: string): void {
+    if (this.locked()) {
+      return;
+    }
     const fallback = this.tillPlans()?.defaultPlan.uid ?? 'NORMAL';
     this.planPick.set(value === fallback ? null : value);
   }
@@ -300,6 +424,18 @@ export default class PosPage {
   /** A line the chosen plan has no price for: the sale will be refused. */
   protected unpriced(line: CartLine): boolean {
     return !!this.quoted()[line.product.productUid]?.unpriced;
+  }
+
+  /** The lines the chosen plan has no price for: Complete sale waits until they are dealt with. */
+  protected readonly unpricedLines = computed(() =>
+    this.lines().filter((line) => this.quoted()[line.product.productUid]?.unpriced),
+  );
+
+  /** "Change plan" beside the unpriced lines: puts the cursor on the plan select. */
+  protected focusPlan(): void {
+    const select = document.getElementById('pos-price-plan') as HTMLSelectElement | null;
+    select?.focus();
+    select?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
   }
 
   /** Prices the server quoted for this basket and customer (lists, branch prices, promotions). */
@@ -794,10 +930,44 @@ export default class PosPage {
     return tenant && branch && user ? parkedKey(tenant, branch, user) : null;
   });
   protected readonly parked = signal<ParkedSale[]>([]);
+  /** The Sale list: every parked sale but the one on screen (an unconfirmed one stays stored). */
+  protected readonly parkedList = computed(() =>
+    this.parked().filter((p) => p.id !== this.cartId()),
+  );
   protected readonly parkedOpen = signal(false);
+  /**
+   * Reads this cashier's parked sales at this branch, dropping expired ones and any personal data
+   * an older version stored. An unconfirmed checkout comes back on screen, still locked.
+   */
   private readonly parkedWatch = effect(() => {
     const key = this.parkedStore();
-    untracked(() => this.parked.set(key ? readParked(this.storage(), key) : []));
+    untracked(() => {
+      const list = key ? readParked(this.storage(), key) : [];
+      if (key) writeParked(this.storage(), key, list);
+      this.parked.set(list);
+      const waiting = list.find((p) => p.pending);
+      if (waiting && !this.lines().length && !this.locked()) {
+        void this.restore(waiting);
+      }
+    });
+  });
+
+  /** Customers' names for the Sale list, read from the API (storage keeps only their uids). */
+  protected readonly parkedNames = signal<Record<string, string | undefined>>({});
+  private readonly parkedNamesWatch = effect(() => {
+    if (!this.parkedOpen() || !this.session.can('partners.view')) {
+      return;
+    }
+    const known = untracked(this.parkedNames);
+    const uids = [
+      ...new Set(this.parkedList().flatMap((p) => (p.customerUid ? [p.customerUid] : []))),
+    ].filter((uid) => !(uid in known));
+    for (const uid of uids) {
+      void this.api
+        .get<Customer>(`/customers/${uid}`, {}, { silent: true, noBranch: true })
+        .then((c) => this.parkedNames.update((all) => ({ ...all, [uid]: c.name })))
+        .catch(() => undefined);
+    }
   });
 
   private storage(): Storage | null {
@@ -816,10 +986,19 @@ export default class PosPage {
 
   /**
    * Leaving the POS (another page, sign-out, another branch) never loses an unfinished sale: it is
-   * parked in the Sale list, and the cashier picks it up from there on return.
+   * parked in the Sale list, and the cashier picks it up from there on return. An unconfirmed
+   * checkout keeps the cashier at the till instead: it is already stored with its key, and the
+   * panel in the Payment card says what to do. (A sign-out the app forces, after the idle limit,
+   * still goes ahead; the sale is back on screen after the next sign-in.)
    */
   private readonly leaveCheck = inject(DestroyRef).onDestroy(
     inject(LeaveGuard).register(async () => {
+      if (this.locked()) {
+        this.storePending();
+        this.toasts.info(this.translations.t('pos.uncertain.stay'));
+        this.showPending();
+        return false;
+      }
       if (this.parkCurrent()) {
         this.toasts.success(this.translations.t('pos.saleParked'));
       }
@@ -829,65 +1008,221 @@ export default class PosPage {
 
   /** Reloading or closing the tab parks the sale too (storage writes finish before the page goes). */
   protected parkBeforeUnload(): void {
-    this.parkCurrent();
+    if (this.locked()) {
+      this.storePending();
+    } else {
+      this.parkCurrent();
+    }
   }
 
   /** Puts the sale on screen aside and starts a fresh one. */
   protected parkSale(): void {
+    if (this.locked()) {
+      this.showPending();
+      return;
+    }
     if (!this.parkCurrent()) {
-      this.toasts.error(this.translations.t('toast.addItem'));
+      this.problem.set(this.translations.t('toast.addItem'));
       return;
     }
     this.toasts.success(this.translations.t('pos.saleParked'));
     this.focusSearch();
   }
 
+  /** The sale on screen as storage keeps it: uids, codes and quantities, no names. */
+  private snapshot(): ParkedSale {
+    const pending = this.pending();
+    return {
+      id: this.cartId(),
+      parkedAt: new Date().toISOString(),
+      lines: this.lines().map((l): ParkedLine => ({
+        productUid: l.product.productUid,
+        sku: l.product.sku,
+        quantity: l.quantity,
+        ...(l.serials?.length ? { serials: [...l.serials] } : {}),
+      })),
+      customerUid: this.customer()?.uid ?? null,
+      discountPercent: this.discountPercent(),
+      total: this.totals().total,
+      idempotencyKey: this.idempotencyKey,
+      ...(pending ? { pending, pendingAt: this.pendingAt() } : {}),
+    };
+  }
+
   /** Moves the sale on screen to the Sale list and clears the screen; false when it is empty. */
   private parkCurrent(): boolean {
-    if (!this.lines().length) {
+    if (!this.lines().length || this.locked()) {
       return false;
     }
-    this.saveParked(
-      park(this.parked(), {
-        id: crypto.randomUUID(),
-        parkedAt: new Date().toISOString(),
-        lines: this.lines(),
-        customer: this.customer(),
-        discountPercent: this.discountPercent(),
-        total: this.totals().total,
-      }),
-    );
+    this.saveParked(park(this.parked(), this.snapshot()));
     this.clear();
     return true;
   }
 
+  /**
+   * Keeps the unconfirmed checkout on screen in storage too (as a parked sale with its request),
+   * so a reload, a closed tab or a forced sign-out does not lose its key.
+   */
+  private storePending(): void {
+    if (this.locked()) {
+      const existing = this.parked().find((p) => p.id === this.cartId());
+      this.saveParked(
+        park(this.parked(), {
+          ...this.snapshot(),
+          parkedAt: existing?.parkedAt ?? new Date().toISOString(),
+        }),
+      );
+    }
+  }
+
+  /** The checkout is settled (a sale came back, or a clear refusal): its stored copy goes. */
+  private settlePending(): void {
+    if (this.pending()) {
+      this.saveParked(unpark(this.parked(), this.cartId()).rest);
+    }
+    this.pending.set(null);
+    this.pendingAt.set(null);
+    this.pendingWhy.set(null);
+    this.lookup.set(null);
+  }
+
+  /** Brings the panel of the unconfirmed checkout into view and to the screen reader's attention. */
+  private showPending(): void {
+    setTimeout(() => {
+      const panel = this.pendingPanel()?.nativeElement;
+      panel?.scrollIntoView?.({ block: 'center', behavior: 'smooth' });
+      panel?.focus({ preventScroll: true });
+    });
+  }
+
   /** Brings a parked sale back; one already on screen is parked in its place. */
-  protected resume(id: string): void {
-    const { sale, rest } = unpark(this.parked(), id);
-    if (!sale) {
+  protected async resume(id: string): Promise<void> {
+    const sale = this.parked().find((p) => p.id === id);
+    if (!sale || this.locked()) {
+      if (this.locked()) this.showPending();
       return;
     }
-    this.saveParked(rest);
     if (this.lines().length) {
       this.parkSale();
     }
-    this.clear();
-    this.lines.set(sale.lines);
-    this.discountPercent.set(sale.discountPercent);
-    if (sale.customer) {
-      this.pickCustomer(sale.customer);
-      this.customerLookup()?.setText(sale.customer.name);
-    }
-    sale.lines.forEach((l) => this.loadBatches(l.product.productUid));
-    this.syncCash();
     this.parkedOpen.set(false);
-    this.focusSearch();
+    await this.restore(sale);
+  }
+
+  /**
+   * Puts a parked sale on screen: its key, and its products and customer read again from the API
+   * (storage has only their uids). Products that can no longer be found are left out and said so.
+   * An unconfirmed checkout comes back locked, showing what was sent.
+   */
+  private async restore(sale: ParkedSale): Promise<void> {
+    const { found, failed } = await this.findProducts(sale.lines);
+    let customerFailed = false;
+    const customer = sale.customerUid
+      ? await this.api
+          .get<Customer>(`/customers/${sale.customerUid}`, {}, { silent: true, noBranch: true })
+          .catch((failure: unknown) => {
+            customerFailed = unreachable(failure);
+            return null;
+          })
+      : null;
+    if (this.closed || this.locked() || this.lines().length) {
+      return; // something else came on screen meanwhile; the sale stays in the list
+    }
+    if (!sale.pending && (failed || customerFailed)) {
+      // Nothing is dropped for want of a connection: the sale stays in the list for another try.
+      this.problem.set(this.translations.t('pos.parkedNotLoaded'));
+      return;
+    }
+    this.clear();
+    this.cartId.set(sale.id);
+    this.idempotencyKey = sale.idempotencyKey;
+    const lines: CartLine[] = [];
+    let missing = 0;
+    for (const line of sale.lines) {
+      const product = found.get(line.productUid);
+      if (product) {
+        lines.push({
+          product,
+          quantity: line.quantity,
+          ...(line.serials ? { serials: line.serials } : {}),
+        });
+      } else if (sale.pending) {
+        // Shown as sent; the request itself is what goes again, not this screen.
+        lines.push({
+          product: placeholder(line),
+          quantity: line.quantity,
+          ...(line.serials ? { serials: line.serials } : {}),
+        });
+      } else {
+        missing++;
+      }
+    }
+    this.discountPercent.set(sale.discountPercent);
+    if (sale.pending) {
+      this.pending.set(sale.pending);
+      this.pendingAt.set(sale.pendingAt ?? sale.parkedAt);
+      this.pendingWhy.set(null);
+      this.payments.set(sale.pending.payments.map((p) => ({ ...p })));
+      this.prescription.set(sale.pending.prescription);
+      this.lines.set(lines);
+      if (customer) {
+        this.customer.set(customer);
+        this.customerLookup()?.setText(customer.name);
+      }
+      this.showPending();
+    } else {
+      this.saveParked(unpark(this.parked(), sale.id).rest);
+      this.lines.set(lines);
+      if (customer) {
+        this.pickCustomer(customer);
+        this.customerLookup()?.setText(customer.name);
+      } else if (sale.customerUid) {
+        this.problem.set(this.translations.t('pos.parkedCustomerGone'));
+      }
+      if (missing) {
+        this.problem.set(this.translations.t('pos.parkedItemsGone', { count: missing }));
+      }
+      this.syncCash();
+      this.focusSearch();
+    }
+    lines.forEach((l) => this.loadBatches(l.product.productUid));
+  }
+
+  /**
+   * The products of parked lines, read again by their code at this branch (with today's stock).
+   * `failed` when the API could not be asked (no connection, a server error), as opposed to a
+   * product it no longer sells here.
+   */
+  private async findProducts(
+    lines: readonly ParkedLine[],
+  ): Promise<{ found: Map<string, SellableProduct>; failed: boolean }> {
+    const found = new Map<string, SellableProduct>();
+    let failed = false;
+    await Promise.all(
+      lines.map(async (line) => {
+        if (!line.sku) {
+          return;
+        }
+        const page = await this.api
+          .get<Page<SellableProduct>>('/pos/products', { q: line.sku, limit: 20 }, { silent: true })
+          .catch((failure: unknown) => {
+            failed ||= unreachable(failure);
+            return null;
+          });
+        const product = page?.items.find((p) => p.productUid === line.productUid);
+        if (product) found.set(line.productUid, product);
+      }),
+    );
+    return { found, failed };
   }
 
   protected async discard(id: string): Promise<void> {
+    const sale = this.parked().find((p) => p.id === id);
     const ok = await this.confirm.ask({
       title: this.translations.t('pos.confirmDiscardParked'),
-      text: this.translations.t('pos.discardParkedText'),
+      text: this.translations.t(
+        sale?.pending ? 'pos.uncertain.discardText' : 'pos.discardParkedText',
+      ),
       icon: 'danger',
       confirmText: this.translations.t('pos.discard'),
     });
@@ -898,7 +1233,9 @@ export default class PosPage {
 
   /** A new sale: what is on screen is parked, not lost. */
   protected newSale(): void {
-    if (this.lines().length) {
+    if (this.locked()) {
+      this.showPending();
+    } else if (this.lines().length) {
       this.parkSale();
     } else {
       this.clear();
@@ -907,6 +1244,10 @@ export default class PosPage {
   }
 
   protected async cancelSale(): Promise<void> {
+    if (this.locked()) {
+      await this.clearPending();
+      return;
+    }
     if (
       this.lines().length &&
       !(await this.confirm.ask({
@@ -948,11 +1289,15 @@ export default class PosPage {
       this.parkSale();
     } else if (event.key === 'F9') {
       event.preventDefault();
-      void this.checkout();
+      void (this.locked() ? this.checkAgain() : this.checkout());
     }
   }
 
   protected add(product: SellableProduct, quantity = 1): void {
+    if (this.locked()) {
+      this.showPending();
+      return;
+    }
     if (available(product) <= 0) {
       this.toasts.error(this.translations.t('toast.outOfStock', { name: product.name }));
       return;
@@ -987,7 +1332,7 @@ export default class PosPage {
 
   protected pickedSerials(serials: string[]): void {
     const product = this.serialFor();
-    if (product) {
+    if (product && !this.locked()) {
       this.lines.set(withSerials(this.lines(), product, serials));
       this.loadBatches(product.productUid);
       this.syncCash();
@@ -996,6 +1341,9 @@ export default class PosPage {
   }
 
   protected setQty(line: CartLine, quantity: number): void {
+    if (this.locked()) {
+      return;
+    }
     if (line.serials) {
       this.serialFor.set(line.product);
       return;
@@ -1005,6 +1353,9 @@ export default class PosPage {
   }
 
   protected pickCustomer(customer: Customer | null): void {
+    if (this.locked()) {
+      return;
+    }
     this.customer.set(customer);
     this.account.set(null);
     this.member.set(null);
@@ -1063,6 +1414,9 @@ export default class PosPage {
 
   /** The insurer's share as an INSURANCE payment, and the patient's share on the first tender. */
   private applyCoverage(quote: CoverageQuote): void {
+    if (this.locked()) {
+      return; // what was sent is what is shown
+    }
     const others = this.payments().filter((p) => p.method !== 'INSURANCE');
     const first = others[0] ?? { method: 'CASH' as PaymentMethod, amount: 0, reference: null };
     const insurance: SalePayment[] =
@@ -1075,6 +1429,9 @@ export default class PosPage {
   }
 
   protected toggleInsurance(on: boolean): void {
+    if (this.locked()) {
+      return;
+    }
     this.useInsurance.set(on);
     if (!on) {
       this.payments.update((list) => {
@@ -1088,16 +1445,25 @@ export default class PosPage {
   }
 
   protected setDiscount(value: number): void {
+    if (this.locked()) {
+      return;
+    }
     // Above the pharmacy's maximum a manager approves when the sale is completed (Batch 4).
     this.discountPercent.set(Math.min(Math.max(Number(value) || 0, 0), 100));
     this.syncCash();
   }
 
   protected setMethod(index: number, method: PaymentMethod): void {
+    if (this.locked()) {
+      return;
+    }
     this.payments.update((list) => list.map((p, i) => (i === index ? { ...p, method } : p)));
   }
 
   protected setAmount(index: number, amount: number): void {
+    if (this.locked()) {
+      return;
+    }
     this.payments.update((list) =>
       list.map((p, i) => (i === index ? { ...p, amount: Number(amount) || 0 } : p)),
     );
@@ -1124,6 +1490,10 @@ export default class PosPage {
   protected async setCurrency(index: number, select: HTMLSelectElement): Promise<void> {
     const currency = select.value;
     const payment = this.payments()[index];
+    if (this.locked() || !payment) {
+      select.value = payment?.currency ?? this.base();
+      return;
+    }
     const baseNow = baseValue(payment);
     if (currency === this.base()) {
       this.patchPayment(index, { currency: null, exchangeRate: null, amount: baseNow });
@@ -1140,8 +1510,12 @@ export default class PosPage {
           this.translations.t('toast.staleRate', { currency, date: latest.effectiveOn }),
         );
       }
-      const digits = minorUnits(currency);
-      const amount = Math.ceil((baseNow / latest.rate) * 10 ** digits) / 10 ** digits;
+      const amount = coveringAmount(
+        baseNow,
+        latest.rate,
+        minorUnits(currency),
+        minorUnits(this.base()),
+      );
       this.patchPayment(index, { currency, exchangeRate: latest.rate, amount });
     } catch {
       select.value = this.payments()[index]?.currency ?? this.base();
@@ -1168,26 +1542,38 @@ export default class PosPage {
     return [...amounts].sort((a, b) => a - b);
   });
 
-  private patchPayment(index: number, patch: Partial<SalePayment>): void {
+  private patchPayment(index: number, patch: Partial<TillPayment>): void {
     this.payments.update((list) => list.map((p, i) => (i === index ? { ...p, ...patch } : p)));
   }
 
   protected setReference(index: number, reference: string): void {
+    if (this.locked()) {
+      return;
+    }
     this.payments.update((list) =>
       list.map((p, i) => (i === index ? { ...p, reference: reference || null } : p)),
     );
   }
 
   protected addPayment(): void {
+    if (this.locked()) {
+      return;
+    }
     const remaining = Math.max(this.balance(), 0);
     this.payments.update((list) => [...list, splitPayment(this.tillMethods.value(), remaining)]);
   }
 
   protected removePayment(index: number): void {
+    if (this.locked()) {
+      return;
+    }
     this.payments.update((list) => (list.length > 1 ? list.filter((_, i) => i !== index) : list));
   }
 
   protected quickCash(amount: number): void {
+    if (this.locked()) {
+      return;
+    }
     this.payments.update((list) =>
       list.map((p, i) =>
         i === 0
@@ -1197,16 +1583,21 @@ export default class PosPage {
     );
   }
 
+  /** The first payment set to exactly what is still due, worked in whole minor units. */
   protected exact(): void {
-    const others = paidTotal(this.payments().slice(1));
-    const due = Math.max(round2(this.totals().total - others), 0);
-    const first = this.payments()[0];
-    const rate = first?.exchangeRate ?? 1;
-    const digits = minorUnits(first?.currency ?? this.base());
-    this.setAmount(0, Math.ceil((due / rate) * 10 ** digits) / 10 ** digits);
+    const payments = this.payments();
+    const digits = minorUnits(payments[0]?.currency ?? this.base());
+    this.setAmount(0, exactTender(this.totals().total, payments, digits, minorUnits(this.base())));
   }
 
+  /** Empties the screen for a new sale, with a new token and key; never while one is unconfirmed. */
   protected clear(): void {
+    if (this.locked()) {
+      return;
+    }
+    this.cartId.set(crypto.randomUUID());
+    this.push.set({});
+    this.problem.set(null);
     this.lines.set([]);
     this.customer.set(null);
     this.customerLookup()?.setText('');
@@ -1254,15 +1645,29 @@ export default class PosPage {
     void this.checkout();
   }
 
-  /** Completes the sale: checks it, asks for confirmation with its figures, then sends it. */
+  /**
+   * Completes the sale: checks it, asks for confirmation with its figures, then sends it. A
+   * problem is shown in the Payment card (and stays there), not in a passing toast.
+   */
   protected async checkout(): Promise<void> {
     if (this.busy()) {
       return; // a second click before the first one's request has come back
     }
+    if (this.locked()) {
+      return this.checkAgain();
+    }
+    const t = (key: string, params?: Parameters<Translations['t']>[1]) =>
+      this.translations.t(key, params);
+    const refuse = (message: string) => {
+      this.problem.set(message);
+    };
+    this.problem.set(null);
     const lines = this.lines();
     if (!lines.length) {
-      this.toasts.error(this.translations.t('toast.addItem'));
-      return;
+      return refuse(t('toast.addItem'));
+    }
+    if (this.unpricedLines().length) {
+      return refuse(t('pos.unpricedBlock', { plan: this.planName() }));
     }
     if (this.rxNeeded() && !this.prescription()) {
       this.rxOpen.set(true);
@@ -1270,45 +1675,37 @@ export default class PosPage {
     }
     const payments = this.payments().filter((p) => p.amount > 0);
     if (needsCustomer(payments.map((p) => p.method)) && !this.customer()) {
-      this.toasts.error(this.translations.t('toast.customerNeeded'));
-      return;
+      return refuse(t('toast.customerNeeded'));
     }
     const short = round2(this.totals().total - paidTotal(payments));
     if (short > 0 && !this.balanceToAccount()) {
-      this.toasts.error(this.translations.t('toast.paymentsShort'));
-      return;
+      return refuse(t('toast.paymentsShort'));
     }
     const account = this.account();
     if (short > 0 && this.balanceToAccount() && account && short > account.available) {
-      this.toasts.error(
-        this.translations.t('toast.creditAvailable', {
-          amount: formatMoney(account.available, this.base()),
-        }),
+      return refuse(
+        t('toast.creditAvailable', { amount: formatMoney(account.available, this.base()) }),
       );
-      return;
     }
     if (this.member()?.requiresPreauth && this.useInsurance() && !this.preauthNumber()) {
-      this.toasts.error(this.translations.t('toast.preauthNeeded'));
-      return;
+      return refuse(t('toast.preauthNeeded'));
     }
     const tendered = paidTotal(payments.map((p) => ({ ...p, amount: baseValue(p) })));
     if (
       this.change() > 0 &&
       tendered > Math.max(this.totals().total * 5, this.totals().total + 100) &&
       !(await this.confirm.ask({
-        title: this.translations.t('pos.checkChange'),
-        text: this.translations.t('confirm.largeChange', {
+        title: t('pos.checkChange'),
+        text: t('confirm.largeChange', {
           tendered: formatMoney(tendered, this.base()),
           change: formatMoney(this.change(), this.base()),
         }),
         icon: 'warning',
-        confirmText: this.translations.t('pos.changeIsRight'),
+        confirmText: t('pos.changeIsRight'),
       }))
     ) {
       return;
     }
-    const t = (key: string, params?: Parameters<Translations['t']>[1]) =>
-      this.translations.t(key, params);
     const money = (value: number) => formatMoney(value, this.base());
     const sure = await this.confirm.ask({
       title: t('pos.confirmComplete'),
@@ -1325,7 +1722,7 @@ export default class PosPage {
       icon: 'question',
       confirmText: t('ui.l.completeSale'),
     });
-    if (!sure || this.busy()) {
+    if (!sure || this.busy() || this.locked()) {
       return;
     }
     const request: CheckoutRequest = {
@@ -1338,7 +1735,7 @@ export default class PosPage {
         quantity: l.quantity,
         serialNumbers: l.serials,
       })),
-      payments,
+      payments: forApi(payments),
       prescription: this.rxNeeded() ? this.prescription() : null,
       memberUid: this.useInsurance() ? (this.member()?.uid ?? null) : null,
       preauthNumber: this.preauthNumber() || null,
@@ -1346,31 +1743,161 @@ export default class PosPage {
       balanceToAccount: this.balanceToAccount(),
       excessToAccount: this.excessToAccount(),
     };
+    await this.send(request);
+  }
+
+  /** "Check again": the unconfirmed checkout sent again, the same key and the same body. */
+  protected async checkAgain(): Promise<void> {
+    const request = this.pending();
+    if (request && !this.busy()) {
+      await this.send(request);
+    }
+  }
+
+  /**
+   * Sends a checkout and settles what came back. A sale: the receipt. A clear refusal: the
+   * message in the Payment card, and the cart can be changed (nothing was recorded, so the key may
+   * be used again). No clear answer: the cart locks on this exact request, which is stored with
+   * the sale so a reload or a parked copy sends the very same thing. The till stops waiting after
+   * {@link CHECKOUT_TIMEOUT_MS}, but an answer that comes later still completes the sale.
+   */
+  private async send(request: CheckoutRequest): Promise<void> {
+    const attempt = ++this.attempt;
+    const cart = this.cartId();
+    let late = false;
     this.busy.set(true);
+    this.problem.set(null);
+    const call = this.api.post<Sale>('/sales', request, {
+      headers: { 'Idempotency-Key': request.idempotencyKey },
+      silent: true,
+    });
+    call.then(
+      (sale) => {
+        if (late && !this.closed && this.pending()?.idempotencyKey === request.idempotencyKey) {
+          this.completed(sale);
+        }
+      },
+      () => undefined,
+    );
     try {
-      let sale: Sale;
-      try {
-        sale = await this.api.post<Sale>('/sales', request, {
-          headers: { 'Idempotency-Key': this.idempotencyKey },
-          silent: true,
-        });
-      } catch (failure) {
-        // No clear answer (no connection, a server error, a clash): the sale may have gone through.
-        // The key stays, so pressing Complete again returns that sale instead of charging twice.
-        const error = failure as ApiError;
-        const unsure =
-          error?.reason === 'network_error' || error?.status >= 500 || error?.status === 409;
-        this.toasts.error(unsure ? this.translations.t('pos.saleUncertain') : error?.message);
-        throw failure;
+      const sale = await new Promise<Sale>((resolve, reject) => {
+        // While a dialog the request opened is waiting for the person (a manager's approval,
+        // "Open your shift", "Confirm it is you"), the request has not gone yet: keep waiting.
+        const arm = (): ReturnType<typeof setTimeout> =>
+          setTimeout(() => {
+            if (document.querySelector('[aria-modal="true"]')) {
+              timer = arm();
+              return;
+            }
+            late = true;
+            reject(new CheckoutTimeout());
+          }, CHECKOUT_TIMEOUT_MS);
+        let timer = arm();
+        call.then(
+          (value) => {
+            clearTimeout(timer);
+            resolve(value);
+          },
+          (failure: unknown) => {
+            clearTimeout(timer);
+            reject(failure);
+          },
+        );
+      });
+      if (!this.closed && cart === this.cartId()) {
+        this.completed(sale);
       }
-      this.receipt.set(sale);
-      void this.attachPrescription(sale.uid, this.prescriptionFile());
-      this.toasts.success(this.translations.t('toast.saleCompleted', { number: sale.number }));
-      this.clear();
-      void this.products.reload();
-      this.shiftBar()?.refresh();
+    } catch (failure) {
+      if (this.closed || cart !== this.cartId() || attempt !== this.attempt) {
+        return;
+      }
+      const error = failure as Partial<ApiError>;
+      if (uncertain(failure)) {
+        this.pending.set(request);
+        this.pendingAt.update((at) => at ?? new Date().toISOString());
+        this.pendingWhy.set(
+          this.translations.t(
+            failure instanceof CheckoutTimeout
+              ? 'pos.uncertain.timeout'
+              : error.status === 0 || error.reason === 'network_error'
+                ? 'pos.uncertain.network'
+                : 'pos.uncertain.server',
+          ),
+        );
+        this.storePending();
+        this.showPending();
+      } else {
+        this.settlePending();
+        this.problem.set(error.message || this.translations.t('pos.checkoutFailed'));
+      }
     } finally {
-      this.busy.set(false);
+      if (attempt === this.attempt) {
+        this.busy.set(false);
+      }
+    }
+  }
+
+  /** The sale exists: its receipt, and a fresh till. */
+  private completed(sale: Sale): void {
+    this.settlePending();
+    this.receipt.set(sale);
+    void this.attachPrescription(sale.uid, this.prescriptionFile());
+    this.toasts.success(this.translations.t('toast.saleCompleted', { number: sale.number }));
+    this.clear();
+    void this.products.reload();
+    this.shiftBar()?.refresh();
+  }
+
+  /**
+   * "Look it up": the sales made at this branch from a few minutes before the unconfirmed checkout
+   * was first sent, newest first, to see whether it went through. Each opens in a new tab, so the
+   * till (which may not be left meanwhile) stays as it is.
+   */
+  protected async lookUp(): Promise<void> {
+    if (!this.session.can('sales.view')) {
+      this.problem.set(this.translations.t('pos.uncertain.noSalesView'));
+      return;
+    }
+    const at = Date.parse(this.pendingAt() ?? '') || Date.now();
+    this.lookupBusy.set(true);
+    try {
+      const page = await this.api.get<Page<SaleSummary>>(
+        '/sales',
+        { since: new Date(at - LOOKUP_MINUTES * 60_000).toISOString(), limit: 20 },
+        { silent: true },
+      );
+      this.lookup.set(page.items);
+    } catch (failure) {
+      this.problem.set((failure as Error).message);
+    } finally {
+      this.lookupBusy.set(false);
+    }
+  }
+
+  /** A sale in the lookup with the same total as the unconfirmed one: likely the same sale. */
+  protected likelyMatch(sale: SaleSummary): boolean {
+    return round2(sale.total) === this.totals().total;
+  }
+
+  /**
+   * "Clear the till": gives up on the unconfirmed checkout, once the cashier has found the sale in
+   * the history or is sure it was not recorded. Its key goes with it.
+   */
+  protected async clearPending(): Promise<void> {
+    if (!this.locked()) {
+      return;
+    }
+    const ok = await this.confirm.ask({
+      title: this.translations.t('pos.uncertain.clearTitle'),
+      text: this.translations.t('pos.uncertain.clearText'),
+      icon: 'danger',
+      confirmText: this.translations.t('pos.uncertain.clearConfirm'),
+      cancelText: this.translations.t('pos.keepSale'),
+    });
+    if (ok && this.locked() && !this.busy()) {
+      this.settlePending();
+      this.clear();
+      this.focusSearch();
     }
   }
 
@@ -1396,9 +1923,44 @@ export default class PosPage {
 
   /** Keeps the single cash row equal to the total until the cashier types an amount. */
   private syncCash(): void {
+    if (this.locked()) {
+      return;
+    }
     const list = this.payments();
     if (list.length === 1 && list[0].method === 'CASH') {
       this.payments.set([{ ...list[0], amount: this.totals().total }]);
     }
   }
+}
+
+/**
+ * A product of an unconfirmed checkout that could not be read again (no connection after a
+ * reload): shown by its code, as it was sent. The locked cart never changes it.
+ */
+function placeholder(line: ParkedLine): SellableProduct {
+  return {
+    productUid: line.productUid,
+    name: line.sku ?? '—',
+    genericName: null,
+    sku: line.sku,
+    gtin: null,
+    dosageForm: null,
+    strength: null,
+    categoryUid: null,
+    categoryName: null,
+    schedule: 'OTC',
+    sellingPrice: 0,
+    taxRatePercent: 0,
+    quantityOnHand: line.quantity,
+    productType: 'MEDICINE',
+    trackingMode: 'QUANTITY',
+    unitOfMeasure: 'PIECE',
+    requiresSerialAtSale: false,
+  };
+}
+
+/** A failure that says nothing about the record: no connection, or the server failed. */
+function unreachable(failure: unknown): boolean {
+  const status = (failure as { status?: unknown } | null)?.status;
+  return typeof status !== 'number' || status <= 0 || status >= 500;
 }

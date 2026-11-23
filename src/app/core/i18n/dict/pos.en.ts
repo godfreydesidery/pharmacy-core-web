@@ -71,7 +71,7 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.outOfStock': 'Out of stock',
   'pos.parkThisSale': 'Park this sale',
   'pos.parkedHint':
-    'Sales put aside at this till. Resuming one parks the sale on screen in its place.',
+    'Sales put aside at this till, kept for 12 hours. Resuming one parks the sale on screen in its place.',
   'pos.parkedSales': 'Sale list',
   'pos.payment': 'Payment',
   'pos.price': 'Price',
@@ -112,6 +112,43 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.walkInNote':
     'Walk-in customer. Search above to attach one for credit, insurance or their history.',
   'pos.vatIncluded': 'VAT included',
-  'pos.saleUncertain':
-    'The sale got no clear answer and may have gone through. Press Complete sale again: if it went through you get its receipt, and it is never charged twice.',
+  'pos.statusUnconfirmed': 'Not confirmed',
+  'pos.checkoutFailed': 'The sale was not completed.',
+  'pos.dismiss': 'Dismiss',
+  'pos.unpricedTitle': 'No {{plan}} price for these items',
+  'pos.unpricedHint':
+    'The sale cannot be completed until each one is removed or another price plan is chosen.',
+  'pos.unpricedBlock':
+    'Some items have no {{plan}} price. Remove them or choose another price plan.',
+  'pos.changePlan': 'Change price plan',
+  'pos.removeNamed': 'Remove {{name}}',
+  'pos.customerAttached': 'Customer attached',
+  'pos.parkedCustomerGone':
+    'The customer of this sale could not be found; it is now a walk-in sale.',
+  'pos.parkedItemsGone':
+    '{{count}} item(s) of this sale can no longer be sold here and were left out.',
+  'pos.uncertain.title': 'We could not confirm this sale',
+  'pos.uncertain.text':
+    'It may have gone through. The cart is locked so it is never charged twice. Check again sends the same sale with the same key: if it went through you get its receipt, if not it is completed now.',
+  'pos.uncertain.timeout': 'The server did not answer in time.',
+  'pos.uncertain.network': 'The server could not be reached.',
+  'pos.uncertain.server': 'The server had a problem while it was being recorded.',
+  'pos.uncertain.checkAgain': 'Check again',
+  'pos.uncertain.checking': 'Checking…',
+  'pos.uncertain.lookUp': 'Look it up',
+  'pos.uncertain.lookupHint': 'Sales at this branch from {{minutes}} minutes before it was sent:',
+  'pos.uncertain.sameTotal': 'Same total',
+  'pos.uncertain.noneFound': 'No sales were recorded in that time.',
+  'pos.uncertain.noSalesView':
+    'You cannot open the sales history. Ask a manager to look the sale up, or press Check again.',
+  'pos.uncertain.clear': 'Clear the till',
+  'pos.uncertain.clearTitle': 'Clear this unconfirmed sale?',
+  'pos.uncertain.clearText':
+    'Only do this once you found the sale in the sales history, or are sure it was not recorded. If it was recorded and you ring it up again, the customer is charged twice.',
+  'pos.uncertain.clearConfirm': 'Clear the till',
+  'pos.uncertain.stay': 'Check the unconfirmed sale before you leave the till.',
+  'pos.uncertain.discardText':
+    'This sale was never confirmed. Only delete it once you found it in the sales history, or are sure it was not recorded.',
+  'pos.parkedNotLoaded':
+    'This sale could not be loaded. Check the connection and try again; it stays in the Sale list.',
 };

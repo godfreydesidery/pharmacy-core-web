@@ -52,6 +52,9 @@ export class SignOutService {
           .catch(() => undefined);
       }
       const returnUrl = reason === 'user' ? null : usableReturnUrl(this.router.url);
+      // Parked sales stay (the owner's rule: leaving the till, signing out or an idle sign-out
+      // parks the sale so the cashier carries on after signing in). They hold only uids, are kept
+      // per user, pharmacy and branch, and expire after 12 hours (WEB-5).
       this.session.signOut();
       await this.router.navigate(['/sign-in'], {
         queryParams: {
