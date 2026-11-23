@@ -647,6 +647,8 @@ export interface SaleLine {
   /** The last day of the warranty of what the line sold, or null. */
   warrantyEndsOn: IsoDate | null;
   returnedSerialNumbers: string[];
+  /** The medicine's dispensing class when it was sold (null on sales before Batch 4). */
+  schedule?: 'OTC' | 'PRESCRIPTION' | 'CONTROLLED' | null;
 }
 
 export interface Sale {

@@ -47,8 +47,9 @@ function yesterday(): string {
           <ul class="muted small">
             <li>{{ 'periodLock.ruleRefused' | t }}</li>
             <li>{{ 'periodLock.ruleMoved' | t }}</li>
+            <li>{{ 'periodLock.unlockNeedsManager' | t }}</li>
           </ul>
-          @if (session.can('finance.manage')) {
+          @if (session.can('finance.period_lock')) {
             <div class="row mt" style="gap: 8px; align-items: flex-end; flex-wrap: wrap">
               <div class="field">
                 <label for="lock-date">{{ 'periodLock.date' | t }}</label>

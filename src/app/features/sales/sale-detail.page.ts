@@ -12,6 +12,8 @@ import { ToastService } from '../../core/ui/toast.service';
 import { ReceiptComponent } from '../pos/receipt.component';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 
+type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
+
 @Component({
   selector: 'app-sale-detail',
   imports: [TranslatePipe, ...SHARED, ReceiptComponent, AttachmentsComponent],
@@ -237,7 +239,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
       (closed)="returning.set(false)"
     >
       <div class="stack">
-        <p class="muted">{{ 'sales.returnedUnitsGoBackToThe' | t }}</p>
+        <p class="muted">{{ 'restock.explain' | t }}</p>
         <div class="table-wrap" style="border:1px solid var(--border);border-radius:12px">
           <table class="table compact">
             <thead>
@@ -247,6 +249,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 <th class="right">{{ 'sales.sold' | t }}</th>
                 <th class="right">{{ 'sales.returnable' | t }}</th>
                 <th class="right">{{ 'sales.return' | t }}</th>
+                <th>{{ 'restock.goesTo' | t }}</th>
               </tr>
             </thead>
             <tbody>
@@ -286,6 +289,21 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                       [readonly]="!!l.serialNumbers.length"
                       (input)="setQuantity(l, +$any($event.target).value)"
                     />
+                  </td>
+                  <td>
+                    <select
+                      class="select sm"
+                      [attr.aria-label]="'restock.goesTo' | t"
+                      [attr.data-testid]="'restock-' + l.uid"
+                      [value]="dispositionOf(l)"
+                      (change)="setDisposition(l, $any($event.target).value)"
+                    >
+                      <option value="SHELF" [disabled]="restricted(l)">
+                        {{ 'restock.SHELF' | t }}
+                      </option>
+                      <option value="QUARANTINE">{{ 'restock.QUARANTINE' | t }}</option>
+                      <option value="DAMAGED">{{ 'restock.DAMAGED' | t }}</option>
+                    </select>
                   </td>
                 </tr>
               }
@@ -389,6 +407,8 @@ export default class SaleDetailPage {
   protected readonly returning = signal(false);
   protected readonly busy = signal(false);
   protected readonly quantities = signal<Partial<Record<string, number>>>({});
+  /** Where each returned line goes: back on the shelf, held aside, or written off as damaged. */
+  protected readonly dispositions = signal<Partial<Record<string, Disposition>>>({});
   protected readonly reason = signal('');
   protected readonly refundCurrency = signal<string | null>(null);
 
@@ -471,8 +491,22 @@ export default class SaleDetailPage {
     this.quantities.update((q) => ({ ...q, [line.uid]: next.length }));
   }
 
+  /** A prescription or controlled medicine never goes back on the shelf (owner's rule). */
+  protected restricted(line: SaleLine): boolean {
+    return line.schedule === 'PRESCRIPTION' || line.schedule === 'CONTROLLED';
+  }
+
+  protected dispositionOf(line: SaleLine): Disposition {
+    return this.dispositions()[line.uid] ?? (this.restricted(line) ? 'QUARANTINE' : 'SHELF');
+  }
+
+  protected setDisposition(line: SaleLine, disposition: Disposition): void {
+    this.dispositions.update((d) => ({ ...d, [line.uid]: disposition }));
+  }
+
   protected openReturn(): void {
     this.quantities.set({});
+    this.dispositions.set({});
     this.pickedSerials.set({});
     this.reason.set('');
     this.refundCurrency.set(null);
@@ -494,6 +528,9 @@ export default class SaleDetailPage {
         saleLineUid,
         quantity,
         serialNumbers: this.pickedSerials()[saleLineUid] ?? null,
+        disposition: this.dispositionOf(
+          this.returnable().find((l) => l.uid === saleLineUid) as SaleLine,
+        ),
       }));
     if (!lines.length) {
       this.toasts.error(this.translations.t('toast.returnNeedsQuantity'));

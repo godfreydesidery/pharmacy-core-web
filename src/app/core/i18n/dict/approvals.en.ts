@@ -37,4 +37,26 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
   'errors.not_an_approver': 'That person is not allowed to approve this here.',
   'errors.invalid_return_window': 'The return window must be between 0 and 365 days.',
   'errors.shift_required': 'Open a till shift first.',
+  'restock.goesTo': 'Goes to',
+  'restock.SHELF': 'Back on the shelf',
+  'restock.QUARANTINE': 'Held aside (quarantine)',
+  'restock.DAMAGED': 'Damaged: write off',
+  'restock.explain':
+    'Choose where each item goes. Prescription and controlled medicines are never put back on the shelf: they are held aside until a pharmacist releases or writes them off.',
+  'errors.restock_not_allowed':
+    'A prescription or controlled medicine cannot go back on the shelf.',
+  'rolesNotice.title': 'Recommended roles',
+  'rolesNotice.text':
+    'Roles are now split so that no one person can sell, refund and write off stock alone. Your pharmacy keeps its roles until you apply the recommended ones.',
+  'rolesNotice.gains': 'gains',
+  'rolesNotice.loses': 'loses',
+  'rolesNotice.apply': 'Apply recommended roles',
+  'rolesNotice.show': 'Show the changes',
+  'rolesNotice.hide': 'Hide the changes',
+  'rolesNotice.keep': 'Keep my roles',
+  'rolesNotice.appliedToast': 'The recommended roles were applied.',
+  'periodLock.unlockNeedsManager':
+    'Moving the lock to an earlier date, or removing it, needs a manager to approve.',
+  'errors.supplier_return_needs_receipt':
+    'Choose the goods receipt this return belongs to; only a manager can return goods without one.',
 };

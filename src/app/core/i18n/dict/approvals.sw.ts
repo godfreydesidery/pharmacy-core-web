@@ -37,4 +37,25 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'errors.not_an_approver': 'Mtu huyo hana ruhusa ya kuidhinisha hili hapa.',
   'errors.invalid_return_window': 'Muda wa kurudisha lazima uwe kati ya siku 0 na 365.',
   'errors.shift_required': 'Fungua zamu ya droo kwanza.',
+  'restock.goesTo': 'Inakwenda',
+  'restock.SHELF': 'Kurudi rafuni',
+  'restock.QUARANTINE': 'Kuwekwa kando (karantini)',
+  'restock.DAMAGED': 'Imeharibika: futa',
+  'restock.explain':
+    'Chagua kila bidhaa inakwenda wapi. Dawa za cheti na zinazodhibitiwa hazirudishwi rafuni: zinawekwa kando hadi mfamasia aziachilie au azifute.',
+  'errors.restock_not_allowed': 'Dawa ya cheti au inayodhibitiwa haiwezi kurudi rafuni.',
+  'rolesNotice.title': 'Majukumu yanayopendekezwa',
+  'rolesNotice.text':
+    'Majukumu sasa yamegawanywa ili mtu mmoja asiweze kuuza, kurejesha fedha na kufuta bidhaa peke yake. Duka lako linabaki na majukumu yake hadi utumie yanayopendekezwa.',
+  'rolesNotice.gains': 'linapata',
+  'rolesNotice.loses': 'linapoteza',
+  'rolesNotice.apply': 'Tumia majukumu yanayopendekezwa',
+  'rolesNotice.show': 'Onyesha mabadiliko',
+  'rolesNotice.hide': 'Ficha mabadiliko',
+  'rolesNotice.keep': 'Baki na majukumu yangu',
+  'rolesNotice.appliedToast': 'Majukumu yanayopendekezwa yametumika.',
+  'periodLock.unlockNeedsManager':
+    'Kurudisha tarehe ya kufunga nyuma, au kuiondoa, kunahitaji idhini ya meneja.',
+  'errors.supplier_return_needs_receipt':
+    'Chagua stakabadhi ya kupokea bidhaa ambayo marejesho haya ni yake; ni meneja tu anayeweza kurudisha bidhaa bila stakabadhi.',
 };
