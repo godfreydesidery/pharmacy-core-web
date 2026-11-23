@@ -1,4 +1,16 @@
-import { formatDate, formatMoney, humanize, toneOf } from './format';
+import { csvCell, formatDate, formatMoney, humanize, toneOf } from './format';
+
+describe('csvCell', () => {
+  it('neutralises spreadsheet formulas in text, not in numbers (OWASP CSV injection)', () => {
+    expect(csvCell('=HYPERLINK("http://x")')).toBe(`"'=HYPERLINK(""http://x"")"`);
+    expect(csvCell('+255 700 000')).toBe(`"'+255 700 000"`);
+    expect(csvCell('@SUM(A1)')).toBe(`"'@SUM(A1)"`);
+    expect(csvCell('-5')).toBe(`"'-5"`);
+    expect(csvCell(-5)).toBe('"-5"');
+    expect(csvCell('Paracetamol')).toBe('"Paracetamol"');
+    expect(csvCell(null)).toBe('""');
+  });
+});
 
 /** Intl separates the currency code with a no-break space. */
 const plain = (text: string) => text.replace(/ /g, ' ');

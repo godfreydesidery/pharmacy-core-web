@@ -174,14 +174,26 @@ export function isoDay(days = 0): string {
   return `${date.getFullYear()}-${mm}-${dd}`;
 }
 
+/**
+ * One CSV cell, quoted. Text a spreadsheet would run as a formula (starting with `=`, `+`, `-`,
+ * `@`, tab or carriage return) gets a leading `'` (OWASP "CSV Injection"); numbers stay numbers,
+ * so a negative amount is untouched.
+ */
+export function csvCell(value: string | number | null): string {
+  let text = String(value ?? '');
+  if (typeof value === 'string' && /^[=+\-@\t\r]/.test(text)) {
+    text = `'${text}`;
+  }
+  return `"${text.replace(/"/g, '""')}"`;
+}
+
 /** Downloads rows as a CSV file. */
 export function downloadCsv(
   filename: string,
   header: string[],
   rows: (string | number | null)[][],
 ): void {
-  const escape = (value: string | number | null) => `"${String(value ?? '').replace(/"/g, '""')}"`;
-  const csv = [header, ...rows].map((row) => row.map(escape).join(',')).join('\n');
+  const csv = [header, ...rows].map((row) => row.map(csvCell).join(',')).join('\n');
   const link = document.createElement('a');
   link.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   link.download = filename;
