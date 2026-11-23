@@ -1189,30 +1189,31 @@ export default class PosPage {
   }
 
   /**
-   * The products of parked lines, read again by their code at this branch (with today's stock).
-   * `failed` when the API could not be asked (no connection, a server error), as opposed to a
-   * product it no longer sells here.
+   * The products of parked lines, read again by their uids at this branch (with today's stock),
+   * 100 at a time (`GET /pos/products?uids=`, Batch 8). `failed` when the API could not be asked
+   * (no connection, a server error), as opposed to a product it no longer sells here.
    */
   private async findProducts(
     lines: readonly ParkedLine[],
   ): Promise<{ found: Map<string, SellableProduct>; failed: boolean }> {
     const found = new Map<string, SellableProduct>();
     let failed = false;
-    await Promise.all(
-      lines.map(async (line) => {
-        if (!line.sku) {
-          return;
-        }
-        const page = await this.api
-          .get<Page<SellableProduct>>('/pos/products', { q: line.sku, limit: 20 }, { silent: true })
-          .catch((failure: unknown) => {
-            failed ||= unreachable(failure);
-            return null;
-          });
-        const product = page?.items.find((p) => p.productUid === line.productUid);
-        if (product) found.set(line.productUid, product);
-      }),
-    );
+    const uids = [...new Set(lines.map((l) => l.productUid))];
+    for (let i = 0; i < uids.length; i += 100) {
+      const page = await this.api
+        .get<Page<SellableProduct>>(
+          '/pos/products',
+          { uids: uids.slice(i, i + 100).join(',') },
+          { silent: true },
+        )
+        .catch((failure: unknown) => {
+          failed ||= unreachable(failure);
+          return null;
+        });
+      for (const product of page?.items ?? []) {
+        found.set(product.productUid, product);
+      }
+    }
     return { found, failed };
   }
 
@@ -1861,6 +1862,17 @@ export default class PosPage {
     const at = Date.parse(this.pendingAt() ?? '') || Date.now();
     this.lookupBusy.set(true);
     try {
+      // The exact sale first: the API finds a sale by the key it was sent with (Batch 8).
+      const key = this.pending()?.idempotencyKey;
+      const exact = key
+        ? await this.api
+            .get<Page<SaleSummary>>('/sales', { idempotencyKey: key }, { silent: true })
+            .catch(() => null)
+        : null;
+      if (exact?.items.length) {
+        this.lookup.set(exact.items);
+        return;
+      }
       const page = await this.api.get<Page<SaleSummary>>(
         '/sales',
         { since: new Date(at - LOOKUP_MINUTES * 60_000).toISOString(), limit: 20 },

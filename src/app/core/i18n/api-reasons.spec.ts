@@ -14,7 +14,9 @@ describe('API refusal reasons', () => {
 
   it('lists the reasons the API sends, with their problem members', () => {
     expect(Object.keys(reasons).length).toBeGreaterThan(300);
-    expect(reasons['insufficient_stock']).toEqual([]);
+    expect(reasons['insufficient_stock']).toEqual(
+      expect.arrayContaining(['product', 'available', 'requested']),
+    );
     expect(reasons['approval_required']).toEqual(['action', 'amount']);
     expect(reasons['batch_cost_differs']).toEqual(['batchUnitCost']);
   });

@@ -7,17 +7,14 @@
   ],
   "valuesOnlyInDetail": [
     "account_exists",
-    "account_on_hold",
     "adapter_not_available",
     "adapter_unavailable",
     "already_a_member",
     "base_currency_only",
     "batch_expired",
     "batch_expiry_mismatch",
-    "batch_not_expired",
     "batch_not_found",
     "batch_not_in_stock",
-    "batch_not_on_receipt",
     "batch_quarantined",
     "batch_required",
     "branch_not_allowed",
@@ -27,9 +24,7 @@
     "claim_closed",
     "clock_backwards",
     "clock_move",
-    "credit_limit_exceeded",
     "currency_mismatch",
-    "currency_not_accepted",
     "customer_required",
     "duplicate_batch",
     "duplicate_code",
@@ -55,10 +50,8 @@
     "forbidden",
     "foreign_refund_method",
     "foreign_refund_not_allowed",
-    "future_date",
     "inputs_below_formula",
     "insufficient_account_credit",
-    "insufficient_stock",
     "insurance_amount_mismatch",
     "invalid_action",
     "invalid_adapter",
@@ -67,7 +60,6 @@
     "invalid_event_types",
     "invalid_exchange_rate",
     "invalid_idempotency_key",
-    "invalid_idle_minutes",
     "invalid_kind",
     "invalid_limit",
     "invalid_look",
@@ -91,16 +83,10 @@
     "not_controlled",
     "not_managed",
     "over_receipt",
-    "overpayment",
     "payment_declined",
-    "payment_mismatch",
-    "payment_short",
     "period_locked",
     "permission_not_held",
     "plan_feature_unavailable",
-    "plan_limit_reached",
-    "preauth_required",
-    "product_inactive",
     "product_not_found",
     "product_not_on_order",
     "provider_incomplete",
@@ -108,10 +94,8 @@
     "rate_missing",
     "rate_out_of_range",
     "recipe_mismatch",
-    "recovery_on_hold",
     "refund_currency_not_tendered",
     "refund_method_not_allowed",
-    "remittance_exceeds_due",
     "restock_not_allowed",
     "return_exceeds_sold",
     "sale_line_not_found",
@@ -121,16 +105,13 @@
     "serial_not_on_sale",
     "serial_not_sold",
     "serial_not_supported",
-    "serial_required",
     "serials_mismatch",
     "serials_not_tracked",
-    "session_idle",
     "smtp_port_not_allowed",
     "supplier_mismatch",
     "supplier_required",
     "too_many_columns",
     "too_many_providers",
-    "too_many_rows",
     "tracking_mode_locked",
     "unknown_provider",
     "username_taken",
@@ -144,7 +125,9 @@
   "reasons": {
     "account_exists": [],
     "account_locked": [],
-    "account_on_hold": [],
+    "account_on_hold": [
+      "customer"
+    ],
     "adapter_not_available": [],
     "adapter_unavailable": [],
     "admin_role_fixed": [],
@@ -167,11 +150,20 @@
     ],
     "batch_expired": [],
     "batch_expiry_mismatch": [],
-    "batch_not_expired": [],
+    "batch_not_expired": [
+      "batch",
+      "expiry",
+      "product"
+    ],
     "batch_not_found": [],
     "batch_not_in_stock": [],
     "batch_not_of_product": [],
-    "batch_not_on_receipt": [],
+    "batch_not_on_receipt": [
+      "batch",
+      "expiry",
+      "product",
+      "receipt"
+    ],
     "batch_quarantined": [],
     "batch_required": [],
     "branch_not_allowed": [],
@@ -201,14 +193,22 @@
     "controlled_prescription_incomplete": [],
     "count_not_found": [],
     "count_posted": [],
-    "credit_limit_exceeded": [],
+    "credit_limit_exceeded": [
+      "available",
+      "currency",
+      "customer",
+      "limit"
+    ],
     "credit_limit_not_allowed": [],
     "credit_not_permitted": [],
     "currency_locked": [],
     "currency_mismatch": [],
-    "currency_not_accepted": [],
+    "currency_not_accepted": [
+      "currency"
+    ],
     "customer_not_found": [],
     "customer_required": [],
+    "database_busy": [],
     "delivery_not_found": [],
     "destruction_not_found": [],
     "direct_creation_disabled": [],
@@ -249,14 +249,25 @@
     "forbidden": [],
     "foreign_refund_method": [],
     "foreign_refund_not_allowed": [],
-    "future_date": [],
+    "future_date": [
+      "date",
+      "today"
+    ],
     "goods_receipt_not_found": [],
     "head_office_required": [],
     "idempotency_in_progress": [],
-    "idempotency_key_reused": [],
+    "idempotency_key_reused": [
+      "saleNumber",
+      "saleUid"
+    ],
     "inputs_below_formula": [],
     "insufficient_account_credit": [],
-    "insufficient_stock": [],
+    "insufficient_stock": [
+      "available",
+      "batch",
+      "product",
+      "requested"
+    ],
     "insurance_amount_mismatch": [],
     "internal_error": [],
     "invalid_action": [],
@@ -289,7 +300,10 @@
     "invalid_generic_name": [],
     "invalid_gtin": [],
     "invalid_idempotency_key": [],
-    "invalid_idle_minutes": [],
+    "invalid_idle_minutes": [
+      "max",
+      "min"
+    ],
     "invalid_kind": [],
     "invalid_lead_time": [],
     "invalid_limit": [],
@@ -372,7 +386,11 @@
     "orders_required": [],
     "over_receipt": [],
     "overpaid_non_cash": [],
-    "overpayment": [],
+    "overpayment": [
+      "currency",
+      "open",
+      "receipts"
+    ],
     "owner_required": [],
     "passkey_exists": [],
     "passkey_not_found": [],
@@ -381,22 +399,39 @@
     "password_required": [],
     "payer_not_found": [],
     "payment_declined": [],
-    "payment_mismatch": [],
+    "payment_mismatch": [
+      "amount",
+      "method"
+    ],
     "payment_request_not_found": [],
-    "payment_short": [],
+    "payment_short": [
+      "currency",
+      "paid",
+      "total"
+    ],
     "period_locked": [],
+    "period_too_long": [],
     "permission_not_held": [],
     "phone_needs_verification": [],
     "plan_feature_unavailable": [],
-    "plan_limit_reached": [],
+    "plan_limit_reached": [
+      "limit",
+      "plan",
+      "resource",
+      "used"
+    ],
     "plan_not_found": [],
-    "preauth_required": [],
+    "preauth_required": [
+      "payer"
+    ],
     "prescription_required": [],
     "price_list_not_found": [],
     "price_list_target": [],
     "price_plan_not_allowed": [],
     "price_plan_not_found": [],
-    "product_inactive": [],
+    "product_inactive": [
+      "product"
+    ],
     "product_not_found": [],
     "product_not_on_order": [],
     "promotion_not_found": [],
@@ -411,10 +446,17 @@
     "receipt_supplier_mismatch": [],
     "receiver_is_sender": [],
     "recipe_mismatch": [],
-    "recovery_on_hold": [],
+    "recovery_on_hold": [
+      "notBefore"
+    ],
     "refund_currency_not_tendered": [],
     "refund_method_not_allowed": [],
-    "remittance_exceeds_due": [],
+    "remittance_exceeds_due": [
+      "amount",
+      "claim",
+      "due",
+      "payer"
+    ],
     "remittance_mismatch": [],
     "reseal_running": [],
     "restock_not_allowed": [],
@@ -439,11 +481,15 @@
     "serial_not_on_sale": [],
     "serial_not_sold": [],
     "serial_not_supported": [],
-    "serial_required": [],
+    "serial_required": [
+      "product"
+    ],
     "serials_mismatch": [],
     "serials_not_tracked": [],
     "session_expired": [],
-    "session_idle": [],
+    "session_idle": [
+      "idleMinutes"
+    ],
     "session_not_found": [],
     "session_required": [],
     "settings_not_found": [],
@@ -470,7 +516,12 @@
     "too_many_columns": [],
     "too_many_providers": [],
     "too_many_requests": [],
-    "too_many_rows": [],
+    "too_many_rows": [
+      "max"
+    ],
+    "too_many_uids": [
+      "max"
+    ],
     "tracking_mode_locked": [],
     "transfer_not_found": [],
     "two_factor_already_enabled": [],

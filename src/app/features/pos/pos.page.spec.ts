@@ -112,6 +112,14 @@ class FakeApi {
 
   constructor() {
     this.gets.set('/pos/products', (query) => {
+      const uids = String((query as Query)['uids'] ?? '');
+      if (uids) {
+        const wanted = uids.split(',');
+        return Promise.resolve({
+          items: [PARACETAMOL, AMOXICILLIN].filter((p) => wanted.includes(p.productUid)),
+          nextCursor: null,
+        });
+      }
       const q = String((query as Query)['q'] ?? '');
       return Promise.resolve({
         items: [PARACETAMOL, AMOXICILLIN].filter((p) => p.sku === q || p.name.includes(q)),

@@ -62,12 +62,13 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.duplicate_name': 'Jina hili tayari linatumika.',
 
   // selling
-  'errors.insufficient_stock': 'Hakuna hifadhi ya kutosha ya bidhaa hii hapa.',
-  'errors.payment_short': 'Malipo hayatoshi kufikia jumla.',
+  'errors.insufficient_stock':
+    'Hifadhi haitoshi: zipo {{available}} tu, unahitaji {{requested}}. {{product}}{{batch}}',
+  'errors.payment_short': 'Malipo ({{paid}}) hayatoshi kufikia jumla ({{total}}).',
   'errors.overpaid_non_cash':
     'Ni fedha taslimu tu inayoweza kuzidi, isipokuwa ziada iwekwe kwenye akaunti ya mteja.',
   'errors.customer_required': 'Mteja wa papo kwa papo hawezi kudaiwa; chagua mteja.',
-  'errors.credit_limit_exceeded': 'Hii itampitisha mteja kikomo chake cha mkopo.',
+  'errors.credit_limit_exceeded': 'Hii itampitisha mteja kikomo chake cha mkopo ({{limit}}).',
   'errors.credit_not_permitted': 'Jukumu lako haliruhusu kuuza kwa mkopo.',
   'errors.insufficient_account_credit': 'Akaunti haina salio la kutosha.',
   'errors.discount_not_allowed': 'Huruhusiwi kutoa punguzo.',
@@ -170,7 +171,8 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.invalid_value': 'Taarifa inayohitajika haipo.',
 
   // sign-in and accounts
-  'errors.session_idle': 'Umetolewa baada ya muda bila kutumia programu; ingia tena.',
+  'errors.session_idle':
+    'Umetolewa baada ya dakika {{idleMinutes}} bila kutumia programu; ingia tena.',
   'errors.session_not_found': 'Kipindi hicho cha kuingia kimeshaisha.',
   'errors.managed_login':
     'Hii ni akaunti ya mfanyakazi wa famasia: famasia yake ndiyo hutunza taarifa zake na huweka upya nenosiri lake.',
@@ -206,13 +208,13 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.reseal_running': 'Usimbaji upya wa funguo tayari unaendelea.',
 
   // selling, customers and insurance
-  'errors.product_inactive': 'Bidhaa hii haiuzwi tena.',
+  'errors.product_inactive': 'Bidhaa hii haiuzwi tena: {{product}}.',
   'errors.product_not_found': 'Bidhaa hiyo haipo.',
   'errors.customer_not_found': 'Mteja huyo hayupo.',
   'errors.member_not_of_customer': 'Uanachama huu wa bima si wa mteja huyu.',
   'errors.account_on_hold': 'Akaunti ya mteja imesimamishwa; hakuna mkopo mpya unaoruhusiwa.',
   'errors.invalid_credit_limit': 'Weka kikomo cha mkopo.',
-  'errors.currency_not_accepted': 'Famasia hii haipokei sarafu hiyo (Mipangilio → Sarafu).',
+  'errors.currency_not_accepted': 'Famasia hii haipokei sarafu {{currency}} (Mipangilio → Sarafu).',
   'errors.refund_method_not_allowed': 'Fedha hurudishwa kwa njia ileile ambayo mauzo yalilipwa.',
   'errors.preauth_required': 'Bima hii inahitaji namba ya idhini ya awali.',
   'errors.payer_not_found': 'Mlipaji huyo hayupo.',
@@ -255,7 +257,7 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.transfer_not_found': 'Uhamisho huo haupo.',
   'errors.destruction_not_found': 'Rekodi hiyo ya uteketezaji haipo.',
   'errors.invalid_date': 'Tarehe haiwezi kuwa ya siku zijazo.',
-  'errors.future_date': 'Tarehe ni baada ya leo.',
+  'errors.future_date': 'Tarehe {{date}} ni baada ya leo ({{today}}).',
   'errors.invalid_adjustment': 'Marekebisho yawe zaidi ya -100%.',
   'errors.goods_receipt_not_found': 'Mapokezi hayo ya bidhaa hayapo.',
   'errors.purchase_order_not_found': 'Oda hiyo ya manunuzi haipo.',
@@ -286,5 +288,9 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.invalid_owner_type': 'Faili haliwezi kuambatishwa hapa.',
   'errors.invalid_purpose': 'Faili haliwezi kuambatishwa hapa.',
   'errors.invalid_format': 'Pakua kama Excel (xlsx) au CSV.',
-  'errors.too_many_rows': 'Safu nyingi mno zinalingana: punguza vichujio kisha upakue tena.',
+  'errors.too_many_rows':
+    'Safu nyingi mno zinalingana (zaidi ya {{max}}): punguza vichujio kisha upakue tena.',
+  'errors.period_too_long': 'Chagua kipindi kisichozidi siku 366.',
+  'errors.too_many_uids': 'Bidhaa nyingi mno kwa mara moja (zisizozidi {{max}}).',
+  'errors.database_busy': 'Mfumo una shughuli nyingi sasa hivi. Jaribu tena baada ya muda mfupi.',
 };

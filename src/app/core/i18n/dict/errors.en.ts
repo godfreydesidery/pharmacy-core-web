@@ -66,12 +66,14 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.duplicate_name': 'This name is already in use.',
 
   // selling
-  'errors.insufficient_stock': 'There is not enough stock of this product here.',
-  'errors.payment_short': 'The payments do not cover the total.',
+  'errors.insufficient_stock':
+    'Not enough stock: {{available}} available, {{requested}} needed. {{product}}{{batch}}',
+  'errors.payment_short': 'The payments ({{paid}}) do not cover the total ({{total}}).',
   'errors.overpaid_non_cash':
     'Only cash can be overpaid, unless the excess goes on the customer account.',
   'errors.customer_required': 'A walk-in customer cannot owe; choose the customer.',
-  'errors.credit_limit_exceeded': 'This would take the customer over their credit limit.',
+  'errors.credit_limit_exceeded':
+    'This would take the customer over their credit limit ({{limit}}).',
   'errors.credit_not_permitted': 'Your role may not sell on account.',
   'errors.insufficient_account_credit': 'The account does not hold enough credit.',
   'errors.discount_not_allowed': 'You may not give a discount.',
@@ -176,7 +178,8 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.invalid_value': 'A required value is missing.',
 
   // sign-in and accounts
-  'errors.session_idle': 'You were signed out after a while without using the app; sign in again.',
+  'errors.session_idle':
+    'You were signed out after {{idleMinutes}} minutes without using the app; sign in again.',
   'errors.session_not_found': 'That session has already ended.',
   'errors.managed_login':
     'This is a pharmacy staff login: its pharmacy keeps its details and resets its password.',
@@ -213,14 +216,14 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.reseal_running': 'The re-encryption of the keys is already running.',
 
   // selling, customers and insurance
-  'errors.product_inactive': 'This product is no longer sold.',
+  'errors.product_inactive': 'This product is no longer sold: {{product}}.',
   'errors.product_not_found': 'No such product.',
   'errors.customer_not_found': 'No such customer.',
   'errors.member_not_of_customer': "This insurance membership is not the customer's.",
   'errors.account_on_hold': "The customer's account is on hold; no new credit is allowed.",
   'errors.invalid_credit_limit': 'Enter the credit limit.',
   'errors.currency_not_accepted':
-    'This pharmacy does not accept that currency (Settings → Currencies).',
+    'This pharmacy does not accept {{currency}} (Settings → Currencies).',
   'errors.refund_method_not_allowed': 'A refund goes back the way the sale was paid.',
   'errors.preauth_required': 'This insurer needs a pre-authorisation number.',
   'errors.payer_not_found': 'No such insurer.',
@@ -262,7 +265,7 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.transfer_not_found': 'No such transfer.',
   'errors.destruction_not_found': 'No such destruction record.',
   'errors.invalid_date': 'The date cannot be in the future.',
-  'errors.future_date': 'The date is after today.',
+  'errors.future_date': 'The date {{date}} is after today ({{today}}).',
   'errors.invalid_adjustment': 'The adjustment must be more than -100%.',
   'errors.goods_receipt_not_found': 'No such goods receipt.',
   'errors.purchase_order_not_found': 'No such purchase order.',
@@ -292,5 +295,9 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.invalid_owner_type': 'A file cannot be attached here.',
   'errors.invalid_purpose': 'A file cannot be attached here.',
   'errors.invalid_format': 'Download as Excel (xlsx) or CSV.',
-  'errors.too_many_rows': 'Too many rows match: narrow the filters and download again.',
+  'errors.too_many_rows':
+    'Too many rows match (more than {{max}}): narrow the filters and download again.',
+  'errors.period_too_long': 'Choose a period of at most 366 days.',
+  'errors.too_many_uids': 'Too many products at once (at most {{max}}).',
+  'errors.database_busy': 'The system is busy right now. Try again in a moment.',
 };

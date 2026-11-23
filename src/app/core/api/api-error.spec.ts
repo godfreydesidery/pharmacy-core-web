@@ -9,7 +9,15 @@ const english = (key: string, params?: Params, fallback?: string) =>
   translate(EN, key, params, fallback);
 
 describe('localizeError', () => {
-  const short = new ApiError(422, 'payment_short', 'The payments cover 9,000.00 of 10,000.00.');
+  const short = new ApiError(
+    422,
+    'payment_short',
+    'The payments cover 9,000.00 of 10,000.00.',
+    null,
+    null,
+    null,
+    { paid: 9000, total: 10000 },
+  );
 
   it('keeps the server detail in English, which names the amounts', () => {
     expect(localizeError(short, 'en', swahili)).toBe(short);
@@ -22,7 +30,10 @@ describe('localizeError', () => {
     expect(localized.reason).toBe('weak_password');
     expect(localized.field).toBe('password');
     expect(localized.correlationId).toBe('c-1');
-    expect(localizeError(short, 'sw', swahili).message).toBe('Malipo hayatoshi kufikia jumla.');
+    // The values the API sends with the refusal (Batch 8) are named in Swahili too.
+    expect(localizeError(short, 'sw', swahili).message).toBe(
+      'Malipo (9,000) hayatoshi kufikia jumla (10,000).',
+    );
   });
 
   it('explains a recalled batch with the dictionary line even in English', () => {
