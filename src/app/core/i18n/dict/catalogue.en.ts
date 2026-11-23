@@ -37,7 +37,8 @@ export const CATALOGUE_EN: Readonly<Record<string, string>> = {
   'catalogue.model': 'Model',
   'catalogue.name': 'Name',
   'catalogue.nameGenericBrandSkuOrGtin': 'Name, generic, brand, code or barcode…',
-  'catalogue.codeHint': 'Unique in the pharmacy. Leave empty and the next number is given (such as P00042).',
+  'catalogue.codeHint':
+    'Unique in the pharmacy. Leave empty and the next number is given (such as P00042).',
   'catalogue.codeAuto': 'Automatic',
   'catalogue.noCategories': 'No categories',
   'catalogue.noManufacturers': 'No manufacturers',

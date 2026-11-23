@@ -64,7 +64,8 @@ export const PROVIDERS_SW: Readonly<Record<string, string>> = {
     'Mnatumia watoa huduma wa jukwaa. Ongezeni wenu ili kutuma kupitia akaunti zenu; wazimeni kurudi.',
   'providers.off': 'Imezimwa',
   'providers.tripped': 'Imesimamishwa kwa muda',
-  'providers.trippedHint': 'Imeshindwa mara kadhaa mfululizo, kwa hiyo inajaribiwa baada ya wengine kwa dakika chache.',
+  'providers.trippedHint':
+    'Imeshindwa mara kadhaa mfululizo, kwa hiyo inajaribiwa baada ya wengine kwa dakika chache.',
   'providers.up': 'Panda juu',
   'providers.down': 'Shuka chini',
   'providers.turnOff': 'Zima',
@@ -73,7 +74,8 @@ export const PROVIDERS_SW: Readonly<Record<string, string>> = {
   'providers.testOne': 'Jaribu',
   'providers.remove': 'Ondoa',
   'providers.removeTitle': 'Ondoa {{name}}?',
-  'providers.removeText': 'Ujumbe hautapita tena kupitia huyu. Funguo zake zilizohifadhiwa zinafutwa.',
+  'providers.removeText':
+    'Ujumbe hautapita tena kupitia huyu. Funguo zake zilizohifadhiwa zinafutwa.',
   'providers.none': 'Hakuna watoa huduma bado: ujumbe unapita kwa mipangilio ya seva.',
   'providers.noneOwn': 'Hamna watoa huduma wenu bado.',
   'providers.addTitle': 'Ongeza mtoa huduma',

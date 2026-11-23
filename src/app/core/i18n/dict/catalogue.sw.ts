@@ -37,7 +37,8 @@ export const CATALOGUE_SW: Readonly<Record<string, string>> = {
   'catalogue.model': 'Modeli',
   'catalogue.name': 'Jina',
   'catalogue.nameGenericBrandSkuOrGtin': 'Jina, jina la kisayansi, chapa, msimbo au msimbopau…',
-  'catalogue.codeHint': 'Haurudiwi katika duka. Ukiacha wazi, namba inayofuata hutolewa (mfano P00042).',
+  'catalogue.codeHint':
+    'Haurudiwi katika duka. Ukiacha wazi, namba inayofuata hutolewa (mfano P00042).',
   'catalogue.codeAuto': 'Otomatiki',
   'catalogue.noCategories': 'Hakuna makundi',
   'catalogue.noManufacturers': 'Hakuna watengenezaji',

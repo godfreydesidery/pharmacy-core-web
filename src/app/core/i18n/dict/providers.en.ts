@@ -64,7 +64,8 @@ export const PROVIDERS_EN: Readonly<Record<string, string>> = {
     'Using the platform’s providers. Add your own to send through your accounts instead; turn them off to go back.',
   'providers.off': 'Off',
   'providers.tripped': 'Held back',
-  'providers.trippedHint': 'It failed several times in a row, so it is tried after the others for a few minutes.',
+  'providers.trippedHint':
+    'It failed several times in a row, so it is tried after the others for a few minutes.',
   'providers.up': 'Move up',
   'providers.down': 'Move down',
   'providers.turnOff': 'Turn off',
