@@ -59,4 +59,11 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
     'Moving the lock to an earlier date, or removing it, needs a manager to approve.',
   'errors.supplier_return_needs_receipt':
     'Choose the goods receipt this return belongs to; only a manager can return goods without one.',
+  'creditLimit.change': 'Change credit limit',
+  'creditLimit.hint':
+    'Credit sales above the limit are refused. Changing it is recorded in the audit trail.',
+  'creditLimit.saved': 'The credit limit was changed.',
+  'creditLimit.notAllowed': 'Only an accountant or a manager can set or change a credit limit.',
+  'errors.credit_limit_not_allowed':
+    'Only an accountant or a manager can set or change a credit limit.',
 };

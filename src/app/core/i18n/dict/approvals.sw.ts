@@ -58,4 +58,12 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
     'Kurudisha tarehe ya kufunga nyuma, au kuiondoa, kunahitaji idhini ya meneja.',
   'errors.supplier_return_needs_receipt':
     'Chagua stakabadhi ya kupokea bidhaa ambayo marejesho haya ni yake; ni meneja tu anayeweza kurudisha bidhaa bila stakabadhi.',
+  'creditLimit.change': 'Badilisha kikomo cha mkopo',
+  'creditLimit.hint':
+    'Mauzo ya mkopo zaidi ya kikomo yanakataliwa. Mabadiliko yanaandikwa katika kumbukumbu za ukaguzi.',
+  'creditLimit.saved': 'Kikomo cha mkopo kimebadilishwa.',
+  'creditLimit.notAllowed':
+    'Ni mhasibu au meneja tu anayeweza kuweka au kubadilisha kikomo cha mkopo.',
+  'errors.credit_limit_not_allowed':
+    'Ni mhasibu au meneja tu anayeweza kuweka au kubadilisha kikomo cha mkopo.',
 };

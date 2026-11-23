@@ -324,7 +324,8 @@ export interface CustomerInput {
   type: CustomerType;
   insuranceProvider: string | null;
   insuranceNumber: string | null;
-  creditLimit: number | null;
+  /** Left out by someone without `partners.credit_limit`: the current limit is kept. */
+  creditLimit?: number | null;
   address: string | null;
   active: boolean;
   /** How long the customer has to pay an amount put on account; NET_30 by default. */
