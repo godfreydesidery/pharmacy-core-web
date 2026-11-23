@@ -1,4 +1,12 @@
-import { ChangeDetectionStrategy, Component, effect, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  effect,
+  inject,
+  signal,
+  untracked,
+} from '@angular/core';
+import { SettingsStore } from '../../core/format/settings.store';
 import { OpenShiftService } from '../../core/session/open-shift';
 import { Api } from '../../core/api/api.service';
 import { loaded } from '../../core/data/data';
@@ -185,8 +193,29 @@ export class ShiftBarComponent {
   protected readonly report = signal<ShiftView | null>(null);
 
   private readonly openShift = inject(OpenShiftService);
+  private readonly settings = inject(SettingsStore);
 
   constructor() {
+    // Smoothly, before the first item: when the pharmacy requires an open shift and the cashier
+    // has none, "Open your shift" asks as the till opens, not when a customer is waiting at
+    // Complete (the API's shift_required stays the backstop for refunds and vouchers).
+    let fetched = false;
+    let asked = false;
+    effect(() => {
+      if (this.shift.loading()) {
+        fetched = true;
+        return;
+      }
+      const required = this.settings.settings()?.requireOpenShift;
+      if (!fetched || asked || this.shift.value() || this.shift.error() || !required) {
+        return;
+      }
+      if (!this.session.can('sales.sell')) {
+        return;
+      }
+      asked = true;
+      untracked(() => void this.openShift.ask());
+    });
     // A shift opened from the "Open shift" prompt shows here at once.
     effect(() => {
       if (this.openShift.opened() > 0) {
