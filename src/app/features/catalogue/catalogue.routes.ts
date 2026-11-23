@@ -4,9 +4,15 @@ export default [
   { path: '', pathMatch: 'full', redirectTo: 'products' },
   { path: 'products', title: 'Products', loadComponent: () => import('./products.page') },
   { path: 'pricing', title: 'Pricing', loadComponent: () => import('./pricing.page') },
+  // The plans as buttons on one page; each plan's prices and actions on its own page.
   {
     path: 'pricing-plans',
     title: 'Pricing plans',
+    loadComponent: () => import('./pricing-plans.page'),
+  },
+  {
+    path: 'pricing-plans/:plan',
+    title: 'Pricing plan',
     loadComponent: () => import('./pricing-plans.page'),
   },
   {

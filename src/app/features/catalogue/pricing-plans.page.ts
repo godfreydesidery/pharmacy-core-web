@@ -1,5 +1,8 @@
 import { HttpClient } from '@angular/common/http';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
+import { map } from 'rxjs';
 import { Api } from '../../core/api/api.service';
 import {
   BulkResult,
@@ -61,58 +64,114 @@ interface PlanDraft {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
-      <div class="page-head">
-        <div>
-          <h1>{{ 'plans.title' | t }}</h1>
-          <p class="sub">{{ 'plans.sub' | t }}</p>
+      @if (selected() === null) {
+        <div class="page-head">
+          <div>
+            <h1>{{ 'plans.title' | t }}</h1>
+            <p class="sub">{{ 'plans.choose' | t }}</p>
+          </div>
         </div>
-      </div>
 
-      <div class="plan-cards" role="tablist" data-testid="plan-cards">
-        @for (c of cards.value() ?? []; track c.uid) {
-          <button
-            type="button"
-            role="tab"
-            class="plan-card"
-            [class.active]="(c.uid ?? 'normal') === selected()"
-            [class.off]="!c.active"
-            [attr.aria-selected]="(c.uid ?? 'normal') === selected()"
-            [attr.data-testid]="'plan-card-' + c.name"
-            (click)="choose(c)"
-          >
-            <b>{{ c.uid ? c.name : ('plans.normal' | t) }}</b>
-            <small>{{ audience(c) }}</small>
-            <small class="muted">
-              {{
-                c.uid
-                  ? c.rulePercent === null
-                    ? ('pricing.blocks' | t)
-                    : ('plans.rule' | t: { rule: signed(c.rulePercent) })
-                  : ('plans.default' | t)
-              }}
-            </small>
-            <span class="count">
-              {{ 'plans.count' | t: { count: c.priced } }}
-              @if (!c.active) {
-                · {{ 'plans.inactive' | t }}
+        <div class="plan-filter" role="search">
+          <div class="field grow">
+            <label for="plan-search">{{ 'plans.findPlan' | t }}</label>
+            <input
+              id="plan-search"
+              type="search"
+              data-testid="plan-search"
+              [placeholder]="'plans.searchHint' | t"
+              [value]="planQuery()"
+              (input)="planQuery.set($any($event.target).value)"
+            />
+          </div>
+          <div class="field">
+            <label for="plan-kind">{{ 'plans.whoFor' | t }}</label>
+            <select
+              id="plan-kind"
+              data-testid="plan-kind"
+              [value]="planKind()"
+              (change)="planKind.set($any($event.target).value)"
+            >
+              @for (k of planKinds; track k) {
+                <option [value]="k">{{ 'plans.kind.' + k | t }}</option>
               }
-            </span>
-          </button>
+            </select>
+          </div>
+          <label class="check">
+            <input
+              type="checkbox"
+              data-testid="plan-inactive"
+              [checked]="showInactive()"
+              (change)="showInactive.set($any($event.target).checked)"
+            />
+            {{ 'plans.showInactive' | t }}
+          </label>
+        </div>
+        <p class="muted small" aria-live="polite" data-testid="plan-shown">
+          {{
+            'plans.shown' | t: { shown: shownCards().length, total: (cards.value() ?? []).length }
+          }}
+        </p>
+
+        <nav class="plan-cards" data-testid="plan-cards" [attr.aria-label]="'plans.title' | t">
+          @for (c of shownCards(); track c.uid) {
+            <a
+              class="plan-card"
+              [class.off]="!c.active"
+              [attr.data-testid]="'plan-card-' + c.name"
+              [routerLink]="['/catalogue/pricing-plans', c.uid ?? 'normal']"
+            >
+              <b>{{ c.uid ? c.name : ('plans.normal' | t) }}</b>
+              <small>{{ audience(c) }}</small>
+              <small class="muted">
+                {{
+                  c.uid
+                    ? c.rulePercent === null
+                      ? ('pricing.blocks' | t)
+                      : ('plans.rule' | t: { rule: signed(c.rulePercent) })
+                    : ('plans.default' | t)
+                }}
+              </small>
+              <span class="count">
+                {{ 'plans.count' | t: { count: c.priced } }}
+                @if (!c.active) {
+                  · {{ 'plans.inactive' | t }}
+                }
+              </span>
+            </a>
+          }
+          @if (canEdit()) {
+            <button type="button" class="plan-card add" data-testid="plan-new" (click)="newPlan()">
+              <app-icon name="plus" [size]="18" />
+              <b>{{ 'plans.newPlan' | t }}</b>
+            </button>
+          }
+        </nav>
+        @if (cards.value() && shownCards().length === 0) {
+          <p class="muted" data-testid="plan-none">{{ 'plans.noneMatch' | t }}</p>
         }
-        @if (canEdit()) {
-          <button type="button" class="plan-card add" data-testid="plan-new" (click)="newPlan()">
-            <app-icon name="plus" [size]="18" />
-            <b>{{ 'plans.newPlan' | t }}</b>
-          </button>
+      } @else {
+        <div class="page-head">
+          <div>
+            <a class="back" routerLink="/catalogue/pricing-plans" data-testid="plans-back">
+              <app-icon name="arrow-left" [size]="16" />
+              {{ 'plans.title' | t }}
+            </a>
+            <h1>{{ cardName() }}</h1>
+          </div>
+        </div>
+        @if (cards.value() && !card()) {
+          <div class="card">
+            <p class="muted">{{ 'plans.notFound' | t }}</p>
+          </div>
         }
-      </div>
+      }
 
       @if (card(); as c) {
         <div class="card">
           <div class="plan-head">
             <div>
-              <h2>{{ c.uid ? c.name : ('plans.normal' | t) }}</h2>
-              <p class="muted small">
+              <p class="muted">
                 {{ audience(c) }}
                 @if (c.uid && c.rulePercent === null && notPricedCount() > 0) {
                   ·
@@ -706,6 +765,47 @@ interface PlanDraft {
     </app-drawer>
   `,
   styles: `
+    .plan-filter {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 12px;
+      margin-bottom: 6px;
+    }
+    .plan-filter .field {
+      display: grid;
+      grid-template-rows: auto 38px;
+      gap: 4px;
+      min-width: 180px;
+    }
+    .plan-filter input,
+    .plan-filter select {
+      height: 38px;
+    }
+    .plan-filter .grow {
+      flex: 1 1 260px;
+    }
+    .plan-filter .check {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding-bottom: 8px;
+    }
+    a.plan-card {
+      color: inherit;
+      text-decoration: none;
+    }
+    .back {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      margin-bottom: 4px;
+      color: var(--muted);
+      text-decoration: none;
+    }
+    .back:hover {
+      color: var(--primary);
+    }
     .plan-cards {
       display: grid;
       grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
@@ -844,7 +944,32 @@ export default class PricingPlansPage {
     path: '/pricing-plans/cards',
     options: { noBranch: true },
   }));
-  protected readonly selected = signal('normal');
+  private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
+  /** The plan whose page this is ('normal' for Normal Sale); null on the page of buttons. */
+  protected readonly selected = toSignal(
+    this.route.paramMap.pipe(map((params) => params.get('plan'))),
+    { initialValue: null as string | null },
+  );
+  /** The page of buttons: filter by text, by who the plan is for, and inactive ones. */
+  protected readonly planKinds = ['all', 'type', 'customer', 'insurer', 'till'] as const;
+  protected readonly planQuery = signal('');
+  protected readonly planKind = signal<(typeof this.planKinds)[number]>('all');
+  protected readonly showInactive = signal(false);
+  protected readonly shownCards = computed(() => {
+    const words = this.planQuery().trim().toLowerCase().split(/\s+/).filter(Boolean);
+    const kind = this.planKind();
+    return (this.cards.value() ?? []).filter((c) => {
+      if (!c.uid) {
+        // Normal Sale stays first unless a search or a kind leaves it out.
+        return kind === 'all' && words.every((w) => this.cardText(c).includes(w));
+      }
+      if (!c.active && !this.showInactive()) return false;
+      if (kind !== 'all' && this.kindOf(c) !== kind) return false;
+      const text = this.cardText(c);
+      return words.every((w) => text.includes(w));
+    });
+  });
   protected readonly card = computed(
     () => (this.cards.value() ?? []).find((c) => (c.uid ?? 'normal') === this.selected()) ?? null,
   );
@@ -868,7 +993,7 @@ export default class PricingPlansPage {
   }));
   protected readonly items = pagedList<PlanItemRow>(
     () => ({
-      path: `/pricing-plans/${this.selected()}/items`,
+      path: `/pricing-plans/${this.selected() ?? 'normal'}/items`,
       query: {
         q: this.qDebounced() || undefined,
         categoryUid: this.category() || undefined,
@@ -921,9 +1046,25 @@ export default class PricingPlansPage {
   protected readonly history = signal<PriceChange[]>([]);
 
   protected choose(c: PlanCard): void {
-    this.selected.set(c.uid ?? 'normal');
     this.notPriced.set(false);
     this.edited.set({});
+    void this.router.navigate(['/catalogue/pricing-plans', c.uid ?? 'normal']);
+  }
+
+  private kindOf(c: PlanCard): 'type' | 'customer' | 'insurer' | 'till' {
+    if (c.payerName) return 'insurer';
+    if (c.customerName) return 'customer';
+    if (c.customerType) return 'type';
+    return 'till';
+  }
+
+  /** What a search matches: the name, who it is for and its rule, in the language shown. */
+  private cardText(c: PlanCard): string {
+    const name = c.uid ? c.name : this.translations.t('plans.normal');
+    return [name, this.audience(c), c.payerName, c.customerName, c.customerType]
+      .filter(Boolean)
+      .join(' ')
+      .toLowerCase();
   }
 
   protected audience(c: PlanCard): string {
@@ -1157,7 +1298,7 @@ export default class PricingPlansPage {
         const made = await this.api.post<PriceList>('/price-lists', this.body(d), {
           noBranch: true,
         });
-        this.selected.set(made.uid);
+        void this.router.navigate(['/catalogue/pricing-plans', made.uid]);
       }
       this.toasts.success(this.translations.t('pricing.saved'));
       this.draft.set(null);
