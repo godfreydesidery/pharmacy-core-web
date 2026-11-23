@@ -153,6 +153,12 @@ export interface Settings {
   idleMinutes: number;
   /** Everyone who works here needs an authenticator app or a passkey (G16). */
   requireTwoFactor?: boolean;
+  /** Above this amount (base currency) a refund, write-off, voucher or shift difference needs a manager. */
+  approvalLimit: number;
+  /** Days after a sale its goods may come back without a manager (0 to 365). */
+  returnWindowDays: number;
+  /** A cashier opens a till shift before selling, refunding or issuing a voucher. */
+  requireOpenShift: boolean;
 }
 
 /** `POST /auth/activity`: the session's inactivity limit after the person used the app. */
@@ -318,7 +324,8 @@ export interface CustomerInput {
   type: CustomerType;
   insuranceProvider: string | null;
   insuranceNumber: string | null;
-  creditLimit: number | null;
+  /** Left out by someone without `partners.credit_limit`: the current limit is kept. */
+  creditLimit?: number | null;
   address: string | null;
   active: boolean;
   /** How long the customer has to pay an amount put on account; NET_30 by default. */
@@ -465,6 +472,8 @@ export interface TransferLine {
   expiryDate: IsoDate | null;
   quantity: number;
   serialNumbers: string[];
+  /** Units that arrived (null while in transit, and on transfers received before Batch 4). */
+  receivedQuantity?: number | null;
 }
 
 export interface Transfer {
@@ -479,6 +488,12 @@ export interface Transfer {
   lines: TransferLine[];
   createdAt: IsoDateTime;
   receivedAt: IsoDateTime | null;
+  dispatchedBy?: string | null;
+  /** The sender, who may not also receive it. */
+  dispatchedByUid?: Uid | null;
+  receivedBy?: string | null;
+  /** Whole days since it was sent, while in transit. */
+  daysInTransit?: number | null;
 }
 
 /* ---------- purchasing ---------- */
@@ -641,6 +656,8 @@ export interface SaleLine {
   /** The last day of the warranty of what the line sold, or null. */
   warrantyEndsOn: IsoDate | null;
   returnedSerialNumbers: string[];
+  /** The medicine's dispensing class when it was sold (null on sales before Batch 4). */
+  schedule?: 'OTC' | 'PRESCRIPTION' | 'CONTROLLED' | null;
 }
 
 export interface Sale {
@@ -698,16 +715,27 @@ export interface SaleReturn {
   refundExchangeRate?: number | null;
   /** Base paid out − refundTotal: positive a realised exchange loss, negative a gain. */
   fxDifference?: number;
-  lines: {
-    saleLineUid: Uid;
-    productName: string;
-    batchNumber: string;
-    quantity: number;
-    serialNumbers: string[];
-    refund: number;
-  }[];
+  lines: SaleReturnLine[];
   createdAt: IsoDateTime;
   createdBy: string;
+}
+
+export interface SaleReturnLine {
+  /** The return line's own uid (to release what is held). */
+  uid: Uid;
+  saleLineUid: Uid;
+  productName: string;
+  batchNumber: string;
+  quantity: number;
+  serialNumbers: string[];
+  refund: number;
+  /** Where its units went: back on the shelf, held aside, or written off as damaged. */
+  disposition?: 'SHELF' | 'QUARANTINE' | 'DAMAGED';
+  /** Units still held aside (0 once released). */
+  heldQuantity?: number;
+  releasedOutcome?: 'SHELF' | 'DAMAGED' | null;
+  releasedAt?: IsoDateTime | null;
+  releasedBy?: string | null;
 }
 
 /* ---------- finance ---------- */

@@ -375,7 +375,8 @@ export default class DestructionsPage {
 
   protected async save(): Promise<void> {
     const lines = this.lines().filter((l) => l.batchUid);
-    if (!this.method().trim() || !this.witnessName().trim() || !lines.length) {
+    // The witness may be left empty when a manager approves: they become the witness (Batch 4).
+    if (!this.method().trim() || !this.note().trim() || !lines.length) {
       this.toasts.error(this.translations.t('dest.incomplete'));
       return;
     }

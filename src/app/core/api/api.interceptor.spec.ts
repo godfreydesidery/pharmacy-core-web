@@ -8,6 +8,8 @@ import { ApiError } from './api-error';
 import { Api } from './api.service';
 import { apiInterceptor } from './api.interceptor';
 import { ConfirmIdentityService } from '../session/confirm-identity';
+import { ManagerApprovalService } from '../session/manager-approval';
+import { OpenShiftService } from '../session/open-shift';
 
 describe('apiInterceptor', () => {
   let api: Api;
@@ -92,6 +94,120 @@ describe('apiInterceptor', () => {
         { status: 403, statusText: 'Forbidden' },
       );
     await expect(result).rejects.toMatchObject({ reason: 'reauthentication_required' });
+  });
+
+  it('asks a manager on approval_required, then sends it again with the approval', async () => {
+    const approvals = TestBed.inject(ManagerApprovalService);
+    const asked = vi.spyOn(approvals, 'ask').mockResolvedValue('pap_token');
+    const result = api.post<{ code: string }>('/vouchers', { value: 80000 });
+    const first = http.expectOne('/api/v1/vouchers');
+    const key = first.request.headers.get('Idempotency-Key');
+    first.flush(
+      {
+        status: 403,
+        reason: 'approval_required',
+        detail: 'A manager must approve this.',
+        action: 'VOUCHER',
+        amount: 80000,
+      },
+      { status: 403, statusText: 'Forbidden' },
+    );
+    await vi.waitFor(() =>
+      expect(asked).toHaveBeenCalledWith({ action: 'VOUCHER', amount: 80000 }),
+    );
+    const again = await vi.waitFor(() => http.expectOne('/api/v1/vouchers'));
+    expect(again.request.headers.get('X-Approval')).toBe('pap_token');
+    // The same attempt: the refusal was not recorded, so the same key goes again.
+    expect(again.request.headers.get('Idempotency-Key')).toBe(key);
+    again.flush({ success: true, data: { code: 'V1' } });
+    expect(await result).toEqual({ code: 'V1' });
+  });
+
+  it('toasts a refusal of the approved attempt, and does not ask twice', async () => {
+    const approvals = TestBed.inject(ManagerApprovalService);
+    const asked = vi.spyOn(approvals, 'ask').mockResolvedValue('pap_old');
+    const toasts = TestBed.inject(ToastService);
+    const result = api.post('/vouchers', {});
+    http
+      .expectOne('/api/v1/vouchers')
+      .flush(
+        { status: 403, reason: 'approval_required', action: 'VOUCHER', amount: 1 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    const again = await vi.waitFor(() => http.expectOne('/api/v1/vouchers'));
+    again.flush(
+      { status: 403, reason: 'approval_invalid', detail: 'That approval has expired.' },
+      { status: 403, statusText: 'Forbidden' },
+    );
+    await expect(result).rejects.toMatchObject({ reason: 'approval_invalid' });
+    expect(asked).toHaveBeenCalledOnce();
+    expect(toasts.toasts().at(-1)?.message).toBe('That approval has expired.');
+  });
+
+  it('adds a second approval when one request needs two', async () => {
+    const approvals = TestBed.inject(ManagerApprovalService);
+    const asked = vi
+      .spyOn(approvals, 'ask')
+      .mockResolvedValueOnce('pap_late')
+      .mockResolvedValueOnce('pap_controlled');
+    const result = api.post('/sales/s1/returns', {});
+    http
+      .expectOne('/api/v1/sales/s1/returns')
+      .flush(
+        { status: 403, reason: 'approval_required', action: 'LATE_RETURN', amount: 5000 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    const second = await vi.waitFor(() => http.expectOne('/api/v1/sales/s1/returns'));
+    expect(second.request.headers.get('X-Approval')).toBe('pap_late');
+    second.flush(
+      { status: 403, reason: 'approval_required', action: 'CONTROLLED_WRITE_OFF', amount: 900 },
+      { status: 403, statusText: 'Forbidden' },
+    );
+    const third = await vi.waitFor(() => http.expectOne('/api/v1/sales/s1/returns'));
+    expect(third.request.headers.get('X-Approval')).toBe('pap_late, pap_controlled');
+    third.flush({ success: true, data: { ok: true } });
+    expect(await result).toEqual({ ok: true });
+    expect(asked).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not ask twice for the same action', async () => {
+    const asked = vi
+      .spyOn(TestBed.inject(ManagerApprovalService), 'ask')
+      .mockResolvedValue('pap_1');
+    const result = api.post('/vouchers', {});
+    const refusal = { status: 403, reason: 'approval_required', action: 'VOUCHER', amount: 1 };
+    http.expectOne('/api/v1/vouchers').flush(refusal, { status: 403, statusText: 'Forbidden' });
+    const again = await vi.waitFor(() => http.expectOne('/api/v1/vouchers'));
+    again.flush(refusal, { status: 403, statusText: 'Forbidden' });
+    await expect(result).rejects.toMatchObject({ reason: 'approval_required' });
+    expect(asked).toHaveBeenCalledOnce();
+  });
+
+  it('opens a shift at the till on shift_required, then sends the sale again', async () => {
+    const asked = vi.spyOn(TestBed.inject(OpenShiftService), 'ask').mockResolvedValue(true);
+    const result = api.post<{ number: string }>('/sales', {});
+    http
+      .expectOne('/api/v1/sales')
+      .flush(
+        { status: 409, reason: 'shift_required', detail: 'Open a till shift first.' },
+        { status: 409, statusText: 'Conflict' },
+      );
+    const again = await vi.waitFor(() => http.expectOne('/api/v1/sales'));
+    again.flush({ success: true, data: { number: 'S-1' } });
+    expect(await result).toEqual({ number: 'S-1' });
+    expect(asked).toHaveBeenCalledOnce();
+  });
+
+  it('gives up when the manager approval is cancelled', async () => {
+    vi.spyOn(TestBed.inject(ManagerApprovalService), 'ask').mockResolvedValue(null);
+    const result = api.post('/vouchers', {});
+    http
+      .expectOne('/api/v1/vouchers')
+      .flush(
+        { status: 403, reason: 'approval_required', action: 'VOUCHER', amount: 1 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await expect(result).rejects.toMatchObject({ reason: 'approval_required' });
   });
 
   it('sends an Idempotency-Key on money-moving POSTs, not on sales or reads', () => {

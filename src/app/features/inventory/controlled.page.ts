@@ -12,6 +12,8 @@ interface ControlledProduct {
   strength: string | null;
   dosageForm: string | null;
   onHand: number;
+  /** False for a product that was controlled once and is not now: its register stays. */
+  controlledNow?: boolean;
 }
 
 interface RegisterLine {
@@ -72,7 +74,12 @@ interface RegisterLine {
               >
                 <span class="grow"
                   ><b>{{ p.name }}</b
-                  ><small class="muted">{{ p.strength }}</small></span
+                  ><small class="muted"
+                    >{{ p.strength }}
+                    @if (p.controlledNow === false) {
+                      · {{ 'controlled.noLonger' | t }}
+                    }
+                  </small></span
                 >
                 <span class="badge" [class.red]="p.onHand === 0">{{ p.onHand | num }}</span>
               </button>

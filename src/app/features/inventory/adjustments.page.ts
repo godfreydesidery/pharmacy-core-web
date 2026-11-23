@@ -165,6 +165,9 @@ const REASONS: AdjustmentReason[] = [
         <div class="field full">
           <label>{{ 'inventory.note' | t }}</label
           ><textarea class="input" formControlName="note"></textarea>
+          @if (err('note'); as m) {
+            <span class="error">{{ m }}</span>
+          }
         </div>
       </form>
       <ng-container footer>
@@ -223,6 +226,12 @@ export default class AdjustmentsPage {
     }
     if (this.form.controls.quantityChange.value === 0) {
       this.form.controls.quantityChange.setErrors({ api: 'Must not be zero' });
+      return;
+    }
+    if (this.form.controls.quantityChange.value < 0 && !this.form.controls.note.value.trim()) {
+      // Stock taken off the books always says why (FRD-5).
+      this.form.controls.note.setErrors({ api: this.translations.t('errors.note_required') });
+      this.form.controls.note.markAsTouched();
       return;
     }
     this.busy.set(true);

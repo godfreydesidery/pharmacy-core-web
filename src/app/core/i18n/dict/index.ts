@@ -3,6 +3,8 @@
  * files, `<area>.en.ts` and `<area>.sw.ts`, so areas can be translated independently. Register a
  * new pair here: import both and add them to the two spreads below.
  */
+import { APPROVALS_EN } from './approvals.en';
+import { APPROVALS_SW } from './approvals.sw';
 import { PLANNING_EN } from './planning.en';
 import { PLANNING_SW } from './planning.sw';
 import { PLANS_EN } from './plans.en';
@@ -117,6 +119,7 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...PARTNERS_EN,
   ...ENUM_EN,
   ...ERRORS_EN,
+  ...APPROVALS_EN,
   ...MESSAGES_EN,
   ...UI_EN,
 };
@@ -158,6 +161,7 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...PARTNERS_SW,
   ...ENUM_SW,
   ...ERRORS_SW,
+  ...APPROVALS_SW,
   ...MESSAGES_SW,
   ...UI_SW,
 };

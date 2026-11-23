@@ -5,13 +5,22 @@ import { LookService } from './core/ui/look.service';
 import { ThemeService } from './core/ui/theme.service';
 import { ConfirmDialogComponent } from './core/ui/confirm';
 import { ConfirmIdentityComponent } from './core/session/confirm-identity';
+import { ManagerApprovalComponent } from './core/session/manager-approval';
+import { OpenShiftComponent } from './core/session/open-shift';
 import { ToasterComponent } from './core/ui/widgets';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToasterComponent, ConfirmDialogComponent, ConfirmIdentityComponent],
+  imports: [
+    RouterOutlet,
+    ToasterComponent,
+    ConfirmDialogComponent,
+    ConfirmIdentityComponent,
+    ManagerApprovalComponent,
+    OpenShiftComponent,
+  ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<router-outlet /><app-toaster /><app-confirm /><app-confirm-identity />`,
+  template: `<router-outlet /><app-toaster /><app-confirm /><app-confirm-identity /><app-manager-approval /><app-open-shift />`,
 })
 export class App {
   /** Created here so the saved theme applies before any page renders. */

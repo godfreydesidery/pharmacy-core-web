@@ -7,7 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { Api } from '../../core/api/api.service';
-import { Page, Product, Transfer } from '../../core/api/models';
+import { Page, Product, Transfer, TransferLine } from '../../core/api/models';
 import { loaded, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -65,6 +65,14 @@ interface DraftLine {
                 <span class="badge amber" style="margin-left:6px">{{ n }}</span>
               }
             </button>
+            <button
+              type="button"
+              data-testid="overdue-transfers"
+              [class.active]="direction() === 'OVERDUE'"
+              (click)="chosen = true; direction.set('OVERDUE')"
+            >
+              {{ 'transfer.overdue' | t }}
+            </button>
           </div>
           <div class="table-wrap">
             <table class="table">
@@ -100,15 +108,31 @@ interface DraftLine {
                     <td>{{ t.toBranchName }}</td>
                     <td style="white-space:normal;max-width:320px">{{ summary(t) }}</td>
                     <td class="muted">{{ t.createdAt | when }}</td>
-                    <td class="muted">{{ t.receivedAt | when }}</td>
-                    <td><app-status [value]="t.status" /></td>
+                    <td class="muted">
+                      {{ t.receivedAt | when }}
+                      @if (t.receivedBy) {
+                        <small style="display:block">{{ t.receivedBy }}</small>
+                      }
+                    </td>
+                    <td>
+                      <app-status [value]="t.status" />
+                      @if (t.daysInTransit) {
+                        <small class="muted" style="display:block">
+                          {{ 'transfer.daysInTransit' | t: { days: t.daysInTransit } }}
+                        </small>
+                      }
+                    </td>
                     <td class="right">
-                      @if (t.status === 'IN_TRANSIT' && t.toBranchUid === session.branch()?.uid) {
+                      @if (
+                        t.status === 'IN_TRANSIT' &&
+                        t.toBranchUid === session.branch()?.uid &&
+                        !sentByMe(t)
+                      ) {
                         <button
                           class="btn sm success"
                           type="button"
                           [disabled]="busy()"
-                          (click)="receive(t)"
+                          (click)="openReceive(t)"
                         >
                           <app-icon name="check" [size]="14" /> {{ 'inventory.receive' | t }}
                         </button>
@@ -133,6 +157,75 @@ interface DraftLine {
         </div>
       }
     </div>
+
+    <app-modal
+      [open]="!!receiving()"
+      [title]="'transfer.receiveTitle' | t: { number: receiving()?.number ?? '' }"
+      [wide]="true"
+      (closed)="receiving.set(null)"
+    >
+      @if (receiving(); as t) {
+        <p class="muted">{{ 'transfer.receiveText' | t }}</p>
+        <div class="table-wrap" style="border:1px solid var(--border);border-radius:12px">
+          <table class="table compact">
+            <thead>
+              <tr>
+                <th>{{ 'inventory.items' | t }}</th>
+                <th>{{ 'sales.batch' | t }}</th>
+                <th class="right">{{ 'inventory.sent' | t }}</th>
+                <th class="right">{{ 'transfer.arrived' | t }}</th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (l of t.lines; track l.batchUid) {
+                <tr>
+                  <td>{{ l.productName }}</td>
+                  <td class="mono">{{ l.batchNumber }}</td>
+                  <td class="right">{{ l.quantity }}</td>
+                  <td class="right">
+                    <input
+                      class="input sm"
+                      style="width:80px"
+                      type="number"
+                      min="0"
+                      [max]="l.quantity"
+                      [attr.aria-label]="'transfer.arrived' | t"
+                      [value]="arrived()[l.batchUid] ?? l.quantity"
+                      (input)="setArrived(l, +$any($event.target).value)"
+                    />
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+        @if (shortUnits() > 0) {
+          <div class="field mt">
+            <label for="transfer-short-note">{{ 'transfer.shortNote' | t }}</label>
+            <input
+              id="transfer-short-note"
+              class="input"
+              [value]="receiveNote()"
+              (input)="receiveNote.set($any($event.target).value)"
+            />
+            <span class="hint">{{ 'transfer.shortHint' | t: { units: shortUnits() } }}</span>
+          </div>
+        }
+      }
+      <ng-container footer>
+        <button class="btn" type="button" (click)="receiving.set(null)">
+          {{ 'common.cancel' | t }}
+        </button>
+        <button
+          class="btn primary"
+          type="button"
+          [disabled]="busy() || (shortUnits() > 0 && !receiveNote().trim())"
+          (click)="receive()"
+        >
+          {{ 'inventory.receive' | t }}
+        </button>
+      </ng-container>
+    </app-modal>
 
     <app-modal
       [open]="creating()"
@@ -236,9 +329,17 @@ export default class TransfersPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
-  protected readonly direction = signal<'OUTGOING' | 'INCOMING'>('OUTGOING');
+  protected readonly direction = signal<'OUTGOING' | 'INCOMING' | 'OVERDUE'>('OUTGOING');
   protected readonly list = pagedList<Transfer>(() =>
-    this.session.branch() ? { path: '/transfers', query: { direction: this.direction() } } : null,
+    this.session.branch()
+      ? {
+          path: '/transfers',
+          query:
+            this.direction() === 'OVERDUE'
+              ? { overdue: true, days: 7 }
+              : { direction: this.direction() },
+        }
+      : null,
   );
   /** Incoming transfers still in transit to this branch: counted on the tab, opened by default. */
   private readonly incoming = loaded<Page<Transfer>>(() =>
@@ -327,10 +428,50 @@ export default class TransfersPage {
     }
   }
 
-  protected async receive(transfer: Transfer): Promise<void> {
+  /** The transfer being received, with what arrived of each batch (all of it by default). */
+  protected readonly receiving = signal<Transfer | null>(null);
+  protected readonly arrived = signal<Partial<Record<string, number>>>({});
+  protected readonly receiveNote = signal('');
+  protected readonly shortUnits = computed(() =>
+    (this.receiving()?.lines ?? []).reduce(
+      (short, l) => short + (l.quantity - (this.arrived()[l.batchUid] ?? l.quantity)),
+      0,
+    ),
+  );
+
+  /** The person who sent a transfer does not receive it (FRD-15). */
+  protected sentByMe(t: Transfer): boolean {
+    return !!t.dispatchedByUid && t.dispatchedByUid === this.session.user()?.uid;
+  }
+
+  protected openReceive(t: Transfer): void {
+    this.arrived.set({});
+    this.receiveNote.set('');
+    this.receiving.set(t);
+  }
+
+  protected setArrived(line: TransferLine, quantity: number): void {
+    this.arrived.update((a) => ({
+      ...a,
+      [line.batchUid]: Math.min(Math.max(Math.floor(quantity) || 0, 0), line.quantity),
+    }));
+  }
+
+  protected async receive(): Promise<void> {
+    const transfer = this.receiving();
+    if (!transfer) {
+      return;
+    }
+    const lines = transfer.lines
+      .filter((l) => (this.arrived()[l.batchUid] ?? l.quantity) < l.quantity)
+      .map((l) => ({ batchUid: l.batchUid, receivedQuantity: this.arrived()[l.batchUid] ?? 0 }));
     this.busy.set(true);
     try {
-      await this.api.post(`/transfers/${transfer.uid}/receive`, {});
+      await this.api.post(
+        `/transfers/${transfer.uid}/receive`,
+        lines.length ? { note: this.receiveNote().trim() || null, lines } : {},
+      );
+      this.receiving.set(null);
       this.toasts.success(
         this.translations.t('toast.transferReceived', { number: transfer.number }),
       );

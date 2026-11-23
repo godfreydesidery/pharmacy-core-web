@@ -1,4 +1,5 @@
 import { SetupChecklistComponent } from './setup-checklist.component';
+import { RolesNoticeComponent } from '../admin/roles-notice.component';
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { Dashboard, Page, Transfer } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
@@ -20,7 +21,7 @@ const METHOD_COLORS: Record<string, string> = {
 
 @Component({
   selector: 'app-dashboard',
-  imports: [...SHARED, TranslatePipe, SetupChecklistComponent],
+  imports: [...SHARED, TranslatePipe, SetupChecklistComponent, RolesNoticeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -50,6 +51,7 @@ const METHOD_COLORS: Record<string, string> = {
       </div>
 
       <app-setup-checklist />
+      <app-roles-notice />
 
       @if (pendingTransfers(); as n) {
         <a

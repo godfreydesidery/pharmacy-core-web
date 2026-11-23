@@ -12,10 +12,11 @@ import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
+import { RolesNoticeComponent } from './roles-notice.component';
 
 @Component({
   selector: 'app-roles',
-  imports: [...SHARED],
+  imports: [...SHARED, RolesNoticeComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -32,6 +33,7 @@ import { Translations } from '../../core/i18n/translations.store';
           </button>
         </div>
       </div>
+      <app-roles-notice (applied)="roles.reload()" />
       <div class="grid" style="grid-template-columns:280px minmax(0,1fr)">
         <div class="card" style="padding:8px">
           @for (r of roles.value() ?? []; track r.uid) {

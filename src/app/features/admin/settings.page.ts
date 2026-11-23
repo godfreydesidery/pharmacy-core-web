@@ -99,6 +99,46 @@ import { Translations } from '../../core/i18n/translations.store';
             />
             <span class="hint">{{ 'admin.theMostACashierWith' | t }}</span>
           </div>
+          <h3>{{ 'controls.title' | t }}</h3>
+          <div class="field">
+            <label for="approval-limit">{{ 'controls.approvalLimit' | t }}</label
+            ><input
+              id="approval-limit"
+              class="input"
+              type="number"
+              min="0"
+              step="1000"
+              formControlName="approvalLimit"
+              data-testid="approval-limit"
+            />
+            @if (err('approvalLimit'); as e) {
+              <span class="error">{{ e }}</span>
+            }
+            <span class="hint">{{ 'controls.approvalLimitHint' | t }}</span>
+          </div>
+          <div class="field">
+            <label for="return-window">{{ 'controls.returnWindow' | t }}</label
+            ><input
+              id="return-window"
+              class="input"
+              type="number"
+              min="0"
+              max="365"
+              formControlName="returnWindowDays"
+              data-testid="return-window"
+            />
+            @if (err('returnWindowDays'); as e) {
+              <span class="error">{{ e }}</span>
+            }
+            <span class="hint">{{ 'controls.returnWindowHint' | t }}</span>
+          </div>
+          <div class="field">
+            <label class="check" data-testid="require-open-shift">
+              <input type="checkbox" formControlName="requireOpenShift" />
+              {{ 'controls.requireOpenShift' | t }}
+            </label>
+            <span class="hint">{{ 'controls.requireOpenShiftHint' | t }}</span>
+          </div>
           <h3>{{ 'idle.security' | t }}</h3>
           <div class="field">
             <label>{{ 'idle.setting' | t }}</label
@@ -337,6 +377,9 @@ export default class SettingsPage implements OnInit {
     look: ['PREMIUM' as Settings['look']],
     idleMinutes: [15, [Validators.required, Validators.min(5), Validators.max(60)]],
     requireTwoFactor: [false],
+    approvalLimit: [50000, [Validators.required, Validators.min(0)]],
+    returnWindowDays: [7, [Validators.required, Validators.min(0), Validators.max(365)]],
+    requireOpenShift: [false],
   });
 
   async ngOnInit(): Promise<void> {

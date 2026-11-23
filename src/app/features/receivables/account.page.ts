@@ -59,6 +59,16 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
                 {{ a.onHold ? ('ui.l.releaseHold' | t) : ('ui.l.putOnHold' | t) }}
               </button>
             }
+            @if (session.can('partners.credit_limit')) {
+              <button
+                class="btn"
+                type="button"
+                data-testid="change-credit-limit"
+                (click)="openLimit(a.creditLimit)"
+              >
+                <app-icon name="edit" [size]="16" /> {{ 'creditLimit.change' | t }}
+              </button>
+            }
             @if (session.can('finance.write_off')) {
               <button
                 class="btn"
@@ -382,6 +392,39 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
       </app-modal>
 
       <app-modal
+        [open]="limiting()"
+        [title]="'creditLimit.change' | t"
+        (closed)="limiting.set(false)"
+      >
+        <div class="field">
+          <label for="new-credit-limit">{{ 'partners.creditLimit' | t }}</label
+          ><input
+            id="new-credit-limit"
+            class="input"
+            type="number"
+            min="0"
+            step="any"
+            [value]="newLimit()"
+            (input)="newLimit.set(+$any($event.target).value)"
+          />
+        </div>
+        <p class="muted">{{ 'creditLimit.hint' | t }}</p>
+        <ng-container footer>
+          <button class="btn" type="button" (click)="limiting.set(false)">
+            {{ 'common.cancel' | t }}
+          </button>
+          <button
+            class="btn primary"
+            type="button"
+            [disabled]="busy() || newLimit() < 0"
+            (click)="saveLimit()"
+          >
+            {{ 'common.save' | t }}
+          </button>
+        </ng-container>
+      </app-modal>
+
+      <app-modal
         [open]="holding()"
         [title]="a.onHold ? ('ui.l.releaseHold' | t) : ('ui.l.putAccountOnHold' | t)"
         (closed)="holding.set(false)"
@@ -680,6 +723,27 @@ export default class CustomerAccountPage {
       reason: '',
     });
     this.writingOff.set(true);
+  }
+
+  protected readonly limiting = signal(false);
+  protected readonly newLimit = signal(0);
+
+  protected openLimit(current: number): void {
+    this.newLimit.set(current ?? 0);
+    this.limiting.set(true);
+  }
+
+  /** Only the limit changes (`partners.credit_limit`); the rest of the customer stays. */
+  protected async saveLimit(): Promise<void> {
+    await this.run(async () => {
+      await this.api.put(
+        `/customers/${this.customerUid}/credit-limit`,
+        { creditLimit: Number(this.newLimit()) || 0 },
+        { noBranch: true },
+      );
+      this.toasts.success(this.translations.t('creditLimit.saved'));
+      this.limiting.set(false);
+    });
   }
 
   protected openHold(): void {

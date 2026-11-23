@@ -192,6 +192,9 @@ const TYPES: CustomerType[] = [
         <div class="field">
           <label>{{ 'partners.creditLimit' | t }}</label
           ><input class="input" type="number" min="0" step="any" formControlName="creditLimit" />
+          @if (!canSetLimit()) {
+            <span class="hint">{{ 'creditLimit.notAllowed' | t }}</span>
+          }
         </div>
         <div class="field">
           <label>{{ 'partners.paymentTerms' | t }}</label
@@ -294,6 +297,10 @@ export default class CustomersPage {
     return controlError(this.form.get(name));
   }
 
+  protected canSetLimit(): boolean {
+    return this.session.can('partners.credit_limit');
+  }
+
   protected edit(customer: Customer | null): void {
     this.current.set(customer);
     this.form.reset({
@@ -308,6 +315,12 @@ export default class CustomersPage {
       address: customer?.address ?? '',
       active: customer?.active ?? true,
     });
+    // Setting a limit is its own permission (accountants and managers): shown, not editable.
+    if (this.canSetLimit()) {
+      this.form.controls.creditLimit.enable();
+    } else {
+      this.form.controls.creditLimit.disable();
+    }
     this.open.set(true);
   }
 
@@ -323,7 +336,8 @@ export default class CustomersPage {
       type: v.type,
       insuranceProvider: v.insuranceProvider || null,
       insuranceNumber: v.insuranceNumber || null,
-      creditLimit: Number(v.creditLimit) || 0,
+      // Left out without the permission: the API keeps the current limit.
+      creditLimit: this.canSetLimit() ? Number(v.creditLimit) || 0 : undefined,
       paymentTerms: v.paymentTerms,
       address: v.address || null,
       active: v.active,

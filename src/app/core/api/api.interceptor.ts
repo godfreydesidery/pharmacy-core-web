@@ -1,8 +1,16 @@
 import { Router } from '@angular/router';
-import { HttpContextToken, HttpEvent, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
+import {
+  HttpContextToken,
+  HttpEvent,
+  HttpInterceptorFn,
+  HttpRequest,
+  HttpResponse,
+} from '@angular/common/http';
 import { Injector, inject } from '@angular/core';
-import { catchError, from, map, switchMap, throwError } from 'rxjs';
+import { Observable, catchError, from, map, switchMap, throwError } from 'rxjs';
 import { ConfirmIdentityService } from '../session/confirm-identity';
+import { ManagerApprovalService } from '../session/manager-approval';
+import { OpenShiftService } from '../session/open-shift';
 import { Translations } from '../i18n/translations.store';
 import { SessionStore } from '../session/session.store';
 import { SignOutService } from '../session/sign-out';
@@ -15,8 +23,15 @@ export const SILENT = new HttpContextToken<boolean>(() => false);
 export const NO_BRANCH = new HttpContextToken<boolean>(() => false);
 /** Already sent again after the person confirmed their password: do not ask a second time. */
 const CONFIRMED = new HttpContextToken<boolean>(() => false);
+/** A shift was opened at the till for this request: do not ask again. */
+const SHIFT_OPENED = new HttpContextToken<boolean>(() => false);
+/** The actions a manager already approved for this request: never asked for twice. */
+const APPROVED = new HttpContextToken<readonly string[]>(() => []);
 
 export const API_PREFIX = '/api/';
+
+/** A manager's single-use approval of the request (see ManagerApprovalService). */
+const APPROVAL_HEADER = 'X-Approval';
 
 /**
  * The money-moving POSTs the API keeps idempotent (IETF Idempotency-Key header): each request
@@ -24,7 +39,7 @@ export const API_PREFIX = '/api/';
  * after "Confirm it is you") is recorded once. POST /sales carries its own key in the body.
  */
 const IDEMPOTENT =
-  /^\/api\/v1\/(receivables\/(payments|write-offs)|finance\/supplier-payments|expenses|sales\/[^/]+\/returns|vouchers(\/[^/]+\/void)?|stock\/(adjustments|opening)|transfers(\/[^/]+\/receive)?|insurance\/remittances|goods-receipts|destructions|supplier-returns|pos\/payment-requests)$/;
+  /^\/api\/v1\/(receivables\/(payments|write-offs)|finance\/supplier-payments|expenses|sales\/[^/]+\/returns|sales\/returns\/[^/]+\/lines\/[^/]+\/release|vouchers(\/[^/]+\/void)?|stock\/(adjustments|opening)|transfers(\/[^/]+\/receive)?|insurance\/remittances|goods-receipts|destructions|supplier-returns|pos\/payment-requests)$/;
 
 interface Envelope {
   success: boolean;
@@ -80,53 +95,84 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
     headers = headers.set('X-Branch-Id', branch.uid);
   }
 
-  return next(request.clone({ headers })).pipe(
-    map((event: HttpEvent<unknown>) =>
-      event instanceof HttpResponse && isEnvelope(event.body)
-        ? event.clone({ body: event.body.data })
-        : event,
-    ),
-    catchError((failure: unknown) => {
-      const error = localizeError(
-        ApiError.from(failure),
-        translations.lang(),
-        (key, params, fallback) => translations.t(key, params, fallback),
-      );
-      if (error.reason === 'reauthentication_required' && !request.context.get(CONFIRMED)) {
-        // A sensitive account change after a while: ask for the password, then send it again.
-        return from(injector.get(ConfirmIdentityService).ask()).pipe(
-          switchMap((confirmed) =>
-            confirmed
-              ? next(
-                  request.clone({ headers, context: request.context.set(CONFIRMED, true) }),
-                ).pipe(
-                  map((event: HttpEvent<unknown>) =>
-                    event instanceof HttpResponse && isEnvelope(event.body)
-                      ? event.clone({ body: event.body.data })
-                      : event,
-                  ),
-                )
-              : throwError(() => error),
-          ),
-        );
-      }
-      const signingIn = request.url.includes('/auth/sign-in');
-      const signingOut = request.url.includes('/auth/sign-out');
-      if (error.status === 401 && !signingIn) {
-        if (!signingOut) {
-          // Looked up here, not above: the service itself sends requests through this interceptor.
-          void injector
-            .get(SignOutService)
-            .end(error.reason === 'session_idle' ? 'idle' : 'expired');
-        }
-      } else if (error.reason === 'two_factor_required_by_pharmacy') {
-        // G16: this pharmacy requires a second factor; set one up, then come back.
-        toasts.error(error.message);
-        void injector.get(Router).navigateByUrl('/account?setup=2fa');
-      } else if (!request.context.get(SILENT)) {
-        toasts.error(error.message);
-      }
-      return throwError(() => error);
-    }),
+  const unwrap = map((event: HttpEvent<unknown>) =>
+    event instanceof HttpResponse && isEnvelope(event.body)
+      ? event.clone({ body: event.body.data })
+      : event,
   );
+
+  // Sends the request; after "Confirm it is you" or a manager's approval it is sent again through
+  // here, so a refusal of the second attempt is handled (and shown) like any other.
+  const send = (attempt: HttpRequest<unknown>): Observable<HttpEvent<unknown>> =>
+    next(attempt).pipe(
+      unwrap,
+      catchError((failure: unknown) => {
+        const error = localizeError(
+          ApiError.from(failure),
+          translations.lang(),
+          (key, params, fallback) => translations.t(key, params, fallback),
+        );
+        if (error.reason === 'reauthentication_required' && !attempt.context.get(CONFIRMED)) {
+          // A sensitive account change after a while: ask for the password, then send it again.
+          return from(injector.get(ConfirmIdentityService).ask()).pipe(
+            switchMap((confirmed) =>
+              confirmed
+                ? send(attempt.clone({ context: attempt.context.set(CONFIRMED, true) }))
+                : throwError(() => error),
+            ),
+          );
+        }
+        if (error.reason === 'shift_required' && !attempt.context.get(SHIFT_OPENED)) {
+          // The pharmacy requires an open shift: the cashier opens one here, then it goes again.
+          return from(injector.get(OpenShiftService).ask()).pipe(
+            switchMap((opened) =>
+              opened
+                ? send(attempt.clone({ context: attempt.context.set(SHIFT_OPENED, true) }))
+                : throwError(() => error),
+            ),
+          );
+        }
+        const approved = attempt.context.get(APPROVED);
+        const action = String(error.extras['action'] ?? '');
+        if (error.reason === 'approval_required' && !approved.includes(action)) {
+          // Above the pharmacy's limit: a manager approves on this screen, then it goes again.
+          // One request may need two (a late return of a damaged controlled medicine): each
+          // approval is added to the list header, and an action is never asked for twice.
+          const amount = Number(error.extras['amount'] ?? 0);
+          return from(injector.get(ManagerApprovalService).ask({ action, amount })).pipe(
+            switchMap((token) => {
+              if (!token) {
+                return throwError(() => error);
+              }
+              const sent = attempt.headers.get(APPROVAL_HEADER);
+              return send(
+                attempt.clone({
+                  headers: attempt.headers.set(APPROVAL_HEADER, sent ? `${sent}, ${token}` : token),
+                  context: attempt.context.set(APPROVED, [...approved, action]),
+                }),
+              );
+            }),
+          );
+        }
+        const signingIn = attempt.url.includes('/auth/sign-in');
+        const signingOut = attempt.url.includes('/auth/sign-out');
+        if (error.status === 401 && !signingIn) {
+          if (!signingOut) {
+            // Looked up here, not above: the service itself sends requests through this interceptor.
+            void injector
+              .get(SignOutService)
+              .end(error.reason === 'session_idle' ? 'idle' : 'expired');
+          }
+        } else if (error.reason === 'two_factor_required_by_pharmacy') {
+          // G16: this pharmacy requires a second factor; set one up, then come back.
+          toasts.error(error.message);
+          void injector.get(Router).navigateByUrl('/account?setup=2fa');
+        } else if (!attempt.context.get(SILENT)) {
+          toasts.error(error.message);
+        }
+        return throwError(() => error);
+      }),
+    );
+
+  return send(request.clone({ headers }));
 };
