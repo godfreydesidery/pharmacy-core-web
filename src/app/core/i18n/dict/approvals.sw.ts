@@ -66,4 +66,21 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
     'Ni mhasibu au meneja tu anayeweza kuweka au kubadilisha kikomo cha mkopo.',
   'errors.credit_limit_not_allowed':
     'Ni mhasibu au meneja tu anayeweza kuweka au kubadilisha kikomo cha mkopo.',
+  'pos.deepDiscount': 'Zaidi ya {{max}}%: meneja ataidhinisha unapokamilisha mauzo.',
+  'pricing.switchOff': 'Zima',
+  'pricing.confirmSwitchOff':
+    'Zima “{{name}}”? Itabaki kwenye kumbukumbu na inaweza kuwashwa tena.',
+  'errors.invalid_disposition': 'Chagua bidhaa iliyorudishwa inakwenda wapi.',
+  'errors.nothing_held': 'Hakuna tena kilichowekwa kando kwa mstari huu.',
+  'errors.invalid_outcome': 'Chagua kuirudisha rafuni au kuifuta.',
+  'held.title': 'Zilizowekwa kando',
+  'held.text':
+    'Bidhaa zilizorudishwa zimewekwa kando hadi mfamasia azikague. Dawa za cheti na zinazodhibitiwa zinaweza kufutwa tu.',
+  'held.quantity': 'Zilizowekwa',
+  'held.toShelf': 'Rudisha rafuni',
+  'held.writeOff': 'Futa',
+  'held.confirmShelf': 'Rudisha {{quantity}} × {{product}} rafuni ili ziuzwe?',
+  'held.confirmWriteOff': 'Futa {{quantity}} × {{product}} kama zilizoharibika?',
+  'held.shelved': '{{quantity}} × {{product}} zimerudishwa rafuni.',
+  'held.writtenOff': '{{quantity}} × {{product}} zimefutwa.',
 };

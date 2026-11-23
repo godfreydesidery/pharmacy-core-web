@@ -66,4 +66,21 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
   'creditLimit.notAllowed': 'Only an accountant or a manager can set or change a credit limit.',
   'errors.credit_limit_not_allowed':
     'Only an accountant or a manager can set or change a credit limit.',
+  'pos.deepDiscount': 'Above {{max}}%: a manager approves when you complete the sale.',
+  'pricing.switchOff': 'Switch off',
+  'pricing.confirmSwitchOff':
+    'Switch off “{{name}}”? It stays on record and can be switched on again.',
+  'errors.invalid_disposition': 'Choose where the returned item goes.',
+  'errors.nothing_held': 'Nothing of this line is held aside any more.',
+  'errors.invalid_outcome': 'Choose to put it back on the shelf or write it off.',
+  'held.title': 'Held aside',
+  'held.text':
+    'Returned items held aside until a pharmacist checks them. Prescription and controlled medicines can only be written off.',
+  'held.quantity': 'Held',
+  'held.toShelf': 'Back on the shelf',
+  'held.writeOff': 'Write off',
+  'held.confirmShelf': 'Put {{quantity}} × {{product}} back on the shelf for sale?',
+  'held.confirmWriteOff': 'Write off {{quantity}} × {{product}} as damaged?',
+  'held.shelved': '{{quantity}} × {{product}} went back on the shelf.',
+  'held.writtenOff': '{{quantity}} × {{product}} was written off.',
 };

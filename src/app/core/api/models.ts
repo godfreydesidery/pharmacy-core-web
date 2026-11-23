@@ -707,16 +707,27 @@ export interface SaleReturn {
   refundExchangeRate?: number | null;
   /** Base paid out − refundTotal: positive a realised exchange loss, negative a gain. */
   fxDifference?: number;
-  lines: {
-    saleLineUid: Uid;
-    productName: string;
-    batchNumber: string;
-    quantity: number;
-    serialNumbers: string[];
-    refund: number;
-  }[];
+  lines: SaleReturnLine[];
   createdAt: IsoDateTime;
   createdBy: string;
+}
+
+export interface SaleReturnLine {
+  /** The return line's own uid (to release what is held). */
+  uid: Uid;
+  saleLineUid: Uid;
+  productName: string;
+  batchNumber: string;
+  quantity: number;
+  serialNumbers: string[];
+  refund: number;
+  /** Where its units went: back on the shelf, held aside, or written off as damaged. */
+  disposition?: 'SHELF' | 'QUARANTINE' | 'DAMAGED';
+  /** Units still held aside (0 once released). */
+  heldQuantity?: number;
+  releasedOutcome?: 'SHELF' | 'DAMAGED' | null;
+  releasedAt?: IsoDateTime | null;
+  releasedBy?: string | null;
 }
 
 /* ---------- finance ---------- */

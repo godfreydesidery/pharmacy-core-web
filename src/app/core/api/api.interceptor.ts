@@ -34,7 +34,7 @@ const APPROVAL_HEADER = 'X-Approval';
  * after "Confirm it is you") is recorded once. POST /sales carries its own key in the body.
  */
 const IDEMPOTENT =
-  /^\/api\/v1\/(receivables\/(payments|write-offs)|finance\/supplier-payments|expenses|sales\/[^/]+\/returns|vouchers(\/[^/]+\/void)?|stock\/(adjustments|opening)|transfers(\/[^/]+\/receive)?|insurance\/remittances|goods-receipts|destructions|supplier-returns|pos\/payment-requests)$/;
+  /^\/api\/v1\/(receivables\/(payments|write-offs)|finance\/supplier-payments|expenses|sales\/[^/]+\/returns|sales\/returns\/[^/]+\/lines\/[^/]+\/release|vouchers(\/[^/]+\/void)?|stock\/(adjustments|opening)|transfers(\/[^/]+\/receive)?|insurance\/remittances|goods-receipts|destructions|supplier-returns|pos\/payment-requests)$/;
 
 interface Envelope {
   success: boolean;

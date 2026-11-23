@@ -574,9 +574,9 @@ interface PromotionDraft {
         </div>
       }
       <ng-container footer>
-        @if (promotion()?.uid) {
+        @if (promotion()?.uid && promotion()?.active) {
           <button class="btn danger" type="button" (click)="deletePromotion()">
-            {{ 'pricing.delete' | t }}
+            {{ 'pricing.switchOff' | t }}
           </button>
         }
         <button class="btn" type="button" (click)="promotion.set(null)">
@@ -820,12 +820,13 @@ export default class PricingPage {
       !p?.uid ||
       !(await this.confirm.ask({
         title: this.translations.t('common.areYouSure'),
-        text: this.translations.t('pricing.confirmDelete', { name: p.name }),
+        text: this.translations.t('pricing.confirmSwitchOff', { name: p.name }),
         icon: 'danger',
       }))
     ) {
       return;
     }
+    // Promotions are never deleted: this switches it off, and it stays on record (FRD-8).
     await this.api.delete(`/promotions/${p.uid}`, { noBranch: true });
     this.promotion.set(null);
     void this.promotions.reload();

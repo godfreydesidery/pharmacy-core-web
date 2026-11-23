@@ -66,19 +66,27 @@
                 'pos.linesAndUnits' | t: { lines: lines().length, units: totals().items }
               }}</b>
             </div>
-            @if (session.can('sales.discount') && maxDiscount() > 0) {
+            @if (session.can('sales.discount')) {
               <div class="kv">
                 <span>{{ 'pos.discount' | t }}</span>
                 <input
                   class="input sm discount"
                   type="number"
                   min="0"
-                  [max]="maxDiscount()"
+                  max="100"
                   [value]="discountPercent()"
                   (change)="setDiscount(+$any($event.target).value)"
                   [attr.aria-label]="'pos.discount' | t"
+                  [attr.aria-describedby]="
+                    discountPercent() > maxDiscount() ? 'deep-discount' : null
+                  "
                 />
               </div>
+              @if (discountPercent() > maxDiscount()) {
+                <small id="deep-discount" class="muted" data-testid="deep-discount">
+                  {{ 'pos.deepDiscount' | t: { max: maxDiscount() } }}
+                </small>
+              }
             }
             @if (rxNeeded()) {
               <button type="button" class="notice tone-purple rx" (click)="rxOpen.set(true)">

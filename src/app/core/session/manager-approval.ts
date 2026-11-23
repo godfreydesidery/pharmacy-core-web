@@ -26,6 +26,9 @@ export interface ApprovalRequest {
   amount: number;
 }
 
+/** Actions whose amount is a percent off, not money. */
+const PERCENT_ACTIONS = new Set(['DEEP_DISCOUNT', 'DEEP_PROMOTION']);
+
 interface Granted {
   token: string;
   approvedBy: string;
@@ -229,8 +232,15 @@ export class ManagerApprovalComponent {
   });
 
   protected readonly amountLabel = computed(() => {
-    const amount = this.service.open()?.request.amount ?? 0;
-    return amount > 0 ? formatMoney(amount, this.settings.currency()) : '';
+    const request = this.service.open()?.request;
+    const amount = request?.amount ?? 0;
+    if (amount <= 0) {
+      return '';
+    }
+    // A deep discount or promotion is approved as a percent, the rest as money.
+    return PERCENT_ACTIONS.has(request?.action ?? '')
+      ? `${amount}%`
+      : formatMoney(amount, this.settings.currency());
   });
 
   constructor() {

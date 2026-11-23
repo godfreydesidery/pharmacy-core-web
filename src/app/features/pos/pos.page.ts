@@ -1088,8 +1088,8 @@ export default class PosPage {
   }
 
   protected setDiscount(value: number): void {
-    const max = this.maxDiscount();
-    this.discountPercent.set(Math.min(Math.max(Number(value) || 0, 0), max));
+    // Above the pharmacy's maximum a manager approves when the sale is completed (Batch 4).
+    this.discountPercent.set(Math.min(Math.max(Number(value) || 0, 0), 100));
     this.syncCash();
   }
 
