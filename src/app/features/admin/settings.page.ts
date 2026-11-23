@@ -1,3 +1,4 @@
+import { PharmacyExportService } from '../../core/ui/pharmacy-export';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -6,9 +7,7 @@ import {
   signal,
   computed,
 } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
 import { FormBuilder, Validators } from '@angular/forms';
-import { downloadFrom } from '../../core/ui/export.component';
 import { Api } from '../../core/api/api.service';
 import { Settings, CurrencyInfo } from '../../core/api/models';
 import { SettingsStore } from '../../core/format/settings.store';
@@ -410,22 +409,12 @@ export default class SettingsPage implements OnInit {
     return controlError(this.form.get(name));
   }
 
-  protected readonly exporting = signal(false);
-  private readonly http = inject(HttpClient);
+  private readonly pharmacyExport = inject(PharmacyExportService);
+  protected readonly exporting = this.pharmacyExport.busy;
 
   /** Every record of the pharmacy, with its files, as one ZIP (its right to take its data). */
-  protected async exportData(): Promise<void> {
-    this.exporting.set(true);
-    try {
-      await downloadFrom(
-        this.http,
-        '/data-export',
-        this.toasts,
-        this.translations.t('close.exportFailed'),
-      );
-    } finally {
-      this.exporting.set(false);
-    }
+  protected exportData(): Promise<void> {
+    return this.pharmacyExport.run();
   }
 
   protected async save(): Promise<void> {

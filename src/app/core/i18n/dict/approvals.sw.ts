@@ -114,4 +114,17 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
     'Zilizohesabiwa wakati wa kufunga mwisho: {{amount}}. Badilisha kama droo ina kiasi kingine.',
   'openShift.hintNone': 'Andika fedha zilizo kwenye droo, au 0.',
   'openShift.open': 'Fungua zamu na uendelee',
+  'data.preparing': 'Tunaandaa nakala yako. Itapakuliwa hapa ikiwa tayari; acha ukurasa huu wazi.',
+  'data.ready': 'Nakala yako iko tayari na inapakuliwa.',
+  'data.expired': 'Nakala hiyo imeisha muda. Anza nyingine.',
+  'data.stillPreparing': 'Nakala bado inaandaliwa. Jaribu tena baada ya dakika chache kuipakua.',
+  'errors.export_running': 'Nakala tayari inaandaliwa.',
+  'errors.export_not_found': 'Nakala hiyo haipo tena.',
+  'errors.file_too_large_uncompressed': 'Faili ni kubwa mno likifunguliwa (zaidi ya MB 50).',
+  'errors.file_too_compressed':
+    'Faili limebanwa kwa njia isiyoruhusiwa. Lihifadhi upya kutoka programu yako ya jedwali.',
+  'errors.file_too_many_entries': 'Faili lina sehemu nyingi mno kuwa jedwali la kawaida.',
+  'errors.file_not_allowed': 'Aina hii ya faili hairuhusiwi. Tumia .xlsx au .csv bila nenosiri.',
+  'errors.cell_too_long': 'Seli ina herufi zaidi ya 32,767.',
+  'errors.too_many_columns': 'Jedwali lina data baada ya safu ya 200.',
 };

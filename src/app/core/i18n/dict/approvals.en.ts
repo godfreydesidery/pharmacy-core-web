@@ -114,4 +114,20 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
     'Counted at the last close: {{amount}}. Change it if the drawer holds something else.',
   'openShift.hintNone': 'Type the cash in the drawer, or 0.',
   'openShift.open': 'Open shift and continue',
+  'data.preparing':
+    'Preparing your export. It downloads here when it is ready; keep this page open.',
+  'data.ready': 'Your export is ready and downloading.',
+  'data.expired': 'That export has expired. Start a new one.',
+  'data.stillPreparing':
+    'The export is still being prepared. Try again in a few minutes to download it.',
+  'errors.export_running': 'An export is already being prepared.',
+  'errors.export_not_found': 'That export no longer exists.',
+  'errors.file_too_large_uncompressed': 'The file is too large once unpacked (over 50 MB).',
+  'errors.file_too_compressed':
+    'The file is packed in a way that is not allowed. Save it again from your spreadsheet program.',
+  'errors.file_too_many_entries': 'The file has too many parts to be a normal spreadsheet.',
+  'errors.file_not_allowed':
+    'This kind of file is not allowed. Use .xlsx or .csv without a password.',
+  'errors.cell_too_long': 'A cell holds more than 32,767 characters.',
+  'errors.too_many_columns': 'The sheet has data beyond column 200.',
 };
