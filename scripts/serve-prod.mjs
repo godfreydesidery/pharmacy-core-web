@@ -8,9 +8,13 @@
 // - a malformed URL is a 400, never a crash;
 // - hashed build files are cached for a year (immutable), index.html is revalidated with an ETag,
 //   and text is sent brotli- or gzip-compressed;
-// - the client's own X-Forwarded-For / Forwarded headers are dropped; X-Real-IP is kept only from
-//   a trusted edge that sets it (TRUST_EDGE_IP, on by default: Railway's edge overwrites it), and
-//   is otherwise this connection's address, so a client cannot choose the IP the API records;
+// - the client's own X-Forwarded-For / Forwarded headers are dropped and the API gets X-Real-IP
+//   from the edge this server sits behind (CLIENT_IP_SOURCE), so a client cannot choose the IP
+//   the API records:
+//     x-real-ip (default): Railway's edge overwrites X-Real-IP with the address that connected;
+//     x-forwarded-for: an AWS ALB appends the connecting address as the LAST X-Forwarded-For
+//       entry (earlier entries are whatever the client sent), so only that last entry is used;
+//     socket: this connection's own address (no trusted edge; TRUST_EDGE_IP=false means this);
 // - when the browser goes away, the request to the API is ended too (no orphaned streams).
 import { createHash } from 'node:crypto';
 import { existsSync, readFileSync, statSync } from 'node:fs';
@@ -22,7 +26,23 @@ import { brotliCompressSync, constants, gzipSync } from 'node:zlib';
 const root = fileURLToPath(new URL('../dist/pharmacy-core-web/browser/', import.meta.url));
 const port = Number(process.env.PORT ?? 4300);
 const api = new URL(process.env.API_URL ?? 'http://localhost:8080');
-const trustEdgeIp = process.env.TRUST_EDGE_IP !== 'false';
+const clientIpSource =
+  process.env.CLIENT_IP_SOURCE ?? (process.env.TRUST_EDGE_IP === 'false' ? 'socket' : 'x-real-ip');
+if (!['x-real-ip', 'x-forwarded-for', 'socket'].includes(clientIpSource)) {
+  throw new Error(`CLIENT_IP_SOURCE must be x-real-ip, x-forwarded-for or socket`);
+}
+
+/** The client's address as the trusted edge reports it, else this connection's. */
+function clientIp(req) {
+  let edge;
+  if (clientIpSource === 'x-real-ip') {
+    edge = req.headers['x-real-ip'];
+  } else if (clientIpSource === 'x-forwarded-for') {
+    const chain = String(req.headers['x-forwarded-for'] ?? '').split(',');
+    edge = chain[chain.length - 1]?.trim();
+  }
+  return typeof edge === 'string' && edge ? edge : (req.socket.remoteAddress ?? '');
+}
 // Where uploaded files are fetched from when they live in S3/R2 (an origin like
 // https://files.example.com); the local store is served by the API on this origin.
 const filesOrigin = process.env.FILES_ORIGIN ? ` ${process.env.FILES_ORIGIN}` : '';
@@ -112,9 +132,7 @@ function proxy(req, res, url) {
   for (const [name, value] of Object.entries(req.headers)) {
     if (!dropped.has(name) && name !== 'x-real-ip') headers[name] = value;
   }
-  const edgeIp = trustEdgeIp ? req.headers['x-real-ip'] : undefined;
-  headers['x-real-ip'] =
-    typeof edgeIp === 'string' && edgeIp ? edgeIp : (req.socket.remoteAddress ?? '');
+  headers['x-real-ip'] = clientIp(req);
   headers.host = api.host;
   const upstream = request(
     { host: api.hostname, port: api.port, path: url, method: req.method, headers },

@@ -26,7 +26,7 @@ The web console of **Pharmacy Core**, a multi-tenant, multi-branch pharmacy syst
 You need Node 22+ and npm 10+.
 
 ```bash
-npm install          # .npmrc sets legacy-peer-deps (works around an npm 10 peer-resolution bug)
+npm ci               # exactly the locked versions (the lock installs on Linux and Windows)
 npm start            # http://localhost:4200
 ```
 

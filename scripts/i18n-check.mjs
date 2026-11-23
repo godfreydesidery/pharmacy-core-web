@@ -42,7 +42,11 @@ for (const file of sources(app)) {
   }
 }
 
-const undefinedKeys = [...used].filter(([key]) => !en.has(key));
+// A key ending in '.' is a prefix completed at run time ('acct.ev.' + action): it is defined when
+// some English key starts with it.
+const defined = (key) =>
+  key.endsWith('.') ? [...en].some((known) => known.startsWith(key)) : en.has(key);
+const undefinedKeys = [...used].filter(([key]) => !defined(key));
 const extraSw = [...sw].filter((key) => !en.has(key));
 const missingSw = [...en].filter((key) => !sw.has(key));
 

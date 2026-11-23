@@ -4,17 +4,17 @@
 #   docker build -t pharmacy-core-web . && docker run -p 4300:4300 -e API_URL=http://host.docker.internal:8080 pharmacy-core-web
 
 # ---- build ----
-FROM node:22-alpine AS build
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a AS build
 WORKDIR /src
 COPY package.json package-lock.json ./
-# npm install, not npm ci: the lock file is written on Windows and lacks Linux-only optional
-# packages (@emnapi/*), which npm ci refuses; everything else still installs at the locked versions.
-RUN npm install --no-audit --no-fund
+# Exactly the locked versions (checked to install on Linux; base images pinned by digest, kept
+# current by Dependabot).
+RUN npm ci --no-audit --no-fund
 COPY . .
 RUN npm run build
 
 # ---- runtime ----
-FROM node:22-alpine
+FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d73bde88481a
 WORKDIR /app
 COPY --from=build /src/dist/pharmacy-core-web/browser ./dist/pharmacy-core-web/browser
 COPY --from=build /src/scripts/serve-prod.mjs ./scripts/serve-prod.mjs
