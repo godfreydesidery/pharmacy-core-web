@@ -1,4 +1,5 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { ConfirmService } from '../../core/ui/confirm';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { Page, Webhook, WebhookDelivery } from '../../core/api/models';
@@ -22,7 +23,13 @@ import { Translations } from '../../core/i18n/translations.store';
           </p>
         </div>
         <div class="actions">
-          <button class="btn primary" type="button" (click)="edit(null)">
+          <button
+            class="btn primary"
+            type="button"
+            [disabled]="atLimit()"
+            [attr.title]="atLimit() ? ('webhooks.limit' | t) : null"
+            (click)="edit(null)"
+          >
             <app-icon name="plus" [size]="16" /> {{ 'admin.addWebhook' | t }}
           </button>
         </div>
@@ -30,9 +37,9 @@ import { Translations } from '../../core/i18n/translations.store';
       <div class="notice tone-blue mb">
         <app-icon name="shield" />
         <span
-          >{{ 'admin.eachDeliveryIsAPost' | t }}
-          <span class="mono">{{ 'admin.xPharmacySignatureSha256Lt' | t }}</span
-          >{{ 'admin.usingTheWebhookSSecret' | t }}</span
+          >{{ 'webhooks.signing' | t }}
+          <span class="mono">webhook-id, webhook-timestamp, webhook-signature</span>
+          {{ 'webhooks.signingMore' | t }}</span
         >
       </div>
       <div class="card">
@@ -73,6 +80,15 @@ import { Translations } from '../../core/i18n/translations.store';
                       </button>
                       <button class="btn sm" type="button" (click)="edit(w)">
                         <app-icon name="edit" [size]="14" />
+                      </button>
+                      <button
+                        class="btn sm"
+                        type="button"
+                        data-testid="rotate-secret"
+                        [disabled]="busy()"
+                        (click)="rotate(w)"
+                      >
+                        <app-icon name="key" [size]="14" /> {{ 'webhooks.rotate' | t }}
                       </button>
                       <button class="btn sm" type="button" (click)="remove(w)">
                         <app-icon name="trash" [size]="14" />
@@ -152,12 +168,19 @@ import { Translations } from '../../core/i18n/translations.store';
       </ng-container>
     </app-modal>
 
-    <app-modal [open]="!!secret()" [title]="'admin.webhookSecret' | t" (closed)="secret.set(null)">
+    <app-modal
+      [open]="!!secret()"
+      [title]="'admin.webhookSecret' | t"
+      (closed)="secret.set(null); oldUntil.set(null)"
+    >
       <div class="stack">
         <div class="notice tone-amber">
           <app-icon name="alert" /> {{ 'admin.copyThisSecretNowIt' | t }}
         </div>
         <div class="secret">{{ secret() }}</div>
+        @if (oldUntil(); as until) {
+          <p class="muted">{{ 'webhooks.oldUntil' | t: { time: (until | when) } }}</p>
+        }
       </div>
       <ng-container footer
         ><button class="btn primary" type="button" (click)="copy()">
@@ -211,6 +234,11 @@ export default class WebhooksPage {
   protected readonly current = signal<Webhook | null>(null);
   protected readonly selectedEvents = signal<string[]>([]);
   protected readonly secret = signal<string | null>(null);
+  /** After a rotation: until when the old secret also signs. */
+  protected readonly oldUntil = signal<string | null>(null);
+  private readonly confirm = inject(ConfirmService);
+  /** At most 10 webhooks per pharmacy (INT-13). */
+  protected readonly atLimit = computed(() => (this.hooks.total() ?? 0) >= 10);
   protected readonly deliveriesOf = signal<Webhook | null>(null);
   protected readonly deliveries = signal<WebhookDelivery[]>([]);
   protected readonly form = inject(FormBuilder).nonNullable.group({
@@ -269,8 +297,38 @@ export default class WebhooksPage {
     }
   }
 
+  /** A new signing secret, shown once; the old one keeps signing for 24 hours. */
+  protected async rotate(hook: Webhook): Promise<void> {
+    const ok = await this.confirm.ask({
+      title: this.translations.t('webhooks.rotate'),
+      text: this.translations.t('webhooks.confirmRotate', { url: hook.url }),
+      icon: 'question',
+    });
+    if (!ok) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      const rotated = await this.api.post<Webhook & { previousSecretUntil?: string | null }>(
+        `/webhooks/${hook.uid}/rotate-secret`,
+        {},
+        { noBranch: true },
+      );
+      this.oldUntil.set(rotated.previousSecretUntil ?? null);
+      this.secret.set(rotated.secret ?? null);
+      await this.hooks.reload();
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
   protected async remove(hook: Webhook): Promise<void> {
-    if (!confirm(this.translations.t('confirm.deleteWebhook', { name: hook.name }))) {
+    const ok = await this.confirm.ask({
+      title: this.translations.t('common.areYouSure'),
+      text: this.translations.t('confirm.deleteWebhook', { name: hook.name }),
+      icon: 'danger',
+    });
+    if (!ok) {
       return;
     }
     await this.api.delete(`/webhooks/${hook.uid}`, { noBranch: true });

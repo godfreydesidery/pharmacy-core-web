@@ -261,7 +261,9 @@ type Tab = 'templates' | 'deliveries' | 'providers';
                   <tr class="clickable" (click)="selectedDelivery.set(d.uid)">
                     <td>
                       <b>{{ label(d.templateKey) }}</b>
-                      @if (d.lastError) {
+                      @if ($any(d).reason === 'sms_cap_reached') {
+                        <small class="text-amber block">{{ 'delivery.smsCapReached' | t }}</small>
+                      } @else if (d.lastError) {
                         <small class="text-red block" [title]="d.lastError">{{
                           d.lastError
                         }}</small>

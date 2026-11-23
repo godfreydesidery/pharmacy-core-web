@@ -27,6 +27,8 @@ interface DeliveryDetail {
   provider: string | null;
   attempts: number;
   lastError: string | null;
+  /** Why it was not sent, when the server refused it (e.g. `sms_cap_reached`). */
+  reason?: string | null;
   createdAt: string;
   sentAt: string | null;
 }
@@ -72,7 +74,11 @@ interface DeliveryDetail {
               </dd>
             </div>
           </dl>
-          @if (d.lastError) {
+          @if (d.reason === 'sms_cap_reached') {
+            <div class="notice tone-amber">
+              <app-icon name="alert" /> {{ 'delivery.smsCapReached' | t }}
+            </div>
+          } @else if (d.lastError) {
             <div class="notice tone-red"><app-icon name="alert" /> {{ d.lastError }}</div>
           }
           @if (d.subject) {

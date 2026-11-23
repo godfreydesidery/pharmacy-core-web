@@ -127,4 +127,29 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'errors.file_not_allowed': 'Aina hii ya faili hairuhusiwi. Tumia .xlsx au .csv bila nenosiri.',
   'errors.cell_too_long': 'Seli ina herufi zaidi ya 32,767.',
   'errors.too_many_columns': 'Jedwali lina data baada ya safu ya 200.',
+  'providers.reenterSecret': 'Seva imebadilika: andika nenosiri tena, la sivyo litafutwa.',
+  'providers.port.587': '587 (STARTTLS, inapendekezwa)',
+  'providers.port.465': '465 (TLS)',
+  'providers.port.2525': '2525 (STARTTLS)',
+  'providers.port.2587': '2587 (STARTTLS)',
+  'providers.port.25': '25 (STARTTLS)',
+  'delivery.smsCapReached':
+    'SMS za mwezi huu zimekwisha: ongeza mtoa huduma wako wa SMS au panda mpango.',
+  'webhooks.rotate': 'Badilisha siri',
+  'webhooks.confirmRotate':
+    'Tengeneza siri mpya ya kusaini kwa {{url}}? Ya zamani itaendelea kusaini kwa saa 24, ili usasishe mpokeaji wako.',
+  'webhooks.oldUntil': 'Siri ya zamani itaendelea kusaini hadi {{time}}.',
+  'webhooks.limit': 'Webhook zisizozidi 10 kwa kila duka.',
+  'errors.smtp_host_not_allowed':
+    'Anwani hiyo ya seva ya barua hairuhusiwi. Tumia jina la seva ya barua ya umma.',
+  'errors.smtp_port_not_allowed': 'Tumia port 587, 465, 2525, 2587 au 25.',
+  'errors.sms_cap_reached':
+    'SMS za mwezi huu zimekwisha. Ongeza mtoa huduma wako wa SMS au panda mpango.',
+  'errors.webhook_limit': 'Webhook zisizozidi 10 kwa kila duka.',
+  'errors.adapter_not_available': 'Njia hiyo ya malipo haipatikani hapa.',
+  'errors.payment_mismatch': 'Ombi hili la malipo ni la njia nyingine au tawi jingine.',
+  'webhooks.signing':
+    'Kila utumaji ni POST iliyosainiwa kwa njia ya Standard Webhooks (standardwebhooks.com): vichwa',
+  'webhooks.signingMore':
+    '(HMAC-SHA256 ya id.timestamp.body kwa siri yako). Kataa muda unaotofautiana zaidi ya dakika 5. X-Pharmacy-Signature bado inakuja kwa sasa lakini itaondolewa.',
 };
