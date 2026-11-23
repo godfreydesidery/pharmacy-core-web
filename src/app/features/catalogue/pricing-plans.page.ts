@@ -1252,18 +1252,8 @@ export default class PricingPlansPage {
     this.draft.set({ ...d });
   }
 
-  /** The plan as saved now, with its items (a save replaces them, so they go back unchanged). */
-  private async current(uid: string): Promise<PriceList | undefined> {
-    const page = await this.api.get<{ items: PriceList[] } | PriceList[]>(
-      '/price-lists',
-      { limit: 500 },
-      { noBranch: true },
-    );
-    const lists = Array.isArray(page) ? page : page.items;
-    return lists.find((l) => l.uid === uid);
-  }
-
-  private body(d: PlanDraft, existing?: PriceList): object {
+  /** The plan's own fields; its prices are kept (a save without `items` keeps them, Batch 7). */
+  private body(d: PlanDraft): object {
     return {
       name: d.name,
       customerType: d.target === 'type' ? d.customerType || null : null,
@@ -1275,11 +1265,6 @@ export default class PricingPlansPage {
       validFrom: d.validFrom || null,
       validTo: d.validTo || null,
       active: d.active,
-      items: (existing?.items ?? []).map((i) => ({
-        productUid: i.productUid,
-        minQuantity: i.minQuantity,
-        price: i.price,
-      })),
     };
   }
 
@@ -1289,8 +1274,7 @@ export default class PricingPlansPage {
     this.busy.set(true);
     try {
       if (d.uid) {
-        const existing = await this.current(d.uid);
-        await this.api.put(`/price-lists/${d.uid}`, this.body(d, existing), { noBranch: true });
+        await this.api.put(`/price-lists/${d.uid}`, this.body(d), { noBranch: true });
       } else {
         const made = await this.api.post<PriceList>('/price-lists', this.body(d), {
           noBranch: true,
@@ -1310,8 +1294,7 @@ export default class PricingPlansPage {
     this.editPlan(c);
     const d = this.draft()!;
     d.active = !c.active;
-    const existing = await this.current(c.uid);
-    await this.api.put(`/price-lists/${c.uid}`, this.body(d, existing), { noBranch: true });
+    await this.api.put(`/price-lists/${c.uid}`, this.body(d), { noBranch: true });
     this.draft.set(null);
     this.toasts.success(this.translations.t(d.active ? 'plans.activated' : 'plans.deactivated'));
     await this.cards.reload();

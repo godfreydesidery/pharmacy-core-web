@@ -11,6 +11,16 @@ export interface ListRequest {
 }
 
 /**
+ * How {@link loaded} reads a value the API pages (a statement's entries): the next page's cursor
+ * of what was read, and how a following page joins it. At most {@code maxPages} are read.
+ */
+export interface FollowPages<T> {
+  next(value: T): string | null;
+  join(sofar: T, page: T): T;
+  maxPages?: number;
+}
+
+/**
  * What a list or value read from the API shows besides its rows: loading, or the failure of its
  * last read and a way to read it again. The shared empty widget takes one (`<app-empty [for]>`),
  * so a list that failed to load says so, with Retry, instead of looking empty.
@@ -26,6 +36,8 @@ export interface PagedList<T> extends LoadState {
   readonly items: Signal<T[]>;
   /** How many rows the whole list has (null until the first page arrives). */
   readonly total: Signal<number | null>;
+  /** The API capped the count: the list has more rows than {@link total} (shown as "10,000+"). */
+  readonly capped: Signal<boolean>;
   /** The page shown, from 1. */
   readonly page: Signal<number>;
   /** Rows per page. */
@@ -69,6 +81,7 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
   const loading = signal(false);
   const error = signal<ApiError | null>(null);
   const total = signal<number | null>(null);
+  const capped = signal(false);
   const page = signal(1);
   const size = signal(rememberedSize(limit));
   const pages = computed(() => Math.max(1, Math.ceil((total() ?? 0) / size())));
@@ -97,6 +110,7 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
       items.set(rows);
       page.set(wanted);
       total.set(Array.isArray(answer) ? rows.length : (answer.total ?? rows.length));
+      capped.set(!Array.isArray(answer) && answer.totalCapped === true);
       // A page past the end (rows deleted meanwhile): show the last one instead.
       const last = Math.max(1, Math.ceil((total() ?? 0) / size()));
       if (wanted > last) {
@@ -127,6 +141,7 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
       } else {
         items.set([]);
         total.set(null);
+        capped.set(false);
         page.set(1);
       }
     });
@@ -139,6 +154,7 @@ export function pagedList<T>(request: () => ListRequest | null, limit = 25): Pag
     loading,
     error,
     total,
+    capped,
     page,
     size,
     pages,
@@ -165,7 +181,7 @@ export interface Loaded<T> extends LoadState {
 }
 
 /** One value read from the API, reloaded like {@link pagedList}. */
-export function loaded<T>(request: () => ListRequest | null): Loaded<T> {
+export function loaded<T>(request: () => ListRequest | null, follow?: FollowPages<T>): Loaded<T> {
   const api = inject(Api);
   const session = inject(SessionStore);
   const value = signal<T | null>(null);
@@ -183,7 +199,20 @@ export function loaded<T>(request: () => ListRequest | null): Loaded<T> {
     loading.set(true);
     error.set(null);
     try {
-      const result = await api.get<T>(current.path, current.query, current.options);
+      let result: T = await api.get<T>(current.path, current.query, current.options);
+      // A paged value is read to its end (up to maxPages), each page after the cursor of the last.
+      for (let page = 1, cursor = follow?.next(result); follow && cursor; page++) {
+        if (page >= (follow.maxPages ?? 50) || mine !== generation) {
+          break;
+        }
+        const more: T = await api.get<T>(
+          current.path,
+          { ...(current.query ?? {}), cursor },
+          current.options,
+        );
+        result = follow.join(result, more);
+        cursor = follow.next(more);
+      }
       if (mine === generation) {
         value.set(result);
       }

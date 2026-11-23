@@ -91,6 +91,7 @@ export const UI_EN: Readonly<Record<string, string>> = {
   'ui.import.failed': 'The file could not be checked; try again.',
   'ui.import.templateFailed': 'The template could not be downloaded; try again.',
   'ui.pager.range': 'Showing {{from}}–{{to}} of {{total}}',
+  'ui.pager.rangeMore': 'Showing {{from}}–{{to}} of {{total}}+',
   'ui.pager.none': 'Nothing to show',
   'ui.pager.rows': 'Rows per page',
   'ui.pager.pages': 'Pages',

@@ -126,7 +126,8 @@ export class EmptyComponent {
     <div class="table-foot pager">
       <span class="range">{{
         list().total()
-          ? ('ui.pager.range' | t: { from: from(), to: to(), total: list().total() })
+          ? ((list().capped() ? 'ui.pager.rangeMore' : 'ui.pager.range')
+            | t: { from: from(), to: to(), total: list().total() })
           : ('ui.pager.none' | t)
       }}</span>
       <label class="size"

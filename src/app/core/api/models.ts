@@ -8,6 +8,8 @@ export interface Page<T> {
   items: T[];
   nextCursor: string | null;
   total: number | null;
+  /** The total was capped (more rows than {@link total}, which is then 10,000): show "10,000+". */
+  totalCapped?: boolean | null;
 }
 
 /* ---------- auth ---------- */
@@ -983,7 +985,10 @@ export interface PriceList {
   validFrom: string | null;
   validTo: string | null;
   active: boolean;
-  items: PriceListItem[];
+  /** Null in the list of plans (Batch 7): read one plan, `GET /price-lists/{uid}`, for its items. */
+  items: PriceListItem[] | null;
+  /** How many prices the plan has. */
+  itemCount?: number;
   /** An insurer's plan: the default for its members' sales. */
   payerUid?: Uid | null;
   payerName?: string | null;

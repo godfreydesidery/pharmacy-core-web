@@ -33,6 +33,11 @@ export function uncertain(failure: unknown): boolean {
   const error = failure as { status?: unknown; reason?: unknown } | null;
   const status = typeof error?.status === 'number' ? error.status : -1;
   const reason = typeof error?.reason === 'string' ? error.reason : '';
+  // 503 server_busy is refused before any work (the instance is at its cap): a clear "no".
+  // 503 database_busy may come after the sale started, so it stays uncertain.
+  if (reason === 'server_busy') {
+    return false;
+  }
   return status <= 0 || (status >= 200 && status < 300) || status >= 500 || MAY_EXIST.has(reason);
 }
 

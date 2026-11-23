@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
-import { ENTRY_LABELS, Statement } from '../../core/api/credit.models';
+import { ENTRY_LABELS, Statement, WHOLE_STATEMENT } from '../../core/api/credit.models';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -120,15 +120,20 @@ export default class StatementPrintPage {
   protected readonly labels = ENTRY_LABELS;
   protected readonly customerUid = this.route.snapshot.paramMap.get('customerUid')!;
   protected readonly printedOn = new Date().toISOString().slice(0, 10);
-  protected readonly statement = loaded<Statement>(() => ({
-    path: `/receivables/accounts/${this.customerUid}/statement`,
-    query: {
-      from: this.route.snapshot.queryParamMap.get('from'),
-      to: this.route.snapshot.queryParamMap.get('to'),
-      limit: 100,
-    },
-    options: { noBranch: true },
-  }));
+  // The whole period, every page. Without dates the API prints the last 90 days from a balance
+  // brought forward (Batch 7).
+  protected readonly statement = loaded<Statement>(
+    () => ({
+      path: `/receivables/accounts/${this.customerUid}/statement`,
+      query: {
+        from: this.route.snapshot.queryParamMap.get('from'),
+        to: this.route.snapshot.queryParamMap.get('to'),
+        limit: 100,
+      },
+      options: { noBranch: true },
+    }),
+    WHOLE_STATEMENT,
+  );
   protected readonly closing = computed(() => {
     const s = this.statement.value();
     const items = s?.entries.items ?? [];

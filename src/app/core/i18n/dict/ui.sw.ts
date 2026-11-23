@@ -93,6 +93,7 @@ export const UI_SW: Readonly<Record<string, string>> = {
   'ui.import.failed': 'Faili halikuweza kukaguliwa; jaribu tena.',
   'ui.import.templateFailed': 'Kiolezo hakikuweza kupakuliwa; jaribu tena.',
   'ui.pager.range': 'Inaonyesha {{from}}–{{to}} kati ya {{total}}',
+  'ui.pager.rangeMore': 'Inaonyesha {{from}}–{{to}} kati ya zaidi ya {{total}}',
   'ui.pager.none': 'Hakuna cha kuonyesha',
   'ui.pager.rows': 'Mistari kwa ukurasa',
   'ui.pager.pages': 'Kurasa',

@@ -10,6 +10,7 @@ import {
   ReceivePaymentInput,
   SchemeView,
   Statement,
+  WHOLE_STATEMENT,
 } from '../../core/api/credit.models';
 import { loaded } from '../../core/data/data';
 import { SettingsStore } from '../../core/format/settings.store';
@@ -587,11 +588,15 @@ export default class CustomerAccountPage {
     path: `/receivables/accounts/${this.customerUid}`,
     options: { noBranch: true },
   }));
-  protected readonly statement = loaded<Statement>(() => ({
-    path: `/receivables/accounts/${this.customerUid}/statement`,
-    query: { from: this.from(), to: this.to(), limit: 100 },
-    options: { noBranch: true },
-  }));
+  // The whole period, every page: open charges further down must not be missed (PERF-17).
+  protected readonly statement = loaded<Statement>(
+    () => ({
+      path: `/receivables/accounts/${this.customerUid}/statement`,
+      query: { from: this.from(), to: this.to(), limit: 100 },
+      options: { noBranch: true },
+    }),
+    WHOLE_STATEMENT,
+  );
   protected readonly members = loaded<{ items: MemberView[] }>(() =>
     this.session.can('partners.view')
       ? {

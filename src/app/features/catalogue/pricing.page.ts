@@ -141,7 +141,7 @@ interface PromotionDraft {
                           : l.adjustmentPercent + '%'
                       }}
                     </td>
-                    <td class="right">{{ l.items.length }}</td>
+                    <td class="right">{{ l.itemCount ?? l.items?.length ?? 0 }}</td>
                     <td class="muted">{{ l.validFrom ?? '…' }} – {{ l.validTo ?? '…' }}</td>
                     <td class="right">
                       @if (canEdit()) {
@@ -630,7 +630,11 @@ export default class PricingPage {
     return this.session.branches().find((b) => b.uid === uid)?.name ?? '—';
   }
 
-  protected editList(l: PriceList | null): void {
+  protected async editList(summary: PriceList | null): Promise<void> {
+    // The list of plans carries no items: read the whole plan before editing it.
+    const l = summary?.uid
+      ? await this.api.get<PriceList>(`/price-lists/${summary.uid}`, undefined, { noBranch: true })
+      : summary;
     this.list.set({
       uid: l?.uid ?? null,
       name: l?.name ?? '',

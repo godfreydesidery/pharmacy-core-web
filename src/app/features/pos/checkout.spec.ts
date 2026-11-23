@@ -75,4 +75,9 @@ describe('mobile-money push', () => {
       reference: null,
     });
   });
+
+  it('a busy server (refused before any work) does not lock the till; a busy database does', () => {
+    expect(uncertain({ status: 503, reason: 'server_busy' })).toBe(false);
+    expect(uncertain({ status: 503, reason: 'database_busy' })).toBe(true);
+  });
 });
