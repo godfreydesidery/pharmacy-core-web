@@ -127,6 +127,10 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   // money, insurance and receivables
   'errors.invalid_amount': 'Kiasi kiwe zaidi ya sifuri.',
   'errors.invalid_rate': 'Kiwango kiwe zaidi ya sifuri.',
+  'errors.exchange_rate_mismatch':
+    'Kiwango hicho si kiwango cha leo kilichorekodiwa. Rekodi kiwango kipya kwenye Viwango vya fedha kwanza.',
+  'errors.base_currency_only': 'Malipo haya hupokelewa kwa sarafu ya duka pekee.',
+  'errors.owner_required': 'Chagua kumbukumbu ambayo faili ni yake.',
   'errors.invalid_exchange_rate': 'Kiwango cha kubadilisha fedha kiwe zaidi ya sifuri.',
   'errors.same_currency': 'Chagua sarafu mbili tofauti.',
   'errors.invalid_effective_on': 'Tarehe haiwezi kuwa ya baadaye.',

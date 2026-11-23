@@ -132,6 +132,10 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   // money, insurance and receivables
   'errors.invalid_amount': 'The amount must be more than zero.',
   'errors.invalid_rate': 'The rate must be more than zero.',
+  'errors.exchange_rate_mismatch':
+    'That exchange rate differs from the rate recorded for today. Record the new rate under Exchange rates first.',
+  'errors.base_currency_only': 'This payment is taken in the base currency of the pharmacy only.',
+  'errors.owner_required': 'Choose the record the file belongs to.',
   'errors.invalid_exchange_rate': 'The exchange rate must be more than zero.',
   'errors.same_currency': 'Choose two different currencies.',
   'errors.invalid_effective_on': 'The date cannot be in the future.',

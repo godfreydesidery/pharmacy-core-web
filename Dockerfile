@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
-# Production image: the Angular build served by scripts/serve-prod.mjs, which also proxies
-# /api, /actuator, /v3/api-docs and /swagger-ui to API_URL (same origin for the browser).
+# Production image: the Angular build served by scripts/serve-prod.mjs, which also proxies /api
+# and /actuator/health to API_URL (same origin for the browser) and sends the security headers.
 #   docker build -t pharmacy-core-web . && docker run -p 4300:4300 -e API_URL=http://host.docker.internal:8080 pharmacy-core-web
 
 # ---- build ----

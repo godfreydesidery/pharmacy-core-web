@@ -21,7 +21,7 @@ import { ToastService } from '../../core/ui/toast.service';
           <h1>{{ 'vouchers.title' | t }}</h1>
           <p class="sub">{{ 'vouchers.sub' | t }}</p>
         </div>
-        @if (session.can('sales.sell') && session.branch()) {
+        @if (session.can('sales.voucher') && session.branch()) {
           <div class="actions">
             <button class="btn primary" type="button" (click)="open.set(true)">
               <app-icon name="plus" [size]="16" /> {{ 'vouchers.sell' | t }}
