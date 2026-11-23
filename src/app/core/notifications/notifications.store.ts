@@ -37,6 +37,8 @@ export class NotificationsStore {
   private source: EventSource | null = null;
   private retryTimer: ReturnType<typeof setTimeout> | null = null;
   private retryDelay = 2_000;
+  /** The latest connection attempt; an older one's ticket is thrown away. */
+  private attempt = 0;
 
   constructor() {
     effect(() => {
@@ -93,7 +95,29 @@ export class NotificationsStore {
       this.recentState.set([]);
       return;
     }
-    const params = new URLSearchParams({ token });
+    // EventSource cannot send the session token as a header, and a token in a URL ends up in
+    // logs: the stream opens with a 60-second ticket, a new one for every (re)connection.
+    const attempt = ++this.attempt;
+    this.api
+      .post<{ ticket: string }>(
+        '/notifications/stream-ticket',
+        {},
+        { silent: true, noBranch: true },
+      )
+      .then(({ ticket }) => {
+        if (attempt === this.attempt && this.session.token() === token) {
+          this.open(ticket, token, tenant);
+        }
+      })
+      .catch(() => {
+        if (attempt === this.attempt) {
+          this.scheduleReconnect(token, tenant);
+        }
+      });
+  }
+
+  private open(ticket: string, token: string, tenant: string | null): void {
+    const params = new URLSearchParams({ ticket });
     if (tenant) {
       params.set('tenant', tenant);
     }
@@ -145,6 +169,7 @@ export class NotificationsStore {
   }
 
   private disconnect(): void {
+    this.attempt++;
     if (this.retryTimer) {
       clearTimeout(this.retryTimer);
       this.retryTimer = null;

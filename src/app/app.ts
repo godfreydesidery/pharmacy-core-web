@@ -4,13 +4,14 @@ import { IdleWatch } from './core/session/idle';
 import { LookService } from './core/ui/look.service';
 import { ThemeService } from './core/ui/theme.service';
 import { ConfirmDialogComponent } from './core/ui/confirm';
+import { ConfirmIdentityComponent } from './core/session/confirm-identity';
 import { ToasterComponent } from './core/ui/widgets';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, ToasterComponent, ConfirmDialogComponent],
+  imports: [RouterOutlet, ToasterComponent, ConfirmDialogComponent, ConfirmIdentityComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<router-outlet /><app-toaster /><app-confirm />`,
+  template: `<router-outlet /><app-toaster /><app-confirm /><app-confirm-identity />`,
 })
 export class App {
   /** Created here so the saved theme applies before any page renders. */
