@@ -37,6 +37,8 @@ export const ACCT_SW: Readonly<Record<string, string>> = {
   'acct.event': 'Kilichotokea',
   'acct.from': 'Kutoka',
   'acct.noHistory': 'Hakuna bado.',
+  'acct.ev.IDENTITY_CONFIRMED': 'Alithibitisha nenosiri kwa badiliko',
+  'acct.ev.PASSWORD_RESET_THROTTLED': 'Viungo vingi mno vya kubadilisha nenosiri viliombwa',
   'acct.ev.SIGN_IN': 'Umeingia',
   'acct.ev.SIGN_IN_FAILED': 'Kuingia kumeshindikana',
   'acct.ev.SIGN_OUT': 'Umetoka',
@@ -141,4 +143,19 @@ export const ACCT_SW: Readonly<Record<string, string>> = {
     'Famasia hii inalazimisha uthibitisho wa hatua mbili: weka programu ya uthibitisho au passkey kwanza.',
   'errors.two_factor_needed_first':
     'Weka uthibitisho wa hatua mbili kwenye akaunti yako kabla ya kuulazimisha kwa wote.',
+  'identity.title': 'Thibitisha ni wewe',
+  'identity.text': 'Weka nenosiri lako ili kufanya badiliko hili kwenye akaunti yako.',
+  'identity.password': 'Nenosiri',
+  'identity.code': 'Namba ya programu ya uthibitisho au ya akiba',
+  'identity.confirm': 'Thibitisha',
+  'errors.reauthentication_required': 'Thibitisha nenosiri lako ili kufanya badiliko hili.',
+  'errors.invalid_password': 'Nenosiri si sahihi.',
+  'errors.common_password':
+    'Nenosiri hilo ni rahisi mno kubashiri. Chagua lisilo neno la kawaida, mfuatano wa vitufe au jina lako.',
+  'errors.permission_not_held': 'Huwezi kutoa ruhusa ambayo jukumu lako halina.',
+  'errors.admin_role_fixed':
+    'Jukumu la Msimamizi lina kila ruhusa daima. Tengeneza jukumu jipya badala yake.',
+  'errors.template_fixed':
+    'Ujumbe wa akaunti (kuingia, kubadilisha nenosiri, mwaliko) huwekwa na jukwaa.',
+  'errors.stream_ticket_expired': 'Muunganisho wa moja kwa moja umeisha; utaunganika wenyewe.',
 };

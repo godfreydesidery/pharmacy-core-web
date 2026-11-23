@@ -1,7 +1,8 @@
 import { Router } from '@angular/router';
 import { HttpContextToken, HttpEvent, HttpInterceptorFn, HttpResponse } from '@angular/common/http';
 import { Injector, inject } from '@angular/core';
-import { catchError, map, throwError } from 'rxjs';
+import { catchError, from, map, switchMap, throwError } from 'rxjs';
+import { ConfirmIdentityService } from '../session/confirm-identity';
 import { Translations } from '../i18n/translations.store';
 import { SessionStore } from '../session/session.store';
 import { SignOutService } from '../session/sign-out';
@@ -12,6 +13,8 @@ import { ApiError, localizeError } from './api-error';
 export const SILENT = new HttpContextToken<boolean>(() => false);
 /** Do not send `X-Branch-Id`, such as for a report across all branches. */
 export const NO_BRANCH = new HttpContextToken<boolean>(() => false);
+/** Already sent again after the person confirmed their password: do not ask a second time. */
+const CONFIRMED = new HttpContextToken<boolean>(() => false);
 
 export const API_PREFIX = '/api/';
 
@@ -74,6 +77,24 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
         translations.lang(),
         (key, params, fallback) => translations.t(key, params, fallback),
       );
+      if (error.reason === 'reauthentication_required' && !request.context.get(CONFIRMED)) {
+        // A sensitive account change after a while: ask for the password, then send it again.
+        return from(injector.get(ConfirmIdentityService).ask()).pipe(
+          switchMap((confirmed) =>
+            confirmed
+              ? next(
+                  request.clone({ headers, context: request.context.set(CONFIRMED, true) }),
+                ).pipe(
+                  map((event: HttpEvent<unknown>) =>
+                    event instanceof HttpResponse && isEnvelope(event.body)
+                      ? event.clone({ body: event.body.data })
+                      : event,
+                  ),
+                )
+              : throwError(() => error),
+          ),
+        );
+      }
       const signingIn = request.url.includes('/auth/sign-in');
       const signingOut = request.url.includes('/auth/sign-out');
       if (error.status === 401 && !signingIn) {

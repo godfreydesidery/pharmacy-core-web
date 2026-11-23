@@ -7,6 +7,7 @@ import { ToastService } from '../ui/toast.service';
 import { ApiError } from './api-error';
 import { Api } from './api.service';
 import { apiInterceptor } from './api.interceptor';
+import { ConfirmIdentityService } from '../session/confirm-identity';
 
 describe('apiInterceptor', () => {
   let api: Api;
@@ -59,6 +60,38 @@ describe('apiInterceptor', () => {
       data: { name: 'Afya' },
     });
     expect(await result).toEqual({ name: 'Afya' });
+  });
+
+  it('asks for the password on reauthentication_required, then sends the request again', async () => {
+    const identity = TestBed.inject(ConfirmIdentityService);
+    const asked = vi.spyOn(identity, 'ask').mockResolvedValue(true);
+    const result = api.post<{ ok: boolean }>('/auth/passkeys/register/options', {});
+    http
+      .expectOne('/api/v1/auth/passkeys/register/options')
+      .flush(
+        { status: 403, reason: 'reauthentication_required', detail: 'Confirm your password.' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(asked).toHaveBeenCalledOnce();
+    http
+      .expectOne('/api/v1/auth/passkeys/register/options')
+      .flush({ success: true, data: { ok: true } });
+    expect(await result).toEqual({ ok: true });
+  });
+
+  it('gives up when the person cancels the password prompt', async () => {
+    const identity = TestBed.inject(ConfirmIdentityService);
+    vi.spyOn(identity, 'ask').mockResolvedValue(false);
+    const result = api.post('/auth/2fa/setup', {});
+    http
+      .expectOne('/api/v1/auth/2fa/setup')
+      .flush(
+        { status: 403, reason: 'reauthentication_required', detail: 'Confirm your password.' },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    await expect(result).rejects.toMatchObject({ reason: 'reauthentication_required' });
   });
 
   it('leaves the branch out when asked', () => {

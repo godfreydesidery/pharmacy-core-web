@@ -37,6 +37,8 @@ export const ACCT_EN: Readonly<Record<string, string>> = {
   'acct.event': 'What happened',
   'acct.from': 'From',
   'acct.noHistory': 'Nothing yet.',
+  'acct.ev.IDENTITY_CONFIRMED': 'Confirmed password for a change',
+  'acct.ev.PASSWORD_RESET_THROTTLED': 'Too many reset links asked for',
   'acct.ev.SIGN_IN': 'Signed in',
   'acct.ev.SIGN_IN_FAILED': 'Sign-in failed',
   'acct.ev.SIGN_OUT': 'Signed out',
@@ -145,4 +147,18 @@ export const ACCT_EN: Readonly<Record<string, string>> = {
     'This pharmacy requires two-factor sign-in: set up an authenticator app or a passkey first.',
   'errors.two_factor_needed_first':
     'Set up two-factor on your own account before requiring it of everyone.',
+  'identity.title': 'Confirm it is you',
+  'identity.text': 'Enter your password to make this change to your account.',
+  'identity.password': 'Password',
+  'identity.code': 'Authenticator or recovery code',
+  'identity.confirm': 'Confirm',
+  'errors.reauthentication_required': 'Confirm your password to make this change.',
+  'errors.invalid_password': 'The password is wrong.',
+  'errors.common_password':
+    'That password is too easy to guess. Choose one that is not a common word, a run of keys or your own name.',
+  'errors.permission_not_held': 'You cannot give a permission your own role does not have.',
+  'errors.admin_role_fixed':
+    'The Administrator role always has every permission. Make a new role instead.',
+  'errors.template_fixed': 'Account messages (sign-in, reset, invitation) are set by the platform.',
+  'errors.stream_ticket_expired': 'The live connection expired; it reconnects by itself.',
 };
