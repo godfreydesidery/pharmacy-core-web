@@ -14,7 +14,8 @@ export interface CountLine {
   productName: string;
   batchNumber: string;
   expiryDate: string | null;
-  expected: number;
+  /** Null while the count is open (a blind count), except on the review before posting. */
+  expected: number | null;
   counted: number | null;
   variance: number | null;
   varianceValue: number | null;
@@ -27,7 +28,12 @@ export interface StockCount {
   note: string | null;
   lines: number;
   counted: number;
-  varianceValue: number;
+  /** Null while the count is open (blind), except on the review. */
+  varianceValue: number | null;
+  /** The shortages at cost: above the approval limit posting needs a manager. */
+  lossValue?: number | null;
+  /** Expected quantities and differences are hidden: the counter counts what is there. */
+  blind?: boolean;
   createdAt: string;
   createdBy: string;
   postedAt: string | null;
@@ -87,10 +93,19 @@ export function sheetOrder(count: StockCount): StockCount {
                 {{ 'count.progress' | t: { counted: c.counted, lines: c.lines } }}</span
               >
             </div>
-            <div class="right">
-              <span class="muted">{{ 'count.varianceValue' | t }}</span>
-              <h3 [class.text-red]="c.varianceValue < 0">{{ c.varianceValue | money }}</h3>
-            </div>
+            @if (!c.blind) {
+              <div class="right">
+                <span class="muted">{{ 'count.varianceValue' | t }}</span>
+                <h3 [class.text-red]="(c.varianceValue ?? 0) < 0">{{ c.varianceValue | money }}</h3>
+                @if (c.lossValue) {
+                  <span class="muted small"
+                    >{{ 'count.lossValue' | t }} {{ c.lossValue | money }}</span
+                  >
+                }
+              </div>
+            } @else {
+              <span class="badge gray" data-testid="blind-count">{{ 'count.blind' | t }}</span>
+            }
           </div>
           <div class="table-wrap">
             <table class="table">
@@ -98,10 +113,14 @@ export function sheetOrder(count: StockCount): StockCount {
                 <tr>
                   <th>{{ 'count.product' | t }}</th>
                   <th>{{ 'count.batch' | t }}</th>
-                  <th class="right">{{ 'count.expected' | t }}</th>
+                  @if (!c.blind) {
+                    <th class="right">{{ 'count.expected' | t }}</th>
+                  }
                   <th class="right">{{ 'count.counted' | t }}</th>
-                  <th class="right">{{ 'count.difference' | t }}</th>
-                  <th class="right">{{ 'count.value' | t }}</th>
+                  @if (!c.blind) {
+                    <th class="right">{{ 'count.difference' | t }}</th>
+                    <th class="right">{{ 'count.value' | t }}</th>
+                  }
                 </tr>
               </thead>
               <tbody>
@@ -114,7 +133,9 @@ export function sheetOrder(count: StockCount): StockCount {
                         <small class="muted" style="display: block">{{ l.expiryDate }}</small>
                       }
                     </td>
-                    <td class="right">{{ l.expected }}</td>
+                    @if (!c.blind) {
+                      <td class="right">{{ l.expected }}</td>
+                    }
                     <td class="right">
                       @if (c.status === 'OPEN') {
                         <input
@@ -129,12 +150,14 @@ export function sheetOrder(count: StockCount): StockCount {
                         {{ l.counted ?? '—' }}
                       }
                     </td>
-                    <td class="right" [class.text-red]="(l.variance ?? 0) < 0">
-                      {{ l.variance ?? '' }}
-                    </td>
-                    <td class="right">
-                      {{ l.varianceValue === null ? '' : (l.varianceValue | money) }}
-                    </td>
+                    @if (!c.blind) {
+                      <td class="right" [class.text-red]="(l.variance ?? 0) < 0">
+                        {{ l.variance ?? '' }}
+                      </td>
+                      <td class="right">
+                        {{ l.varianceValue === null ? '' : (l.varianceValue | money) }}
+                      </td>
+                    }
                   </tr>
                 }
               </tbody>
@@ -145,9 +168,23 @@ export function sheetOrder(count: StockCount): StockCount {
               <button class="btn" type="button" [disabled]="busy()" (click)="save()">
                 {{ 'count.save' | t }}
               </button>
-              <button class="btn primary" type="button" [disabled]="busy()" (click)="post()">
-                {{ 'count.post' | t }}
-              </button>
+              @if (session.can('inventory.adjust')) {
+                @if (c.blind) {
+                  <button
+                    class="btn primary"
+                    type="button"
+                    [disabled]="busy()"
+                    data-testid="review-count"
+                    (click)="review()"
+                  >
+                    {{ 'count.review' | t }}
+                  </button>
+                } @else {
+                  <button class="btn primary" type="button" [disabled]="busy()" (click)="post()">
+                    {{ 'count.post' | t }}
+                  </button>
+                }
+              }
             </div>
           }
         </div>
@@ -169,7 +206,9 @@ export function sheetOrder(count: StockCount): StockCount {
                   <td class="mono strong">{{ c.number }}</td>
                   <td class="muted">{{ c.createdAt | when }}</td>
                   <td class="right">{{ c.counted }} / {{ c.lines }}</td>
-                  <td class="right">{{ c.varianceValue | money }}</td>
+                  <td class="right">
+                    {{ c.varianceValue === null ? '—' : (c.varianceValue | money) }}
+                  </td>
                   <td>{{ 'count.status.' + c.status | t }}</td>
                 </tr>
               } @empty {
@@ -234,6 +273,20 @@ export default class StockCountsPage {
       this.entries.set({});
       this.toasts.success(this.translations.t('count.saved'));
       return true;
+    } finally {
+      this.busy.set(false);
+    }
+  }
+
+  /** Saves what was typed, then shows the expected quantities and differences before posting. */
+  protected async review(): Promise<void> {
+    const c = this.current();
+    if (!c || (Object.keys(this.entries()).length && !(await this.save()))) {
+      return;
+    }
+    this.busy.set(true);
+    try {
+      this.current.set(sheetOrder(await this.api.get<StockCount>(`/stock-counts/${c.uid}/review`)));
     } finally {
       this.busy.set(false);
     }

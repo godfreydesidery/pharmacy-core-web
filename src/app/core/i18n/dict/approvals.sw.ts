@@ -83,4 +83,27 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'held.confirmWriteOff': 'Futa {{quantity}} × {{product}} kama zilizoharibika?',
   'held.shelved': '{{quantity}} × {{product}} zimerudishwa rafuni.',
   'held.writtenOff': '{{quantity}} × {{product}} zimefutwa.',
+  'count.blind': 'Hesabu bila kuona kiasi',
+  'count.review': 'Kagua tofauti',
+  'count.lossValue': 'Upungufu kwa gharama:',
+  'errors.note_required': 'Andika maelezo ya sababu.',
+  'errors.batch_cost_differs':
+    'Bechi hii tayari ipo kwa gharama nyingine. Iandike kama upokeaji wa bidhaa au tumia namba nyingine ya bechi.',
+  'errors.receiver_is_sender': 'Mtu mwingine, si aliyetuma, lazima apokee.',
+  'errors.schedule_downgrade':
+    'Dawa ya cheti au inayodhibitiwa haiwezi kugeuzwa kuwa bidhaa ya daraja la chini.',
+  'errors.no_recipe': 'Bidhaa hii haina kiungo cha pakiti wala fomula ya kuitengeneza.',
+  'errors.recipe_mismatch': 'Kiasi hakilingani na kiungo cha pakiti au fomula.',
+  'errors.inputs_below_formula': 'Viambato ni pungufu ya vinavyohitajika na fomula.',
+  'errors.invalid_days': 'Siku lazima ziwe kati ya 1 na 365.',
+  'errors.invalid_received_quantity': 'Kiasi kilichopokelewa hakiwezi kuzidi kilichotumwa.',
+  'transfer.overdue': 'Zilizochelewa',
+  'transfer.daysInTransit': 'Siku {{days}} njiani',
+  'transfer.receiveTitle': 'Pokea {{number}}',
+  'transfer.receiveText':
+    'Hesabu kilichofika. Kilichopungua kinaandikwa kama hasara ya tawi lililotuma.',
+  'transfer.arrived': 'Kilichofika',
+  'transfer.shortNote': 'Nini kilitokea kwa vipande vilivyokosekana?',
+  'transfer.shortHint': 'Vipande {{units}} vimepungua. Hasara kubwa inahitaji idhini ya meneja.',
+  'controlled.noLonger': 'haidhibitiwi tena',
 };

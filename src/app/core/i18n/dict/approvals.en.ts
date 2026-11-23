@@ -83,4 +83,27 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
   'held.confirmWriteOff': 'Write off {{quantity}} × {{product}} as damaged?',
   'held.shelved': '{{quantity}} × {{product}} went back on the shelf.',
   'held.writtenOff': '{{quantity}} × {{product}} was written off.',
+  'count.blind': 'Blind count',
+  'count.review': 'Review differences',
+  'count.lossValue': 'Shortages at cost:',
+  'errors.note_required': 'Write a note saying why.',
+  'errors.batch_cost_differs':
+    'This batch is already in stock at another cost. Record it as a goods receipt or use another batch number.',
+  'errors.receiver_is_sender': 'Someone other than the person who sent it must receive it.',
+  'errors.schedule_downgrade':
+    'A prescription or controlled medicine cannot be made into a product of a lower class.',
+  'errors.no_recipe': 'This product has no pack link or formula to make it from.',
+  'errors.recipe_mismatch': 'The quantities do not match the pack link or formula.',
+  'errors.inputs_below_formula': 'The ingredients are less than the formula needs.',
+  'errors.invalid_days': 'Days must be between 1 and 365.',
+  'errors.invalid_received_quantity': 'The received quantity cannot be more than was sent.',
+  'transfer.overdue': 'Overdue',
+  'transfer.daysInTransit': '{{days}} days in transit',
+  'transfer.receiveTitle': 'Receive {{number}}',
+  'transfer.receiveText':
+    'Count what arrived. Anything short is recorded as a loss of the branch that sent it.',
+  'transfer.arrived': 'Arrived',
+  'transfer.shortNote': 'What happened to the missing units?',
+  'transfer.shortHint': '{{units}} units short. A large loss needs a manager to approve.',
+  'controlled.noLonger': 'no longer controlled',
 };

@@ -115,7 +115,8 @@ export const STOCKOPS_SW: Readonly<Record<string, string>> = {
   'dest.cancel': 'Ghairi',
   'dest.record': 'Futa na urekodi',
   'dest.recorded': 'Uteketezaji umerekodiwa; bidhaa zimefutwa stoo.',
-  'dest.incomplete': 'Toa njia, shahidi na angalau bechi moja.',
+  'dest.incomplete':
+    'Andika njia, maelezo na angalau bechi moja. Shahidi anaweza kuachwa wazi meneja akiidhinisha.',
   'dest.confirm': 'Futa bidhaa hizi kama zilizoteketezwa? Hili haliwezi kutenduliwa.',
   'errors.invalid_reason': 'Mstari uteketezwe kama Imeisha muda au Imeharibika.',
 };

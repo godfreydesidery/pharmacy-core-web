@@ -115,7 +115,8 @@ export const STOCKOPS_EN: Readonly<Record<string, string>> = {
   'dest.cancel': 'Cancel',
   'dest.record': 'Write off and record',
   'dest.recorded': 'Destruction recorded; the stock is written off.',
-  'dest.incomplete': 'Give the method, the witness and at least one batch.',
+  'dest.incomplete':
+    'Give the method, a note and at least one batch. The witness may be left empty when a manager approves.',
   'dest.confirm': 'Write this stock off as destroyed? This cannot be undone.',
   'errors.invalid_reason': 'A line is destroyed as Expired or Damaged.',
 };

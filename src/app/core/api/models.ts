@@ -472,6 +472,8 @@ export interface TransferLine {
   expiryDate: IsoDate | null;
   quantity: number;
   serialNumbers: string[];
+  /** Units that arrived (null while in transit, and on transfers received before Batch 4). */
+  receivedQuantity?: number | null;
 }
 
 export interface Transfer {
@@ -486,6 +488,12 @@ export interface Transfer {
   lines: TransferLine[];
   createdAt: IsoDateTime;
   receivedAt: IsoDateTime | null;
+  dispatchedBy?: string | null;
+  /** The sender, who may not also receive it. */
+  dispatchedByUid?: Uid | null;
+  receivedBy?: string | null;
+  /** Whole days since it was sent, while in transit. */
+  daysInTransit?: number | null;
 }
 
 /* ---------- purchasing ---------- */
