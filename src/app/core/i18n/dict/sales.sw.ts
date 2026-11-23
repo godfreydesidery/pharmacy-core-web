@@ -45,6 +45,9 @@ export const SALES_SW: Readonly<Record<string, string>> = {
   'sales.recordReturn': 'Rekodi marejesho',
   'sales.reference': 'Kumbukumbu',
   'sales.refund': 'Rejesho la pesa',
+  'sales.refundGoesBack': 'Marejesho yanarudi kwa njia mauzo yalivyolipwa:',
+  'sales.foreignRefundSplitBlocked':
+    'Mauzo haya yalilipwa kwa njia zaidi ya moja, kwa hiyo marejesho yake ni kwa sarafu ya duka.',
   'sales.refundMethod': 'Njia ya kurejesha pesa',
   'sales.refundIn': 'Rejesha kwa',
   'sales.foreignRefundEstimate':

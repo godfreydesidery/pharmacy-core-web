@@ -1,7 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, input, signal } from '@angular/core';
 import { AttachmentsComponent } from '../../core/files/attachments.component';
 import { Api } from '../../core/api/api.service';
-import { PaymentMethod, Sale, SaleLine, SaleReturn } from '../../core/api/models';
+import { Sale, SaleLine, SaleReturn } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
 import { formatMoney } from '../../core/format/format';
 import { SettingsStore } from '../../core/format/settings.store';
@@ -304,16 +304,11 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
           </div>
           <div class="field">
             <label>{{ 'sales.refundMethod' | t }}</label>
-            <select
-              class="select"
-              [value]="refundMethod()"
-              (change)="refundMethod.set($any($event.target).value)"
-            >
-              <option value="CASH">{{ 'sales.cash' | t }}</option>
-              <option value="MOBILE_MONEY">{{ 'sales.mobileMoney' | t }}</option>
-              <option value="CARD">{{ 'sales.card' | t }}</option>
-              <option value="CREDIT">{{ 'sales.storeCredit' | t }}</option>
-            </select>
+            <!-- The refund goes back the way the sale was paid (owner's rule, 23 Nov 2026): the
+                 server splits it; the cashier does not choose. -->
+            <p class="refund-ways" data-testid="refund-ways">
+              {{ 'sales.refundGoesBack' | t }} <b>{{ paidWays() }}</b>
+            </p>
           </div>
           @if (foreignTenders().length) {
             <div class="field">
@@ -354,6 +349,11 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
     </app-modal>
   `,
   styles: `
+    .refund-ways {
+      margin: 0;
+      padding: 9px 0;
+      color: var(--muted);
+    }
     .fx-estimate {
       margin-top: 12px;
     }
@@ -390,8 +390,13 @@ export default class SaleDetailPage {
   protected readonly busy = signal(false);
   protected readonly quantities = signal<Partial<Record<string, number>>>({});
   protected readonly reason = signal('');
-  protected readonly refundMethod = signal<PaymentMethod>('CASH');
   protected readonly refundCurrency = signal<string | null>(null);
+
+  /** The ways the sale was paid, as the refund goes back: "Cash, Mobile money". */
+  protected readonly paidWays = computed(() => {
+    const methods = [...new Set((this.sale.value()?.payments ?? []).map((p) => p.method))];
+    return methods.map((m) => this.translations.t('enum.' + m, undefined, m)).join(', ');
+  });
   protected readonly settings = inject(SettingsStore);
   private readonly translations = inject(Translations);
 
@@ -414,12 +419,15 @@ export default class SaleDetailPage {
     ),
   );
 
+  /** A refund in a foreign currency goes back one way only, and never to an account. */
   protected readonly foreignRefundAllowed = computed(
-    () => !this.baseOnlyPayment() && this.refundMethod() !== 'CREDIT',
+    () =>
+      !this.baseOnlyPayment() &&
+      new Set((this.sale.value()?.payments ?? []).map((p) => p.method)).size === 1,
   );
 
   protected readonly foreignRefundBlockedReason = computed(() =>
-    this.baseOnlyPayment() ? 'sales.foreignRefundSaleBlocked' : 'sales.foreignRefundMethodBlocked',
+    this.baseOnlyPayment() ? 'sales.foreignRefundSaleBlocked' : 'sales.foreignRefundSplitBlocked',
   );
 
   /** What the customer gets back in the chosen currency, at the sale's rate. */
@@ -499,7 +507,6 @@ export default class SaleDetailPage {
     try {
       const result = await this.api.post<SaleReturn>(`/sales/${this.uid()}/returns`, {
         reason: this.reason(),
-        refundMethod: this.refundMethod(),
         refundCurrency: this.foreignRefundAllowed() ? this.refundCurrency() : null,
         lines,
       });
@@ -513,6 +520,18 @@ export default class SaleDetailPage {
 
   /** "SRN-… recorded · refund TZS 10,000", plus the foreign amount and exchange gain or loss. */
   private returnRecorded(r: SaleReturn): string {
+    if (!r.refundCurrency && (r.refunds?.length ?? 0) > 1) {
+      // One return can go back several ways: "Cash TZS 4,000 · Mobile money TZS 6,000".
+      return this.translations.t('toast.returnRecordedSplit', {
+        number: r.number,
+        refunds: (r.refunds ?? [])
+          .map(
+            (x) =>
+              `${this.translations.t('enum.' + x.method, undefined, x.method)} ${formatMoney(x.amount, this.settings.currency())}`,
+          )
+          .join(' · '),
+      });
+    }
     if (!r.refundCurrency) {
       return this.translations.t('toast.returnRecorded', {
         number: r.number,

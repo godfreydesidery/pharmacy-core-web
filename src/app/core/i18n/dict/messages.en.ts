@@ -49,6 +49,7 @@ export const MESSAGES_EN: Readonly<Record<string, string>> = {
   'toast.saleCompleted': '{{number}} completed',
   'toast.returnNeedsQuantity': 'Enter a quantity to return',
   'toast.returnNeedsReason': 'Give a reason for the return',
+  'toast.returnRecordedSplit': '{{number}} recorded · refund {{refunds}}',
   'toast.returnRecorded': '{{number}} recorded · refund {{amount}}',
   'toast.returnRecordedForeign': '{{number}} recorded · refund {{amount}}',
   'toast.returnRecordedFxLoss':

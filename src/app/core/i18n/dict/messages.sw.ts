@@ -49,6 +49,7 @@ export const MESSAGES_SW: Readonly<Record<string, string>> = {
   'toast.saleCompleted': '{{number}} imekamilika',
   'toast.returnNeedsQuantity': 'Weka idadi ya kurejesha',
   'toast.returnNeedsReason': 'Taja sababu ya kurejesha',
+  'toast.returnRecordedSplit': '{{number}} imerekodiwa · marejesho {{refunds}}',
   'toast.returnRecorded': '{{number}} imerekodiwa · rejesho {{amount}}',
   'toast.returnRecordedForeign': '{{number}} imerekodiwa · rejesho {{amount}}',
   'toast.returnRecordedFxLoss':
