@@ -1,4 +1,4 @@
-import { EN_AREAS } from './dict';
+import { EN_AREAS } from './dict/en-areas';
 
 /**
  * English, the reference dictionary: every key the app uses is defined here first. Keys are

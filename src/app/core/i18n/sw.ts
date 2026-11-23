@@ -1,4 +1,4 @@
-import { SW_AREAS } from './dict';
+import { SW_AREAS } from './dict/sw-areas';
 
 /**
  * Kiswahili (Tanzania). Every key here must exist in `en.ts`; a key missing here falls back to

@@ -1,7 +1,6 @@
 import { Injectable, computed, effect, signal } from '@angular/core';
 import { setFormatLocale } from '../format/format';
 import { EN } from './en';
-import { SW } from './sw';
 
 export type Lang = 'en' | 'sw';
 export type Dictionary = Readonly<Record<string, string>>;
@@ -12,7 +11,14 @@ export const LANGUAGES: ReadonlyArray<{ code: Lang; label: string; native: strin
   { code: 'sw', label: 'Swahili', native: 'Kiswahili' },
 ];
 
-const DICTIONARIES: Readonly<Record<Lang, Dictionary>> = { en: EN, sw: SW };
+/**
+ * English ships in the first download (every key's fallback); Swahili is a separate chunk, loaded
+ * when chosen. Until it arrives, text shows in English.
+ */
+const LOADERS: Readonly<Record<Lang, () => Promise<Dictionary>>> = {
+  en: () => Promise.resolve(EN),
+  sw: () => import('./sw').then((m) => m.SW),
+};
 const STORAGE_KEY = 'pharmacy.lang';
 const LOCALES: Readonly<Record<Lang, string>> = { en: 'en-TZ', sw: 'sw-TZ' };
 
@@ -28,6 +34,8 @@ export class Translations {
   static current: Translations | null = null;
 
   readonly lang = signal<Lang>(Translations.stored());
+  /** The dictionaries loaded so far; English always. */
+  private readonly loaded = signal<Partial<Record<Lang, Dictionary>>>({ en: EN });
   /** The Intl locale for numbers and dates, such as `sw-TZ`. */
   readonly locale = computed(() => LOCALES[this.lang()]);
 
@@ -47,11 +55,24 @@ export class Translations {
 
   use(lang: Lang): void {
     this.lang.set(lang);
+    void this.load(lang);
+  }
+
+  /**
+   * Loads `lang`'s dictionary (once). The app awaits the stored language before it starts, so a
+   * Swahili user never sees English first.
+   */
+  async load(lang: Lang = this.lang()): Promise<void> {
+    if (this.loaded()[lang]) {
+      return;
+    }
+    const dictionary = await LOADERS[lang]();
+    this.loaded.update((all) => ({ ...all, [lang]: dictionary }));
   }
 
   /** The text of `key` in the current language; reading it tracks the language signal. */
   t(key: string, params?: Params, fallback?: string): string {
-    return translate(DICTIONARIES[this.lang()], key, params, fallback);
+    return translate(this.loaded()[this.lang()] ?? EN, key, params, fallback);
   }
 
   private static stored(): Lang {

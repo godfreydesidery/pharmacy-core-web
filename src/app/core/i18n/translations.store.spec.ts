@@ -42,9 +42,12 @@ describe('dictionaries', () => {
 describe('Translations', () => {
   beforeEach(() => localStorage.removeItem('pharmacy.lang'));
 
-  it('switches language at runtime and persists the choice', () => {
+  it('switches language at runtime and persists the choice', async () => {
     const translations = TestBed.inject(Translations);
     translations.use('sw');
+    // Swahili is a separate chunk: English shows until it has loaded.
+    expect(translations.t('nav.sales')).toBe('Sales');
+    await translations.load('sw');
     expect(translations.t('nav.sales')).toBe('Mauzo');
     expect(translations.locale()).toBe('sw-TZ');
     TestBed.tick();
