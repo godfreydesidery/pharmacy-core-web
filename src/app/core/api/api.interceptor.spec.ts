@@ -143,6 +143,45 @@ describe('apiInterceptor', () => {
     expect(toasts.toasts().at(-1)?.message).toBe('That approval has expired.');
   });
 
+  it('adds a second approval when one request needs two', async () => {
+    const approvals = TestBed.inject(ManagerApprovalService);
+    const asked = vi
+      .spyOn(approvals, 'ask')
+      .mockResolvedValueOnce('pap_late')
+      .mockResolvedValueOnce('pap_controlled');
+    const result = api.post('/sales/s1/returns', {});
+    http
+      .expectOne('/api/v1/sales/s1/returns')
+      .flush(
+        { status: 403, reason: 'approval_required', action: 'LATE_RETURN', amount: 5000 },
+        { status: 403, statusText: 'Forbidden' },
+      );
+    const second = await vi.waitFor(() => http.expectOne('/api/v1/sales/s1/returns'));
+    expect(second.request.headers.get('X-Approval')).toBe('pap_late');
+    second.flush(
+      { status: 403, reason: 'approval_required', action: 'CONTROLLED_WRITE_OFF', amount: 900 },
+      { status: 403, statusText: 'Forbidden' },
+    );
+    const third = await vi.waitFor(() => http.expectOne('/api/v1/sales/s1/returns'));
+    expect(third.request.headers.get('X-Approval')).toBe('pap_late, pap_controlled');
+    third.flush({ success: true, data: { ok: true } });
+    expect(await result).toEqual({ ok: true });
+    expect(asked).toHaveBeenCalledTimes(2);
+  });
+
+  it('does not ask twice for the same action', async () => {
+    const asked = vi
+      .spyOn(TestBed.inject(ManagerApprovalService), 'ask')
+      .mockResolvedValue('pap_1');
+    const result = api.post('/vouchers', {});
+    const refusal = { status: 403, reason: 'approval_required', action: 'VOUCHER', amount: 1 };
+    http.expectOne('/api/v1/vouchers').flush(refusal, { status: 403, statusText: 'Forbidden' });
+    const again = await vi.waitFor(() => http.expectOne('/api/v1/vouchers'));
+    again.flush(refusal, { status: 403, statusText: 'Forbidden' });
+    await expect(result).rejects.toMatchObject({ reason: 'approval_required' });
+    expect(asked).toHaveBeenCalledOnce();
+  });
+
   it('gives up when the manager approval is cancelled', async () => {
     vi.spyOn(TestBed.inject(ManagerApprovalService), 'ask').mockResolvedValue(null);
     const result = api.post('/vouchers', {});

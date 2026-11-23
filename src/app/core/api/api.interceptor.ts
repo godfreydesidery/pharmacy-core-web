@@ -22,6 +22,8 @@ export const SILENT = new HttpContextToken<boolean>(() => false);
 export const NO_BRANCH = new HttpContextToken<boolean>(() => false);
 /** Already sent again after the person confirmed their password: do not ask a second time. */
 const CONFIRMED = new HttpContextToken<boolean>(() => false);
+/** The actions a manager already approved for this request: never asked for twice. */
+const APPROVED = new HttpContextToken<readonly string[]>(() => []);
 
 export const API_PREFIX = '/api/';
 
@@ -117,16 +119,26 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
             ),
           );
         }
-        if (error.reason === 'approval_required' && !attempt.headers.has(APPROVAL_HEADER)) {
+        const approved = attempt.context.get(APPROVED);
+        const action = String(error.extras['action'] ?? '');
+        if (error.reason === 'approval_required' && !approved.includes(action)) {
           // Above the pharmacy's limit: a manager approves on this screen, then it goes again.
-          const action = String(error.extras['action'] ?? '');
+          // One request may need two (a late return of a damaged controlled medicine): each
+          // approval is added to the list header, and an action is never asked for twice.
           const amount = Number(error.extras['amount'] ?? 0);
           return from(injector.get(ManagerApprovalService).ask({ action, amount })).pipe(
-            switchMap((token) =>
-              token
-                ? send(attempt.clone({ headers: attempt.headers.set(APPROVAL_HEADER, token) }))
-                : throwError(() => error),
-            ),
+            switchMap((token) => {
+              if (!token) {
+                return throwError(() => error);
+              }
+              const sent = attempt.headers.get(APPROVAL_HEADER);
+              return send(
+                attempt.clone({
+                  headers: attempt.headers.set(APPROVAL_HEADER, sent ? `${sent}, ${token}` : token),
+                  context: attempt.context.set(APPROVED, [...approved, action]),
+                }),
+              );
+            }),
           );
         }
         const signingIn = attempt.url.includes('/auth/sign-in');
