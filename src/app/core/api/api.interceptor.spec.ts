@@ -94,6 +94,22 @@ describe('apiInterceptor', () => {
     await expect(result).rejects.toMatchObject({ reason: 'reauthentication_required' });
   });
 
+  it('sends an Idempotency-Key on money-moving POSTs, not on sales or reads', () => {
+    void api.post('/expenses', {});
+    void api.post('/sales/s1/returns', {});
+    void api.post('/sales', {});
+    void api.get('/expenses');
+    const expense = http.expectOne((r) => r.method === 'POST' && r.url === '/api/v1/expenses');
+    const ret = http.expectOne('/api/v1/sales/s1/returns');
+    const sale = http.expectOne((r) => r.method === 'POST' && r.url === '/api/v1/sales');
+    const read = http.expectOne((r) => r.method === 'GET' && r.url === '/api/v1/expenses');
+    expect(expense.request.headers.get('Idempotency-Key')).toMatch(/[0-9a-f-]{36}/);
+    expect(ret.request.headers.get('Idempotency-Key')).toMatch(/[0-9a-f-]{36}/);
+    expect(sale.request.headers.has('Idempotency-Key')).toBe(false);
+    expect(read.request.headers.has('Idempotency-Key')).toBe(false);
+    for (const r of [expense, ret, sale, read]) r.flush({ success: true, data: {} });
+  });
+
   it('leaves the branch out when asked', () => {
     void api.get('/dashboard', undefined, { noBranch: true });
     const request = http.expectOne('/api/v1/dashboard');

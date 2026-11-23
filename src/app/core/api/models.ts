@@ -687,6 +687,8 @@ export interface SaleReturn {
   saleNumber: string;
   reason: string;
   refundMethod: PaymentMethod;
+  /** How the refund went back: the way the sale was paid, one share per method. */
+  refunds?: { method: PaymentMethod; amount: number; reference: string | null }[];
   /** The base value booked at the sale. */
   refundTotal: number;
   /** A refund paid back in a foreign currency the sale was tendered in; null for the base. */

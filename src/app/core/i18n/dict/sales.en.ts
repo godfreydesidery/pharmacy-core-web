@@ -45,6 +45,9 @@ export const SALES_EN: Readonly<Record<string, string>> = {
   'sales.recordReturn': 'Record return',
   'sales.reference': 'Reference',
   'sales.refund': 'Refund',
+  'sales.refundGoesBack': 'The refund goes back the way the sale was paid:',
+  'sales.foreignRefundSplitBlocked':
+    'This sale was paid more than one way, so its refund goes back in the base currency.',
   'sales.refundMethod': 'Refund method',
   'sales.refundIn': 'Refund in',
   'sales.foreignRefundEstimate':

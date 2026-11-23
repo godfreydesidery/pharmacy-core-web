@@ -18,6 +18,14 @@ const CONFIRMED = new HttpContextToken<boolean>(() => false);
 
 export const API_PREFIX = '/api/';
 
+/**
+ * The money-moving POSTs the API keeps idempotent (IETF Idempotency-Key header): each request
+ * carries a fresh key, so a request the network repeats (a proxy retry, the request sent again
+ * after "Confirm it is you") is recorded once. POST /sales carries its own key in the body.
+ */
+const IDEMPOTENT =
+  /^\/api\/v1\/(receivables\/(payments|write-offs)|finance\/supplier-payments|expenses|sales\/[^/]+\/returns|vouchers(\/[^/]+\/void)?|stock\/(adjustments|opening)|transfers(\/[^/]+\/receive)?|insurance\/remittances|goods-receipts|destructions|supplier-returns|pos\/payment-requests)$/;
+
 interface Envelope {
   success: boolean;
   data: unknown;
@@ -48,6 +56,13 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
   if (!headers.has('Accept-Language')) {
     // The language of messages the API sends this user, such as an SMS receipt.
     headers = headers.set('Accept-Language', translations.lang());
+  }
+  if (
+    request.method === 'POST' &&
+    !headers.has('Idempotency-Key') &&
+    IDEMPOTENT.test(request.url.split('?')[0])
+  ) {
+    headers = headers.set('Idempotency-Key', crypto.randomUUID());
   }
   const token = session.token();
   if (token && !headers.has('Authorization')) {
