@@ -32,7 +32,10 @@ const TYPES: CustomerType[] = [
           <p class="sub">{{ 'partners.patientsWholesaleBuyersAndInsuredMembers' | t }}</p>
         </div>
         <div class="actions">
-          <app-export [list]="list" />
+          @if (session.can('data.export')) {
+            <!-- Customers' phones and insurance numbers: bulk export is its own permission (ISO-10). -->
+            <app-export [list]="list" />
+          }
           <app-import
             path="/customers/import"
             permission="partners.manage"
