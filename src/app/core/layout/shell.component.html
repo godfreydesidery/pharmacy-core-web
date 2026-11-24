@@ -1,3 +1,6 @@
+<a class="skip-link" href="#main-content" (click)="skipToContent($event)">{{
+  'ux.skipToContent' | t
+}}</a>
 <aside class="sidebar">
   <a class="brand" routerLink="/">
     @if (logo.url(); as logoUrl) {
@@ -158,7 +161,17 @@
       </button>
     }
     <div class="user">
-      <button class="user-chip" type="button" (click)="userMenu.set(!userMenu())">
+      <button
+        #userChip
+        class="user-chip"
+        type="button"
+        aria-haspopup="menu"
+        aria-controls="user-menu"
+        [attr.aria-expanded]="userMenu()"
+        [attr.aria-label]="'ux.userMenu' | t: { name: session.user()?.name ?? '' }"
+        (click)="toggleUserMenu()"
+        (keydown)="chipKey($event)"
+      >
         <span class="avatar">{{ initials() }}</span>
         <span class="who"
           ><b>{{ session.user()?.name }}</b
@@ -167,14 +180,21 @@
         <app-icon name="chevron" [size]="15" />
       </button>
       @if (userMenu()) {
-        <div class="menu" role="menu">
-          <a routerLink="/workspace" role="menuitem"
+        <div
+          #userMenuEl
+          id="user-menu"
+          class="menu"
+          role="menu"
+          [attr.aria-label]="'ux.userMenu' | t: { name: session.user()?.name ?? '' }"
+          (keydown)="menuKey($event)"
+        >
+          <a routerLink="/workspace" role="menuitem" tabindex="-1"
             ><app-icon name="transfer" [size]="16" /> {{ 'shell.switchPharmacy' | t }}</a
           >
-          <a routerLink="/account" role="menuitem"
+          <a routerLink="/account" role="menuitem" tabindex="-1"
             ><app-icon name="lock" [size]="16" /> {{ 'shell.account' | t }}</a
           >
-          <button type="button" class="danger" role="menuitem" (click)="signOut()">
+          <button type="button" class="danger" role="menuitem" tabindex="-1" (click)="signOut()">
             <app-icon name="logout" [size]="16" /> {{ 'shell.signOut' | t }}
           </button>
         </div>
@@ -205,7 +225,7 @@
     </div>
   }
 
-  <main class="content">
+  <main class="content" id="main-content" tabindex="-1">
     @if (blockedBySuspension()) {
       <div class="page">
         <div

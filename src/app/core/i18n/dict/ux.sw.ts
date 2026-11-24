@@ -143,4 +143,9 @@ export const UX_SW: Readonly<Record<string, string>> = {
   'ux.confirm.return.text':
     'Pesa zinarejeshwa kwa njia mauzo yalivyolipwa, na bidhaa zinarudi kama ulivyochagua.',
   'ux.confirm.return.ok': 'Andika marejesho',
+
+  // the shell (UX-14, UX-16, UX-17, UX-18)
+  'ux.skipToContent': 'Ruka hadi maudhui',
+  'ux.userMenu': 'Menyu ya akaunti ya {{name}}',
+  'nav.suppliers.history': 'Wasambazaji wote',
 };

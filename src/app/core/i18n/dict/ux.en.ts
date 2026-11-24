@@ -148,4 +148,9 @@ export const UX_EN: Readonly<Record<string, string>> = {
   'ux.confirm.return.text':
     'The refund goes back the way the sale was paid, and the items come back as chosen.',
   'ux.confirm.return.ok': 'Record return',
+
+  // the shell (UX-14, UX-16, UX-17, UX-18)
+  'ux.skipToContent': 'Skip to content',
+  'ux.userMenu': 'Account menu of {{name}}',
+  'nav.suppliers.history': 'All suppliers',
 };
