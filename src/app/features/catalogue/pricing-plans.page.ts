@@ -129,24 +129,15 @@ const PLAN_FILTER = {
               [class.off]="!c.active"
               [attr.data-testid]="'plan-card-' + c.name"
               [routerLink]="['/catalogue/pricing-plans', c.uid ?? 'normal']"
+              [attr.title]="details(c)"
             >
+              <span class="plan-icon" aria-hidden="true"
+                ><app-icon [name]="iconOf(c)" [size]="18"
+              /></span>
               <b>{{ c.uid ? c.name : ('plans.normal' | t) }}</b>
-              <small>{{ audience(c) }}</small>
-              <small class="muted">
-                {{
-                  c.uid
-                    ? c.rulePercent === null
-                      ? ('pricing.blocks' | t)
-                      : ('plans.rule' | t: { rule: signed(c.rulePercent) })
-                    : ('plans.default' | t)
-                }}
-              </small>
-              <span class="count">
-                {{ 'plans.count' | t: { count: c.priced } }}
-                @if (!c.active) {
-                  · {{ 'plans.inactive' | t }}
-                }
-              </span>
+              @if (!c.active) {
+                <span class="sr-only">{{ 'plans.inactive' | t }}</span>
+              }
             </a>
           }
           @if (canEdit()) {
@@ -808,17 +799,44 @@ const PLAN_FILTER = {
       color: inherit;
       font: inherit;
     }
+    a.plan-card {
+      grid-template-columns: auto 1fr;
+      align-items: center;
+      gap: 10px;
+      min-height: 60px;
+    }
     .plan-card b {
       font-size: 0.98rem;
+      /* A long name wraps between words; a word wider than the card is hyphenated, not cut. */
+      overflow-wrap: break-word;
+      hyphens: auto;
+      min-width: 0;
     }
-    .plan-card small {
-      font-size: 0.78rem;
+    @media (max-width: 480px) {
+      /* Two cards a row on a phone: the icon above the name gives the name the card's width. */
+      a.plan-card {
+        grid-template-columns: 1fr;
+        align-items: start;
+        align-content: start;
+        gap: 6px;
+        padding: 10px;
+      }
+      .plan-card b {
+        font-size: 0.92rem;
+      }
+      .plan-icon {
+        width: 28px;
+        height: 28px;
+      }
     }
-    .plan-card .count {
-      margin-top: 4px;
-      font-size: 0.8rem;
-      font-weight: 600;
+    .plan-icon {
+      display: grid;
+      place-items: center;
+      width: 34px;
+      height: 34px;
+      border-radius: 10px;
       color: var(--primary);
+      background: color-mix(in srgb, var(--primary) 12%, var(--surface));
     }
     .plan-card:hover,
     .plan-card:focus-visible {
@@ -1036,6 +1054,27 @@ export default class PricingPlansPage {
     this.notPriced.set(false);
     this.edited.set({});
     void this.router.navigate(['/catalogue/pricing-plans', c.uid ?? 'normal']);
+  }
+
+  /** The card's icon, by who the plan is for: the price tag for Normal Sale. */
+  protected iconOf(c: PlanCard): string {
+    if (!c.uid) return 'tag';
+    return { insurer: 'shield', customer: 'user', type: 'bag', till: 'cash' }[this.kindOf(c)];
+  }
+
+  /**
+   * What the card no longer shows, as its tooltip: who the plan is for, its rule and how many
+   * medicines it prices (owner, 24 Nov 2026: the cards show the name only).
+   */
+  protected details(c: PlanCard): string {
+    const rule = c.uid
+      ? c.rulePercent === null
+        ? this.translations.t('pricing.blocks')
+        : this.translations.t('plans.rule', { rule: this.signed(c.rulePercent) })
+      : this.translations.t('plans.default');
+    const parts = [this.audience(c), rule, this.translations.t('plans.count', { count: c.priced })];
+    if (!c.active) parts.push(this.translations.t('plans.inactive'));
+    return parts.join(' · ');
   }
 
   private kindOf(c: PlanCard): 'type' | 'customer' | 'insurer' | 'till' {
