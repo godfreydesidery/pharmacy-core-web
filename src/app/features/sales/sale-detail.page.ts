@@ -211,6 +211,71 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
           </div>
         </div>
 
+        @if (s.fiscalDocuments?.length) {
+          <div class="card mt" data-testid="fiscal-documents">
+            <div class="card-head">
+              <h3>{{ 'fiscal.documents' | t }}</h3>
+            </div>
+            <div class="table-wrap">
+              <table class="table">
+                <thead>
+                  <tr>
+                    <th>{{ 'fiscal.kind' | t }}</th>
+                    <th>{{ 'fiscal.number' | t }}</th>
+                    <th>{{ 'fiscal.status' | t }}</th>
+                    <th class="right">{{ 'fiscal.total' | t }}</th>
+                    <th class="right">{{ 'fiscal.vat' | t }}</th>
+                    <th>{{ 'fiscal.issuedAt' | t }}</th>
+                    <th class="right">{{ 'fiscal.attempts' | t }}</th>
+                    <th></th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (d of s.fiscalDocuments; track d.uid) {
+                    <tr>
+                      <td>
+                        {{ 'enum.' + d.kind | t }}
+                        <div class="faint small">{{ d.sourceNumber }}</div>
+                      </td>
+                      <td>
+                        <b>{{ d.receiptNumber ?? '—' }}</b>
+                        @if (d.verificationCode) {
+                          <div class="faint small">{{ d.verificationCode }}</div>
+                        }
+                      </td>
+                      <td>
+                        <app-status [value]="d.status" />
+                        @if (d.lastError && d.status !== 'ISSUED') {
+                          <div class="faint small" [attr.title]="d.lastError">
+                            {{ 'fiscal.lastError' | t }}: {{ d.lastError }}
+                          </div>
+                        }
+                      </td>
+                      <td class="right">{{ d.total | money }}</td>
+                      <td class="right">{{ d.taxTotal | money }}</td>
+                      <td class="muted">{{ d.issuedAt ? (d.issuedAt | when) : '—' }}</td>
+                      <td class="right">{{ d.attempts }}</td>
+                      <td class="right">
+                        @if (d.status !== 'ISSUED' && session.can('sales.sell')) {
+                          <button
+                            class="btn sm"
+                            type="button"
+                            [disabled]="busy()"
+                            (click)="resend(d.uid)"
+                            data-testid="fiscal-retry"
+                          >
+                            {{ 'fiscal.retry' | t }}
+                          </button>
+                        }
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
+
         <app-attachments
           class="block mt"
           ownerType="SALE"
@@ -473,6 +538,18 @@ export default class SaleDetailPage {
 
   /** The serials of a line picked to come back, by sale line uid. */
   protected readonly pickedSerials = signal<Partial<Record<string, string[]>>>({});
+
+  /** Sends a fiscal document the tax authority refused (or has not answered) again. */
+  protected async resend(documentUid: string): Promise<void> {
+    this.busy.set(true);
+    try {
+      await this.api.post(`/fiscal/documents/${documentUid}/retry`, {});
+      this.toasts.success(this.translations.t('fiscal.sent'));
+      await this.sale.reload();
+    } finally {
+      this.busy.set(false);
+    }
+  }
 
   protected returnableSerials(line: SaleLine): string[] {
     return line.serialNumbers.filter((sn) => !line.returnedSerialNumbers.includes(sn));

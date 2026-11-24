@@ -184,6 +184,7 @@ export const TENANT_NAV: NavItem[] = [
         permission: 'finance.view',
         feature: 'ADVANCED_REPORTS',
       },
+      { label: 'Z reports', path: '/finance/z-reports', permission: 'finance.view' },
       {
         label: 'Supplier payments',
         path: '/finance/supplier-payments',

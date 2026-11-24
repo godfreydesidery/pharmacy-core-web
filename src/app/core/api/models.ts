@@ -141,6 +141,7 @@ export interface Branch {
 export interface Settings {
   currency: string;
   timezone: string;
+  /** The standard VAT rate: what a STANDARD product is sold at while the pharmacy is registered. */
   defaultTaxRatePercent: number;
   invoicePrefix: string;
   receiptFooter: string | null;
@@ -165,6 +166,11 @@ export interface Settings {
   returnWindowDays: number;
   /** A cashier opens a till shift before selling, refunding or issuing a voucher. */
   requireOpenShift: boolean;
+  /** Registered for VAT with TRA: false charges no VAT on any sale and books no input VAT. */
+  vatRegistered?: boolean;
+  /** Taxpayer Identification Number (9 digits, kept without dashes) and VAT Registration Number. */
+  tin?: string | null;
+  vrn?: string | null;
 }
 
 /** `POST /auth/activity`: the session's inactivity limit after the person used the app. */
@@ -278,6 +284,9 @@ export interface Manufacturer {
 }
 
 export type Schedule = 'OTC' | 'PRESCRIPTION' | 'CONTROLLED';
+/** STD-2: STANDARD at the standard rate; ZERO_RATED at 0% (input VAT recoverable); EXEMPT outside VAT. */
+export type TaxCategory = 'STANDARD' | 'ZERO_RATED' | 'EXEMPT';
+export const TAX_CATEGORIES: readonly TaxCategory[] = ['STANDARD', 'ZERO_RATED', 'EXEMPT'];
 export type Storage = 'ROOM_TEMPERATURE' | 'COOL_DRY' | 'REFRIGERATED';
 
 export interface ProductInput {
@@ -295,7 +304,10 @@ export interface ProductInput {
   schedule: Schedule;
   sellingPrice: number;
   costPrice: number;
+  /** Derived from `taxCategory` by the API: the standard rate for STANDARD, else 0. */
   taxRatePercent: number;
+  /** How VAT treats it; most medicines are EXEMPT in Tanzania (verify each with the accountant). */
+  taxCategory?: TaxCategory;
   reorderLevel: number;
   storage: Storage;
   productType: ProductType;
@@ -565,6 +577,9 @@ export interface GoodsReceipt {
   currency: string;
   exchangeRate: number;
   baseTotal: number;
+  /** The invoice's input VAT, on top of the lines (in the receipt currency, and in the base). */
+  vatTotal?: number;
+  baseVatTotal?: number;
 }
 
 /* ---------- sales ---------- */
@@ -603,6 +618,8 @@ export interface SellableProduct {
   unitOfMeasure: UnitOfMeasure;
   /** The POS asks for (or scans) each unit's serial number. */
   requiresSerialAtSale: boolean;
+  /** Its VAT category; `taxRatePercent` is already 0 when the pharmacy is not VAT-registered. */
+  taxCategory?: TaxCategory;
 }
 
 export interface Prescription {
@@ -664,6 +681,53 @@ export interface SaleLine {
   returnedSerialNumbers: string[];
   /** The medicine's dispensing class when it was sold (null on sales before Batch 4). */
   schedule?: 'OTC' | 'PRESCRIPTION' | 'CONTROLLED' | null;
+  /** The VAT it was sold under. */
+  taxCategory?: TaxCategory;
+  taxRatePercent?: number;
+}
+
+export type FiscalStatus = 'PENDING' | 'ISSUED' | 'FAILED';
+export type FiscalDocumentKind = 'RECEIPT' | 'CREDIT_NOTE' | 'Z_REPORT';
+
+/** A document the tax authority (TRA VFD) issues: a sale's receipt, a credit note, a Z report. */
+export interface FiscalDocument {
+  uid: Uid;
+  kind: FiscalDocumentKind;
+  status: FiscalStatus;
+  provider: string;
+  branchUid: Uid;
+  sourceUid: Uid;
+  /** The sale's or return's number, or the Z report's (Z-HQ-20261124). */
+  sourceNumber: string;
+  saleUid: Uid | null;
+  businessDate: IsoDate;
+  sellerTin: string | null;
+  sellerVrn: string | null;
+  total: number;
+  taxTotal: number;
+  /** The authority's number, verification code and QR payload, once ISSUED. */
+  receiptNumber: string | null;
+  verificationCode: string | null;
+  qrPayload: string | null;
+  /** The branch's counters (the VFD's GC and DC). */
+  globalCounter: number | null;
+  dailyCounter: number | null;
+  issuedAt: IsoDateTime | null;
+  attempts: number;
+  lastError: string | null;
+  createdAt: IsoDateTime;
+  /** A Z report's figures. */
+  z: {
+    receipts: number;
+    receiptsTotal: number;
+    receiptsTax: number;
+    creditNotes: number;
+    creditNotesTotal: number;
+    creditNotesTax: number;
+    standardNet: number;
+    zeroRatedNet: number;
+    exemptNet: number;
+  } | null;
 }
 
 export interface Sale {
@@ -688,6 +752,14 @@ export interface Sale {
   prescription: Prescription | null;
   cashierName: string;
   createdAt: IsoDateTime;
+  /** The authority's receipt number, once issued. */
+  fiscalReference?: string | null;
+  /** The fiscal receipt is still to be issued. */
+  fiscalDue?: boolean;
+  /** Its fiscal receipt's status; null without one (no fiscal integration). */
+  fiscalStatus?: FiscalStatus | null;
+  /** The receipt, then the credit notes of its returns (read with the sale). */
+  fiscalDocuments?: FiscalDocument[];
 }
 
 export interface SaleSummary {
@@ -701,6 +773,7 @@ export interface SaleSummary {
   status: SaleStatus;
   cashierName: string;
   createdAt: IsoDateTime;
+  fiscalStatus?: FiscalStatus | null;
 }
 
 export interface SaleReturn {
@@ -724,6 +797,9 @@ export interface SaleReturn {
   lines: SaleReturnLine[];
   createdAt: IsoDateTime;
   createdBy: string;
+  /** Its credit note's status (null: the sale had no fiscal receipt) and number. */
+  fiscalStatus?: FiscalStatus | null;
+  fiscalReference?: string | null;
 }
 
 export interface SaleReturnLine {
@@ -768,6 +844,8 @@ export interface Expense {
   branchUid?: Uid | null;
   createdAt?: IsoDateTime;
   createdBy?: string;
+  /** The input VAT in the amount (VAT-registered pharmacies). */
+  vatAmount?: number;
 }
 
 export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';

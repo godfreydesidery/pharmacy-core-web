@@ -148,6 +148,7 @@ const TONES: Record<string, Tone> = {
   PARTIALLY_RETURNED: 'amber',
   LOW_STOCK: 'amber',
   PENDING: 'amber',
+  ISSUED: 'green',
   PRESCRIPTION: 'purple',
   CONTROLLED: 'red',
   RETURNED: 'gray',

@@ -92,6 +92,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                   <th class="right">{{ 'sales.items' | t }}</th>
                   <th class="right">{{ 'sales.total' | t }}</th>
                   <th>{{ 'sales.status' | t }}</th>
+                  <th>{{ 'fiscal.status' | t }}</th>
                 </tr>
               </thead>
               <tbody>
@@ -112,10 +113,17 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                     <td class="right">{{ s.itemCount }}</td>
                     <td class="right strong">{{ s.total | money }}</td>
                     <td><app-status [value]="s.status" /></td>
+                    <td data-testid="sale-fiscal-status">
+                      @if (s.fiscalStatus) {
+                        <app-status [value]="s.fiscalStatus" />
+                      } @else {
+                        <span class="faint">—</span>
+                      }
+                    </td>
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="8">
+                    <td colspan="9">
                       <app-empty
                         [for]="list"
                         icon="receipt"
