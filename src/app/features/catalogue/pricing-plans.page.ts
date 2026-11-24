@@ -18,7 +18,8 @@ import {
   Product,
 } from '../../core/api/models';
 import { debounced, loaded, pagedList } from '../../core/data/data';
-import { isoDay } from '../../core/format/format';
+import { isoDay, roundMoney } from '../../core/format/format';
+import { SettingsStore } from '../../core/format/settings.store';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
@@ -933,6 +934,7 @@ export default class PricingPlansPage {
   private readonly stale = inject(StaleRecordService);
   private readonly translations = inject(Translations);
   private readonly session = inject(SessionStore);
+  private readonly base = inject(SettingsStore).currency;
 
   protected readonly canEdit = computed(() => this.session.can('catalogue.manage'));
   protected readonly roundings = ['NEAREST', 'UP', 'DOWN'] as const;
@@ -1093,7 +1095,15 @@ export default class PricingPlansPage {
 
   protected placeholder(c: PlanCard, row: PlanItemRow): string {
     if (!c.uid || c.rulePercent === null) return '';
-    return String(Math.round(row.normalPrice * (1 + c.rulePercent / 100) * 100) / 100);
+    return String(this.rulePrice(row.normalPrice, c.rulePercent));
+  }
+
+  /**
+   * A price at the plan's rule, as the API works it: price × (100 + rule) ÷ 100, rounded half-up
+   * to the base currency's minor units, never below zero.
+   */
+  private rulePrice(price: number, rulePercent: number): number {
+    return Math.max(roundMoney((price * (100 + rulePercent)) / 100, this.base()), 0);
   }
 
   protected diff(row: PlanItemRow): number | null {
@@ -1155,9 +1165,7 @@ export default class PricingPlansPage {
     const c = this.card();
     if (p && c) {
       this.addPrice.set(
-        c.rulePercent === null
-          ? p.sellingPrice
-          : Math.round(p.sellingPrice * (1 + c.rulePercent / 100) * 100) / 100,
+        c.rulePercent === null ? p.sellingPrice : this.rulePrice(p.sellingPrice, c.rulePercent),
       );
     }
   }

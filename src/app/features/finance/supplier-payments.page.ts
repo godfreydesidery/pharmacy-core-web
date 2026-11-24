@@ -3,7 +3,7 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { GoodsReceipt, LatestRate, Supplier, SupplierPayment } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
-import { convertHalfEven, isoDay } from '../../core/format/format';
+import { convertMoney, isoDay } from '../../core/format/format';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -253,7 +253,7 @@ export default class SupplierPaymentsPage {
   protected readonly foreign = computed(() => this.values().currency !== this.base());
   protected readonly settled = computed(() => {
     const v = this.values();
-    return convertHalfEven(Number(v.amount) || 0, Number(v.rate) || 0, this.base());
+    return convertMoney(Number(v.amount) || 0, Number(v.rate) || 0, this.base());
   });
   protected readonly supplierName = (s: Supplier) => s.name;
   protected readonly abs = Math.abs;

@@ -15,6 +15,7 @@ import {
   WHOLE_STATEMENT,
 } from '../../core/api/credit.models';
 import { loaded } from '../../core/data/data';
+import { convertMoney, roundMoney } from '../../core/format/format';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -647,12 +648,15 @@ export default class CustomerAccountPage {
   protected readonly foreign = computed(
     () => !!this.currency() && this.currency() !== this.settings.currency(),
   );
+  /** The payment in the base currency: a foreign one converted half-up, as the API books it. */
   protected readonly baseValue = computed(() =>
-    this.foreign() ? Math.round(this.amount() * this.rate() * 100) / 100 : this.amount(),
+    this.foreign()
+      ? convertMoney(this.amount(), this.rate(), this.settings.currency())
+      : this.amount(),
   );
   protected readonly overpay = computed(() => {
     const owed = Math.max(0, this.account.value()?.balance ?? 0);
-    return Math.max(0, Math.round((this.baseValue() - owed) * 100) / 100);
+    return Math.max(0, roundMoney(this.baseValue() - owed, this.settings.currency()));
   });
   protected readonly usedPercent = computed(() => {
     const a = this.account.value();
