@@ -18,6 +18,9 @@ FROM node:22-alpine@sha256:1314fb30ec37592d5845e5a160d522c0e680972aa534549940b8d
 WORKDIR /app
 COPY --from=build /src/dist/pharmacy-core-web/browser ./dist/pharmacy-core-web/browser
 COPY --from=build /src/scripts/serve-prod.mjs ./scripts/serve-prod.mjs
+# The server needs only node: npm, npx and corepack (and their bundled packages, which the image
+# scan flags) are removed from the runtime image.
+RUN rm -rf /usr/local/lib/node_modules/npm /usr/local/lib/node_modules/corepack     /usr/local/bin/npm /usr/local/bin/npx /usr/local/bin/corepack
 USER node
 ENV PORT=4300 API_URL=http://localhost:8080
 EXPOSE 4300
