@@ -8,6 +8,10 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
   'approval.hint':
     'Only someone allowed to approve, other than you, can approve it. It works once.',
   'approval.approve': 'Approve',
+  'approval.selfText':
+    'You are the only person here who can approve {{action}}. Approve it yourself with your password.',
+  'approval.selfHint':
+    "It is recorded as a self-approval, and shows as one in the audit trail and the owner's reports. Once someone else can approve, they must.",
   'approval.action.REFUND': 'this refund',
   'approval.action.LATE_RETURN': 'a return after the return window',
   'approval.action.STOCK_WRITE_OFF': 'writing off stock',

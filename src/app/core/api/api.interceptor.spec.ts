@@ -114,7 +114,7 @@ describe('apiInterceptor', () => {
       { status: 403, statusText: 'Forbidden' },
     );
     await vi.waitFor(() =>
-      expect(asked).toHaveBeenCalledWith({ action: 'VOUCHER', amount: 80000 }),
+      expect(asked).toHaveBeenCalledWith({ action: 'VOUCHER', amount: 80000, selfApproval: false }),
     );
     const again = await vi.waitFor(() => http.expectOne('/api/v1/vouchers'));
     expect(again.request.headers.get('X-Approval')).toBe('pap_token');
@@ -122,6 +122,29 @@ describe('apiInterceptor', () => {
     expect(again.request.headers.get('Idempotency-Key')).toBe(key);
     again.flush({ success: true, data: { code: 'V1' } });
     expect(await result).toEqual({ code: 'V1' });
+  });
+
+  it('tells the dialog when the owner alone may approve it themselves', async () => {
+    const approvals = TestBed.inject(ManagerApprovalService);
+    const asked = vi.spyOn(approvals, 'ask').mockResolvedValue('pap_self');
+    const result = api.post<{ code: string }>('/vouchers', { value: 80000 });
+    http.expectOne('/api/v1/vouchers').flush(
+      {
+        status: 403,
+        reason: 'approval_required',
+        action: 'VOUCHER',
+        amount: 80000,
+        selfApproval: true,
+      },
+      { status: 403, statusText: 'Forbidden' },
+    );
+    await vi.waitFor(() =>
+      expect(asked).toHaveBeenCalledWith({ action: 'VOUCHER', amount: 80000, selfApproval: true }),
+    );
+    const again = await vi.waitFor(() => http.expectOne('/api/v1/vouchers'));
+    expect(again.request.headers.get('X-Approval')).toBe('pap_self');
+    again.flush({ success: true, data: { code: 'V2' } });
+    expect(await result).toEqual({ code: 'V2' });
   });
 
   it('toasts a refusal of the approved attempt, and does not ask twice', async () => {

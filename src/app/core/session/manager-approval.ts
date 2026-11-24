@@ -18,11 +18,18 @@ import { SILENT } from '../api/api.interceptor';
 import { SettingsStore } from '../format/settings.store';
 import { formatMoney } from '../format/format';
 import { DialogDirective } from '../ui/dialog';
+import { SessionStore } from './session.store';
 
 /** What needs approving: the API's `approval_required` problem members. */
 export interface ApprovalRequest {
   action: string;
   amount: number;
+  /**
+   * The API's `selfApproval` member: the person asking is the pharmacy's owner and nobody else
+   * here could approve, so they may approve it themselves with their own password (recorded as a
+   * self-approval).
+   */
+  selfApproval?: boolean;
 }
 
 /** Actions whose amount is a percent off, not money. */
@@ -31,6 +38,7 @@ const PERCENT_ACTIONS = new Set(['DEEP_DISCOUNT', 'DEEP_PROMOTION']);
 interface Granted {
   token: string;
   approvedBy: string;
+  selfApproved?: boolean;
 }
 
 /**
@@ -108,7 +116,11 @@ export class ManagerApprovalService {
         >
           <h2 id="manager-approval-title">{{ 'approval.title' | t }}</h2>
           <p id="manager-approval-text">
-            {{ 'approval.text' | t: { action: actionLabel() } }}
+            @if (open.request.selfApproval) {
+              {{ 'approval.selfText' | t: { action: actionLabel() } }}
+            } @else {
+              {{ 'approval.text' | t: { action: actionLabel() } }}
+            }
           </p>
           @if (amountLabel(); as amount) {
             <p class="amount">
@@ -142,7 +154,9 @@ export class ManagerApprovalService {
               required
             />
           </div>
-          <p class="hint">{{ 'approval.hint' | t }}</p>
+          <p class="hint" data-testid="approval-hint">
+            {{ (open.request.selfApproval ? 'approval.selfHint' : 'approval.hint') | t }}
+          </p>
           <p id="manager-approval-error" class="error" role="alert">{{ error() }}</p>
           <div class="actions">
             <button type="button" class="btn ghost" (click)="cancel()">
@@ -214,6 +228,7 @@ export class ManagerApprovalComponent {
   protected readonly service = inject(ManagerApprovalService);
   private readonly translations = inject(Translations);
   private readonly settings = inject(SettingsStore);
+  private readonly session = inject(SessionStore);
   protected readonly busy = signal(false);
   protected readonly error = signal('');
   protected loginValue = '';
@@ -242,8 +257,10 @@ export class ManagerApprovalComponent {
 
   constructor() {
     effect(() => {
-      if (this.service.open()) {
-        this.loginValue = '';
+      const open = this.service.open();
+      if (open) {
+        // Alone able to approve here: the owner approves with their own sign-in and password.
+        this.loginValue = open.request.selfApproval ? this.session.signInName() : '';
         this.passwordValue = '';
         this.error.set('');
       }

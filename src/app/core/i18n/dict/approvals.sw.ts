@@ -7,6 +7,10 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'approval.password': 'Nenosiri la meneja',
   'approval.hint':
     'Ni mtu mwenye ruhusa ya kuidhinisha, si wewe, anayeweza kuidhinisha. Inatumika mara moja.',
+  'approval.selfText':
+    'Ni wewe peke yako hapa unayeweza kuidhinisha {{action}}. Idhinisha mwenyewe kwa nenosiri lako.',
+  'approval.selfHint':
+    'Inarekodiwa kama idhini ya mwenyewe, na inaonekana hivyo kwenye kumbukumbu za ukaguzi na ripoti za mmiliki. Mtu mwingine akiweza kuidhinisha, ni lazima aidhinishe yeye.',
   'approval.approve': 'Idhinisha',
   'approval.action.REFUND': 'marejesho haya ya fedha',
   'approval.action.LATE_RETURN': 'kurudisha bidhaa baada ya muda wa kurudisha',

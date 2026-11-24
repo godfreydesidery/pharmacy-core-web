@@ -146,7 +146,8 @@
     ],
     "approval_required": [
       "action",
-      "amount"
+      "amount",
+      "selfApproval"
     ],
     "approver_is_requester": [],
     "base_currency_only": [],

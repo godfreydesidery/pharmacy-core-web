@@ -8,6 +8,12 @@ import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
 
 /**
+ * A phone as people write it: international (+255754000111) or local (0754 000 111); the API keeps
+ * it in E.164 with the pharmacy's country code (STD-19). Empty means none.
+ */
+export const PHONE_PATTERN = /^\s*(\+?[\d\s().-]{7,24})?\s*$/;
+
+/**
  * The signed-in person's name, and a staff login's contact phone. A person's own phone is verified
  * by SMS in the sign-in email and phone card instead.
  */
@@ -65,7 +71,7 @@ export class ProfileSectionComponent implements OnInit {
   protected readonly managed = signal(false);
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(120)]],
-    phone: ['', Validators.pattern(/^\s*(\+[\d\s-]{8,20})?\s*$/)],
+    phone: ['', Validators.pattern(PHONE_PATTERN)],
   });
 
   async ngOnInit(): Promise<void> {
