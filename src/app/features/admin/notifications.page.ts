@@ -183,8 +183,7 @@ type Tab = 'templates' | 'deliveries' | 'providers';
             @if (preview(); as p) {
               @if (p.html) {
                 <div class="mail-head">
-                  <small class="muted">{{ 'admin.subject' | t }}</small
-                  ><b>{{ p.subject }}</b>
+                  <small class="muted">{{ 'admin.subject' | t }}</small><b>{{ p.subject }}</b>
                 </div>
                 <iframe
                   class="mail"

@@ -24,16 +24,18 @@ import { Translations } from '../../core/i18n/translations.store';
     >
       <h3>{{ 'admin2.profile' | t }}</h3>
       <div class="field">
-        <label for="profile-name">{{ 'platform.name' | t }}</label
-        ><input id="profile-name" class="input" formControlName="name" />
+        <label for="profile-name">{{ 'platform.name' | t }}</label><input
+          id="profile-name"
+          class="input"
+          formControlName="name"
+        />
         @if (err('name'); as m) {
           <span class="error">{{ m }}</span>
         }
       </div>
       @if (managed()) {
         <div class="field">
-          <label for="profile-phone">{{ 'admin2.phone' | t }}</label
-          ><input
+          <label for="profile-phone">{{ 'admin2.phone' | t }}</label><input
             id="profile-phone"
             class="input"
             type="tel"

@@ -353,7 +353,9 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
                           >
                             <input
                               type="checkbox"
-                              [checked]="pickedSerials()[l.uid]?.includes(sn)"
+                              [checked]="
+                                $safeNavigationMigration(pickedSerials()[l.uid]?.includes(sn))
+                              "
                               (change)="toggleSerial(l, sn)"
                             />
                             <span class="mono">{{ sn }}</span>

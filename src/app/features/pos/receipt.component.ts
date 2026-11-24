@@ -25,8 +25,7 @@ import { FiscalBlockComponent } from './fiscal-block.component';
       <b class="center block">{{ session.tenant()?.name }}</b>
       <div class="center muted small">{{ sale().branchName }}</div>
       <div class="row between small muted">
-        <span>{{ sale().number }}</span
-        ><span>{{ sale().createdAt | when }}</span>
+        <span>{{ sale().number }}</span><span>{{ sale().createdAt | when }}</span>
       </div>
       <div class="small muted">
         {{ 'ui.t.customer' | t: { name: sale().customerName ?? ('ui.l.walkInCustomer' | t) } }} ·
@@ -71,22 +70,24 @@ import { FiscalBlockComponent } from './fiscal-block.component';
       </table>
       <div class="totals">
         <div class="row between">
-          <span class="muted">{{ 'pos.subtotal' | t }}</span
-          ><span>{{ sale().subtotal | money }}</span>
+          <span class="muted">{{ 'pos.subtotal' | t }}</span><span>{{
+            sale().subtotal | money
+          }}</span>
         </div>
         @if (sale().discountTotal) {
           <div class="row between">
-            <span class="muted">{{ 'pos.discount2' | t }}</span
-            ><span>− {{ sale().discountTotal | money }}</span>
+            <span class="muted">{{ 'pos.discount2' | t }}</span><span
+              >− {{ sale().discountTotal | money }}</span
+            >
           </div>
         }
         <div class="row between">
-          <span class="muted">{{ (taxIncluded() ? 'pos.vatIncluded' : 'pos.tax') | t }}</span
-          ><span>{{ sale().taxTotal | money }}</span>
+          <span class="muted">{{
+            (taxIncluded() ? 'pos.vatIncluded' : 'pos.tax') | t
+          }}</span><span>{{ sale().taxTotal | money }}</span>
         </div>
         <div class="row between grand">
-          <span>{{ 'pos.total' | t }}</span
-          ><span>{{ sale().total | money }}</span>
+          <span>{{ 'pos.total' | t }}</span><span>{{ sale().total | money }}</span>
         </div>
         @for (p of sale().payments; track $index) {
           <div class="row between small">
@@ -106,8 +107,7 @@ import { FiscalBlockComponent } from './fiscal-block.component';
         }
         @if (sale().changeDue) {
           <div class="row between strong">
-            <span>{{ 'pos.change' | t }}</span
-            ><span>{{ sale().changeDue | money }}</span>
+            <span>{{ 'pos.change' | t }}</span><span>{{ sale().changeDue | money }}</span>
           </div>
         }
       </div>

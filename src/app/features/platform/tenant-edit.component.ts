@@ -41,19 +41,22 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
       <form [formGroup]="form" class="stack" (ngSubmit)="save()">
         <div class="form-grid three">
           <div class="field">
-            <label>{{ 'platform.tradingName' | t }}</label
-            ><input class="input" formControlName="name" />
+            <label>{{ 'platform.tradingName' | t }}</label><input
+              class="input"
+              formControlName="name"
+            />
             @if (err('name'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
           <div class="field">
-            <label>{{ 'platform.legalName' | t }}</label
-            ><input class="input" formControlName="legalName" />
+            <label>{{ 'platform.legalName' | t }}</label><input
+              class="input"
+              formControlName="legalName"
+            />
           </div>
           <div class="field">
-            <label>{{ 'platform.countryIso' | t }}</label
-            ><input
+            <label>{{ 'platform.countryIso' | t }}</label><input
               class="input"
               formControlName="country"
               maxlength="2"
@@ -64,8 +67,10 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
             }
           </div>
           <div class="field">
-            <label>{{ 'platform.currency' | t }}</label
-            ><select class="select" formControlName="currency">
+            <label>{{ 'platform.currency' | t }}</label><select
+              class="select"
+              formControlName="currency"
+            >
               @for (c of currencies; track c) {
                 <option [value]="c">{{ c }}</option>
               }
@@ -76,8 +81,10 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
             }
           </div>
           <div class="field">
-            <label>{{ 'platform.timeZone' | t }}</label
-            ><select class="select" formControlName="timezone">
+            <label>{{ 'platform.timeZone' | t }}</label><select
+              class="select"
+              formControlName="timezone"
+            >
               @for (z of zones; track z) {
                 <option [value]="z">{{ z }}</option>
               }
@@ -87,23 +94,33 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
         <h4 class="muted">{{ 'admin2.contact' | t }}</h4>
         <div class="form-grid">
           <div class="field">
-            <label>{{ 'admin2.contactName' | t }}</label
-            ><input class="input" formControlName="contactName" />
+            <label>{{ 'admin2.contactName' | t }}</label><input
+              class="input"
+              formControlName="contactName"
+            />
           </div>
           <div class="field">
-            <label>{{ 'admin2.contactEmail' | t }}</label
-            ><input class="input" type="email" formControlName="contactEmail" />
+            <label>{{ 'admin2.contactEmail' | t }}</label><input
+              class="input"
+              type="email"
+              formControlName="contactEmail"
+            />
             @if (err('contactEmail'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
           <div class="field">
-            <label>{{ 'admin2.contactPhone' | t }}</label
-            ><input class="input" formControlName="contactPhone" placeholder="+255754000111" />
+            <label>{{ 'admin2.contactPhone' | t }}</label><input
+              class="input"
+              formControlName="contactPhone"
+              placeholder="+255754000111"
+            />
           </div>
           <div class="field">
-            <label>{{ 'platform.address' | t }}</label
-            ><input class="input" formControlName="address" />
+            <label>{{ 'platform.address' | t }}</label><input
+              class="input"
+              formControlName="address"
+            />
           </div>
           <div class="field full">
             <label class="check"

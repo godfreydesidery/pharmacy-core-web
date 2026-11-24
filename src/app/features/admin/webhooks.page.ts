@@ -60,8 +60,7 @@ import { Translations } from '../../core/i18n/translations.store';
                     <div class="cell-main">
                       <span class="thumb tone-purple"><app-icon name="link" [size]="16" /></span>
                       <div>
-                        <b>{{ w.name }}</b
-                        ><small class="mono">{{ w.url }}</small>
+                        <b>{{ w.name }}</b><small class="mono">{{ w.url }}</small>
                       </div>
                     </div>
                   </td>
@@ -132,8 +131,11 @@ import { Translations } from '../../core/i18n/translations.store';
     >
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">
         <div class="field">
-          <label>{{ 'admin.name' | t }}</label
-          ><input class="input" formControlName="name" [placeholder]="'admin.accountingSync' | t" />
+          <label>{{ 'admin.name' | t }}</label><input
+            class="input"
+            formControlName="name"
+            [placeholder]="'admin.accountingSync' | t"
+          />
           @if (err('name'); as m) {
             <span class="error">{{ m }}</span>
           }

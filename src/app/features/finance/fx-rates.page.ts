@@ -35,8 +35,10 @@ interface RateCard {
         <div>
           <h1>{{ 'finance.exchangeRates' | t }}</h1>
           <p class="sub">
-            {{ 'finance.baseCurrency' | t }} <b>{{ base() }}</b
-            >{{ 'finance.foreignCurrencySalesAndPurchases' | t }} {{ base() }}.
+            {{ 'finance.baseCurrency' | t }} <b>{{ base() }}</b>{{
+              'finance.foreignCurrencySalesAndPurchases' | t
+            }}
+            {{ base() }}.
           </p>
         </div>
         <div class="actions">

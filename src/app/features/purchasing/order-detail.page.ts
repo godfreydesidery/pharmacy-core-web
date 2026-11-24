@@ -141,8 +141,7 @@ import { Translations } from '../../core/i18n/translations.store';
       (closed)="cancelling.set(false)"
     >
       <div class="field">
-        <label>{{ 'purchasing.reason' | t }}</label
-        ><textarea class="input" #reason></textarea>
+        <label>{{ 'purchasing.reason' | t }}</label><textarea class="input" #reason></textarea>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="cancelling.set(false)">

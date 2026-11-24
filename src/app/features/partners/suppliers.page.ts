@@ -68,8 +68,7 @@ const TERMS: PaymentTerms[] = ['COD', 'NET_15', 'NET_30', 'NET_45', 'NET_60'];
                     <div class="cell-main">
                       <span class="thumb tone-teal"><app-icon name="truck" [size]="16" /></span>
                       <div>
-                        <b>{{ s.name }}</b
-                        ><small>{{ s.code }}</small>
+                        <b>{{ s.name }}</b><small>{{ s.code }}</small>
                       </div>
                     </div>
                   </td>

@@ -215,7 +215,9 @@
         >
           <app-icon [name]="suspension().icon" [size]="40" [stroke]="1.4" />
           <h1>{{ suspension().title | t }}</h1>
-          <span>{{ suspension().body | t: { pharmacy: session.tenant()?.name } }}</span>
+          <span>{{
+            suspension().body | t: { pharmacy: $safeNavigationMigration(session.tenant()?.name) }
+          }}</span>
           @if (suspension().hint; as hint) {
             <span class="muted">{{ hint | t }}</span>
           }

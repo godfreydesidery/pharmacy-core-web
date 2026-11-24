@@ -52,8 +52,7 @@ export interface RoleRecommendations {
             <ul class="changes">
               @for (role of r.roles; track role.roleUid) {
                 <li>
-                  <b>{{ role.name }}</b
-                  >:
+                  <b>{{ role.name }}</b>:
                   @if (role.add.length) {
                     {{ 'rolesNotice.gains' | t }} {{ names(role.add) }}.
                   }

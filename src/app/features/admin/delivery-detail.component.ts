@@ -42,7 +42,7 @@ interface DeliveryDetail {
     <app-drawer
       [open]="!!uid()"
       [title]="'admin2.deliveryDetail' | t"
-      [subtitle]="messageName(detail()?.templateKey)"
+      [subtitle]="messageName($safeNavigationMigration(detail()?.templateKey))"
       (closed)="closed.emit()"
     >
       @if (detail(); as d) {

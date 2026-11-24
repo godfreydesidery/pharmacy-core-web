@@ -40,8 +40,7 @@ import { ToastService } from '../../core/ui/toast.service';
               @for (m of methods.items(); track m.code) {
                 <tr>
                   <td>
-                    <b>{{ m.name }}</b
-                    ><small class="muted block mono">{{ m.code }}</small>
+                    <b>{{ m.name }}</b><small class="muted block mono">{{ m.code }}</small>
                   </td>
                   <td>{{ 'payments.kind.' + m.kind | t }}</td>
                   <td>

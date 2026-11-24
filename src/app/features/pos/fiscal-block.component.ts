@@ -54,13 +54,15 @@ export async function qrDataUrl(payload: string): Promise<string> {
         @switch (r.status) {
           @case ('ISSUED') {
             <div class="row between small">
-              <span class="muted">{{ 'fiscal.receipt' | t }}</span
-              ><b data-testid="fiscal-number">{{ r.receiptNumber }}</b>
+              <span class="muted">{{ 'fiscal.receipt' | t }}</span><b data-testid="fiscal-number">{{
+                r.receiptNumber
+              }}</b>
             </div>
             @if (r.verificationCode) {
               <div class="row between small">
-                <span class="muted">{{ 'fiscal.verificationCode' | t }}</span
-                ><span>{{ r.verificationCode }}</span>
+                <span class="muted">{{ 'fiscal.verificationCode' | t }}</span><span>{{
+                  r.verificationCode
+                }}</span>
               </div>
             }
             @if (r.globalCounter !== null) {

@@ -133,8 +133,7 @@ const PRODUCT_TYPES = [
     >
       <form class="form-grid" [formGroup]="payerForm">
         <div class="field">
-          <label>{{ 'insurance.code' | t }}</label
-          ><input
+          <label>{{ 'insurance.code' | t }}</label><input
             class="input mono"
             formControlName="code"
             placeholder="NHIF"
@@ -145,23 +144,31 @@ const PRODUCT_TYPES = [
           }
         </div>
         <div class="field">
-          <label>{{ 'insurance.name' | t }}</label
-          ><input class="input" formControlName="name" />
+          <label>{{ 'insurance.name' | t }}</label><input class="input" formControlName="name" />
           @if (perr('name'); as m) {
             <span class="error">{{ m }}</span>
           }
         </div>
         <div class="field">
-          <label>{{ 'insurance.contact' | t }}</label
-          ><input class="input" formControlName="contact" />
+          <label>{{ 'insurance.contact' | t }}</label><input
+            class="input"
+            formControlName="contact"
+          />
         </div>
         <div class="field">
-          <label>{{ 'insurance.email' | t }}</label
-          ><input class="input" type="email" formControlName="email" />
+          <label>{{ 'insurance.email' | t }}</label><input
+            class="input"
+            type="email"
+            formControlName="email"
+          />
         </div>
         <div class="field">
-          <label>{{ 'insurance.paysWithinDays' | t }}</label
-          ><input class="input" type="number" min="0" formControlName="paymentTermsDays" />
+          <label>{{ 'insurance.paysWithinDays' | t }}</label><input
+            class="input"
+            type="number"
+            min="0"
+            formControlName="paymentTermsDays"
+          />
         </div>
         <label class="check"
           ><input type="checkbox" formControlName="requiresPreauth" />
@@ -196,8 +203,7 @@ const PRODUCT_TYPES = [
           </select>
         </div>
         <div class="field">
-          <label>{{ 'insurance.schemeName' | t }}</label
-          ><input
+          <label>{{ 'insurance.schemeName' | t }}</label><input
             class="input"
             formControlName="name"
             [placeholder]="'insurance.nhifStandard' | t"
@@ -233,8 +239,7 @@ const PRODUCT_TYPES = [
           }
         </div>
         <div class="field">
-          <label>{{ 'insurance.annualLimitPerMember' | t }}</label
-          ><input
+          <label>{{ 'insurance.annualLimitPerMember' | t }}</label><input
             class="input"
             type="number"
             min="0"

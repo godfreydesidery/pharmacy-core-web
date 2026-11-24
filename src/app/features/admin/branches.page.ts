@@ -78,30 +78,32 @@ import { Translations } from '../../core/i18n/translations.store';
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
         <div class="field">
-          <label>{{ 'admin.code' | t }}</label
-          ><input class="input" formControlName="code" style="text-transform:uppercase" />
+          <label>{{ 'admin.code' | t }}</label><input
+            class="input"
+            formControlName="code"
+            style="text-transform:uppercase"
+          />
           @if (err('code'); as m) {
             <span class="error">{{ m }}</span>
           }
         </div>
         <div class="field">
-          <label>{{ 'admin.name' | t }}</label
-          ><input class="input" formControlName="name" />
+          <label>{{ 'admin.name' | t }}</label><input class="input" formControlName="name" />
           @if (err('name'); as m) {
             <span class="error">{{ m }}</span>
           }
         </div>
         <div class="field full">
-          <label>{{ 'admin.address' | t }}</label
-          ><input class="input" formControlName="address" />
+          <label>{{ 'admin.address' | t }}</label><input class="input" formControlName="address" />
         </div>
         <div class="field">
-          <label>{{ 'admin.phone' | t }}</label
-          ><input class="input" formControlName="phone" />
+          <label>{{ 'admin.phone' | t }}</label><input class="input" formControlName="phone" />
         </div>
         <div class="field">
-          <label>{{ 'admin.premisesLicenceNo' | t }}</label
-          ><input class="input" formControlName="licenceNumber" />
+          <label>{{ 'admin.premisesLicenceNo' | t }}</label><input
+            class="input"
+            formControlName="licenceNumber"
+          />
         </div>
         @if (current()) {
           <label class="check full"

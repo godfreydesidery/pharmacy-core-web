@@ -221,34 +221,33 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
                 </div>
                 <div class="pl">
                   <div class="r head">
-                    <span>{{ 'reports.account' | t }}</span
-                    ><span>{{ 'reports.amount' | t }}</span>
+                    <span>{{ 'reports.account' | t }}</span><span>{{ 'reports.amount' | t }}</span>
                   </div>
                   <div class="r">
-                    <span>{{ 'reports.revenue' | t }}</span
-                    ><span>{{ p.revenue | money }}</span>
+                    <span>{{ 'reports.revenue' | t }}</span><span>{{ p.revenue | money }}</span>
                   </div>
                   <div class="r">
-                    <span>{{ 'reports.lessCostOfSales' | t }}</span
-                    ><span>({{ p.costOfSales | money }})</span>
+                    <span>{{ 'reports.lessCostOfSales' | t }}</span><span
+                      >({{ p.costOfSales | money }})</span
+                    >
                   </div>
                   <div class="r total">
-                    <span>{{ 'reports.grossProfit' | t }}</span
-                    ><span>{{ p.grossProfit | money }}</span>
+                    <span>{{ 'reports.grossProfit' | t }}</span><span>{{
+                      p.grossProfit | money
+                    }}</span>
                   </div>
                   @for (e of p.expenses; track e.category) {
                     <div class="r sub">
-                      <span>{{ e.category | label }}</span
-                      ><span>{{ e.amount | money }}</span>
+                      <span>{{ e.category | label }}</span><span>{{ e.amount | money }}</span>
                     </div>
                   }
                   <div class="r">
-                    <span>{{ 'reports.totalExpenses' | t }}</span
-                    ><span>({{ p.totalExpenses | money }})</span>
+                    <span>{{ 'reports.totalExpenses' | t }}</span><span
+                      >({{ p.totalExpenses | money }})</span
+                    >
                   </div>
                   <div class="r total" [class.loss]="p.netProfit < 0">
-                    <span>{{ 'reports.netProfit' | t }}</span
-                    ><span>{{ p.netProfit | money }}</span>
+                    <span>{{ 'reports.netProfit' | t }}</span><span>{{ p.netProfit | money }}</span>
                   </div>
                 </div>
               </div>

@@ -62,8 +62,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
       >
         <h3>{{ 'ui.account.changePassword' | t }}</h3>
         <div class="field">
-          <label>{{ 'ui.account.currentPassword' | t }}</label
-          ><input
+          <label>{{ 'ui.account.currentPassword' | t }}</label><input
             class="input"
             type="password"
             formControlName="currentPassword"
@@ -74,8 +73,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
           }
         </div>
         <div class="field">
-          <label>{{ 'ui.account.newPassword' | t }}</label
-          ><input
+          <label>{{ 'ui.account.newPassword' | t }}</label><input
             class="input"
             type="password"
             formControlName="newPassword"
@@ -87,8 +85,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
           }
         </div>
         <div class="field">
-          <label>{{ 'ui.account.confirmPassword' | t }}</label
-          ><input
+          <label>{{ 'ui.account.confirmPassword' | t }}</label><input
             class="input"
             type="password"
             formControlName="confirm"
