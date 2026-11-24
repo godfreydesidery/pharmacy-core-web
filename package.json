@@ -17,7 +17,8 @@
     "i18n:reasons": "node scripts/api-reasons.mjs",
     "lint:dialogs": "node scripts/no-browser-dialogs.mjs",
     "a11y:contrast": "node scripts/contrast.mjs",
-    "a11y:labels": "node scripts/a11y-labels.mjs --list"
+    "a11y:labels": "node scripts/a11y-labels.mjs --list",
+    "a11y:axe": "ng test --watch=false --include src/app/axe.a11y.spec.ts"
   },
   "private": true,
   "packageManager": "npm@10.9.4",
@@ -40,6 +41,7 @@
     "@angular/cli": "^22.3.0",
     "@angular/compiler-cli": "^22.3.0",
     "@playwright/test": "^1.65.1",
+    "axe-core": "^4.14.1",
     "jsdom": "^31.0.1",
     "prettier": "^3.10.1",
     "typescript": "~6.0.3",

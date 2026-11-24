@@ -8,6 +8,7 @@ import { ConfirmIdentityComponent } from './core/session/confirm-identity';
 import { ManagerApprovalComponent } from './core/session/manager-approval';
 import { OpenShiftComponent } from './core/session/open-shift';
 import { ToasterComponent } from './core/ui/widgets';
+import { LoadingBarComponent } from './core/layout/loading';
 
 @Component({
   selector: 'app-root',
@@ -18,9 +19,10 @@ import { ToasterComponent } from './core/ui/widgets';
     ConfirmIdentityComponent,
     ManagerApprovalComponent,
     OpenShiftComponent,
+    LoadingBarComponent,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  template: `<router-outlet /><app-toaster /><app-confirm /><app-confirm-identity /><app-manager-approval /><app-open-shift />`,
+  template: `<app-loading-bar /><router-outlet /><app-toaster /><app-confirm /><app-confirm-identity /><app-manager-approval /><app-open-shift />`,
 })
 export class App {
   /** Created here so the saved theme applies before any page renders. */

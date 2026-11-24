@@ -42,7 +42,7 @@ export const ADMIN2_EN: Readonly<Record<string, string>> = {
   'admin2.profile': 'Profile',
   'admin2.phone': 'Phone',
   'admin2.phoneHint':
-    'International form, such as +255754000111. Used for SMS and WhatsApp alerts.',
+    'Such as 0754 000 111 or +255754000111; kept in international form. Used for SMS and WhatsApp alerts.',
   'admin2.phoneAdminHint': 'Only for a person who has no phone yet; people edit their own.',
   'admin2.profileSaved': 'Profile saved',
 
@@ -107,7 +107,7 @@ export const ADMIN2_EN: Readonly<Record<string, string>> = {
   'errors.last_root_admin': 'The platform needs at least one active root administrator.',
   'errors.cannot_change_self': 'You cannot deactivate or remove yourself.',
   'errors.root_admin_not_found': 'No such root administrator.',
-  'errors.invalid_phone': 'Enter the phone in international form, such as +255754000111.',
+  'errors.invalid_phone': 'Enter a phone such as 0754 000 111 or +255754000111.',
   'errors.delivery_not_found': 'No such message.',
   'errors.cannot_resend': 'In-app messages stay in the inbox; nothing to resend.',
   'errors.opening_balances_posted': 'The opening balances were already posted.',

@@ -25,7 +25,7 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.client_locked': 'Too many failed sign-ins from this device; try again later.',
   'errors.invalid_credentials': 'The email or password is wrong.',
   'errors.invalid_current_password': 'The current password is wrong.',
-  'errors.weak_password': 'The password must be 8 to 128 characters long.',
+  'errors.weak_password': 'The password can be at most 128 characters long.',
   'errors.invalid_code': 'That code is not right.',
   'errors.invalid_token': 'This reset link is not valid any more; ask for a new one.',
   'errors.challenge_expired': 'This sign-in has expired; sign in again with your password.',
@@ -163,6 +163,9 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.upload_missing': 'The file has not finished uploading; try again.',
   'errors.url_expired': 'This file link has expired; open it again.',
   'errors.invalid_signature': 'This file link is not valid.',
+  'errors.upload_used': 'This upload link has been used; start the upload again.',
+  'errors.field_not_allowed':
+    'At the till a new customer gets a name, a phone and an email only; someone who manages customers sets the rest.',
 
   // The fallback for an `invalid_<field>` reason with no line of its own (see localizeError).
   'errors.invalid_input': 'Check the information entered.',

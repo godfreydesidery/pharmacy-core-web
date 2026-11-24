@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  afterNextRender,
   computed,
   effect,
   inject,
@@ -16,6 +17,13 @@ import { LookupComponent } from '../../core/ui/lookup.component';
 import { ToastService } from '../../core/ui/toast.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
+
+/** A transfer being typed, as a draft keeps it. */
+interface TransferDraft {
+  toBranchUid: string;
+  note: string;
+  lines: DraftLine[];
+}
 
 interface DraftLine {
   productUid: string;
@@ -375,7 +383,17 @@ export default class TransfersPage {
   protected changed(): boolean {
     return this.creating() && (this.lines().length > 0 || !!this.note().trim());
   }
-  private readonly unsaved = guardUnsavedWork(() => this.changed());
+  private readonly unsaved = guardUnsavedWork<TransferDraft>(() => this.changed(), {
+    id: () => 'inventory.transfer',
+    save: () => ({ toBranchUid: this.toBranchUid(), note: this.note(), lines: this.lines() }),
+    restore: (draft) => {
+      this.open();
+      this.toBranchUid.set(draft.toBranchUid);
+      this.note.set(draft.note);
+      this.lines.set(draft.lines);
+    },
+  });
+  private readonly offerOnOpen = afterNextRender(() => void this.unsaved.offerDraft());
   protected readonly stockName = (s: { productName: string }) => s.productName;
   protected readonly stockDetail = (s: { quantity: number }) => `${s.quantity} on hand`;
 

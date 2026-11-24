@@ -6,8 +6,10 @@ export const SECURITY2_SW: Readonly<Record<string, string>> = {
   'security2.unlocked': '{{name}} anaweza kuingia tena',
   'security2.invitationSentInstead':
     'Barua pepe hii tayari ina akaunti, kwa hiyo mwaliko umetumwa; atajiunga atakapoukubali.',
-  'security2.signOutOthers': 'Toka kwenye vifaa vingine {{count}}',
-  'security2.othersSignedOut': 'Umetoka kwenye vifaa vingine {{count}}',
+  'security2.signOutOthers':
+    'Toka kwenye {count, plural, one {kifaa # kingine} other {vifaa vingine #}}',
+  'security2.othersSignedOut':
+    'Umetoka kwenye {count, plural, one {kifaa # kingine} other {vifaa vingine #}}',
 
   // audit trail actions
   'security2.audit.CREATE': 'Imeundwa',

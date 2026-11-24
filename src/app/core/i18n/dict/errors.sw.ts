@@ -22,7 +22,7 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
     'Majaribio mengi ya kuingia yameshindwa kutoka kifaa hiki; jaribu tena baadaye.',
   'errors.invalid_credentials': 'Barua pepe au nenosiri si sahihi.',
   'errors.invalid_current_password': 'Nenosiri la sasa si sahihi.',
-  'errors.weak_password': 'Nenosiri liwe na herufi 8 hadi 128.',
+  'errors.weak_password': 'Nenosiri lisizidi herufi 128.',
   'errors.invalid_code': 'Msimbo huo si sahihi.',
   'errors.invalid_token': 'Kiungo hiki cha kuweka upya hakifanyi kazi tena; omba kipya.',
   'errors.challenge_expired': 'Muda wa kuingia umeisha; ingia tena kwa nenosiri lako.',
@@ -158,6 +158,9 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.upload_missing': 'Faili haijamaliza kupakiwa; jaribu tena.',
   'errors.url_expired': 'Muda wa kiungo hiki cha faili umeisha; kifungue tena.',
   'errors.invalid_signature': 'Kiungo hiki cha faili si halali.',
+  'errors.upload_used': 'Kiungo hiki cha kupakia kimeshatumika; anza kupakia upya.',
+  'errors.field_not_allowed':
+    'Kwenye kaunta mteja mpya anapewa jina, simu na barua pepe tu; anayesimamia wateja ataweka mengine.',
 
   'errors.invalid_input': 'Kagua taarifa ulizoweka.',
 

@@ -11,7 +11,12 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Api } from '../../core/api/api.service';
 import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
-import { Settings, CurrencyInfo } from '../../core/api/models';
+import { CurrencyInfo, ExpiryProvisionBand, Settings } from '../../core/api/models';
+import {
+  DEFAULT_PROVISION_BANDS,
+  MAX_PROVISION_BANDS,
+  provisionBandsProblem,
+} from './provision-bands';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -45,33 +50,22 @@ import { Translations } from '../../core/i18n/translations.store';
         <div class="card card-pad stack">
           <h3>{{ 'admin.locale' | t }}</h3>
           <div class="form-grid">
-            <div class="field">
-              <label>{{ 'admin.currency' | t }}</label><input
-                class="input"
-                [value]="settings()?.currency ?? ''"
-                disabled
-              /><span class="hint">{{ 'admin.setWhenThePharmacyWas' | t }}</span>
-            </div>
-            <div class="field">
-              <label>{{ 'admin.timeZone' | t }}</label><input
-                class="input"
-                [value]="settings()?.timezone ?? ''"
-                disabled
-              />
-            </div>
+            <app-field [label]="'admin.currency' | t" [hint]="'admin.setWhenThePharmacyWas' | t">
+              <input class="input" [value]="settings()?.currency ?? ''" disabled />
+            </app-field>
+            <app-field [label]="'admin.timeZone' | t">
+              <input class="input" [value]="settings()?.timezone ?? ''" disabled />
+            </app-field>
           </div>
           <h3>{{ 'admin.invoicesAmpTax' | t }}</h3>
           <div class="form-grid">
-            <div class="field">
-              <label>{{ 'admin.invoicePrefix' | t }}</label><input
+            <app-field [label]="'admin.invoicePrefix' | t" [error]="err('invoicePrefix')">
+              <input
                 class="input"
                 formControlName="invoicePrefix"
                 style="text-transform:uppercase"
               />
-              @if (err('invoicePrefix'); as m) {
-                <span class="error">{{ m }}</span>
-              }
-            </div>
+            </app-field>
             <div class="field">
               <label for="standard-vat-rate">{{ 'vat.standardRate' | t }}</label><input
                 id="standard-vat-rate"
@@ -126,26 +120,22 @@ import { Translations } from '../../core/i18n/translations.store';
                 </div>
               </div>
             }
-            <div class="field full">
-              <label>{{ 'admin.receiptFooter' | t }}</label><textarea
-                class="input"
-                formControlName="receiptFooter"
-              ></textarea>
-            </div>
+            <app-field class="full" [label]="'admin.receiptFooter' | t">
+              <textarea class="input" formControlName="receiptFooter"></textarea>
+            </app-field>
           </div>
         </div>
         <div class="card card-pad stack">
           <h3>{{ 'admin.pointOfSale' | t }}</h3>
-          <div class="field">
-            <label>{{ 'admin.maximumDiscount' | t }}</label><input
+          <app-field [label]="'admin.maximumDiscount' | t" [hint]="'admin.theMostACashierWith' | t">
+            <input
               class="input"
               type="number"
               min="0"
               max="100"
               formControlName="maxDiscountPercent"
             />
-            <span class="hint">{{ 'admin.theMostACashierWith' | t }}</span>
-          </div>
+          </app-field>
           <h3>{{ 'controls.title' | t }}</h3>
           <div class="field">
             <label for="approval-limit">{{ 'controls.approvalLimit' | t }}</label><input
@@ -184,6 +174,13 @@ import { Translations } from '../../core/i18n/translations.store';
             </label>
             <span class="hint">{{ 'controls.requireOpenShiftHint' | t }}</span>
           </div>
+          <div class="field">
+            <label class="check" data-testid="sensitive-digest">
+              <input type="checkbox" formControlName="sensitiveDigest" />
+              {{ 'moneyops.sensitiveDigest' | t }}
+            </label>
+            <span class="hint">{{ 'moneyops.sensitiveDigestHint' | t }}</span>
+          </div>
           <h3>{{ 'idle.security' | t }}</h3>
           <div class="field">
             <label>{{ 'idle.setting' | t }}</label><input
@@ -208,16 +205,23 @@ import { Translations } from '../../core/i18n/translations.store';
               <span class="error">{{ e }}</span>
             }
           </div>
-          <h3>{{ 'admin.alerts' | t }}</h3>
           <div class="field">
-            <label>{{ 'admin.expiryAlertWindowDays' | t }}</label><input
+            <label class="check" data-testid="shared-counter-pcs">
+              <input type="checkbox" formControlName="sharedCounterPcs" />
+              {{ 'sharedPc.setting' | t }}
+            </label>
+            <span class="hint">{{ 'sharedPc.hint' | t }}</span>
+          </div>
+          <h3>{{ 'admin.alerts' | t }}</h3>
+          <app-field [label]="'admin.expiryAlertWindowDays' | t">
+            <input
               class="input"
               type="number"
               min="1"
               max="730"
               formControlName="expiryAlertDays"
             />
-          </div>
+          </app-field>
           <label class="row" style="justify-content:space-between">
             <span
               ><b style="font-weight:550">{{ 'admin.lowStockAlerts' | t }}</b
@@ -254,6 +258,153 @@ import { Translations } from '../../core/i18n/translations.store';
             </select>
             <span class="hint">{{ 'admin.lookHint' | t }}</span>
           </div>
+        </div>
+        <div class="card card-pad stack" data-testid="writedown-card">
+          <h3>{{ 'writedown.title' | t }}</h3>
+          <label class="check" data-testid="writedown-enabled">
+            <input type="checkbox" formControlName="expiryProvisionEnabled" />
+            {{ 'writedown.enabled' | t }}
+          </label>
+          <span class="hint">{{ 'writedown.hint' | t }}</span>
+          <table class="table bands">
+            <thead>
+              <tr>
+                <th scope="col">{{ 'writedown.days' | t }}</th>
+                <th scope="col">{{ 'writedown.percent' | t }}</th>
+                <th scope="col">
+                  <span class="sr-only">{{ 'writedown.remove' | t }}</span>
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              @for (band of bands(); track $index; let i = $index) {
+                <tr>
+                  <td>
+                    <input
+                      class="input sm"
+                      type="number"
+                      min="0"
+                      max="730"
+                      step="1"
+                      [attr.aria-label]="'writedown.days' | t"
+                      [attr.data-testid]="'band-days-' + i"
+                      [value]="band.daysToExpiry"
+                      (input)="setBand(i, 'daysToExpiry', $any($event.target).value)"
+                    />
+                    <small class="muted">{{
+                      band.daysToExpiry === 0
+                        ? ('writedown.expired' | t)
+                        : ('writedown.within' | t: { days: band.daysToExpiry })
+                    }}</small>
+                  </td>
+                  <td>
+                    <input
+                      class="input sm"
+                      type="number"
+                      min="0"
+                      max="100"
+                      step="any"
+                      [attr.aria-label]="'writedown.percent' | t"
+                      [attr.data-testid]="'band-percent-' + i"
+                      [value]="band.percent"
+                      (input)="setBand(i, 'percent', $any($event.target).value)"
+                    />
+                  </td>
+                  <td>
+                    <button
+                      class="btn ghost sm"
+                      type="button"
+                      [attr.aria-label]="'writedown.remove' | t"
+                      [attr.data-testid]="'band-remove-' + i"
+                      (click)="removeBand(i)"
+                    >
+                      <app-icon name="x" [size]="14" />
+                    </button>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+          <div>
+            <button
+              class="btn sm"
+              type="button"
+              data-testid="band-add"
+              [disabled]="bands().length >= maxBands"
+              (click)="addBand()"
+            >
+              <app-icon name="plus" [size]="14" /> {{ 'writedown.add' | t }}
+            </button>
+          </div>
+          @if (bandsError(); as key) {
+            <span class="error" data-testid="bands-error">{{ key | t: { max: maxBands } }}</span>
+          }
+        </div>
+        <div class="card card-pad stack" data-testid="apportion-card">
+          <h3>{{ 'apportion.title' | t }}</h3>
+          <span class="hint">{{ 'apportion.hint' | t }}</span>
+          <div class="field">
+            <label for="apportion-method">{{ 'apportion.method' | t }}</label>
+            <select
+              id="apportion-method"
+              class="select"
+              formControlName="vatApportionmentMethod"
+              data-testid="apportion-method"
+            >
+              <option value="AUTOMATIC">{{ 'apportion.AUTOMATIC' | t }}</option>
+              <option value="FIXED">{{ 'apportion.FIXED' | t }}</option>
+            </select>
+            @if (apportionValues().vatApportionmentMethod === 'AUTOMATIC') {
+              <span class="hint">{{ 'apportion.automaticHint' | t }}</span>
+            }
+          </div>
+          @if (apportionValues().vatApportionmentMethod === 'FIXED') {
+            <div class="field">
+              <label for="apportion-fixed">{{ 'apportion.fixedPercent' | t }}</label>
+              <input
+                id="apportion-fixed"
+                class="input"
+                type="number"
+                min="0"
+                max="100"
+                step="any"
+                formControlName="vatFixedRecoverablePercent"
+                data-testid="apportion-fixed"
+              />
+              @if (err('vatFixedRecoverablePercent'); as e) {
+                <span class="error">{{ e }}</span>
+              } @else if (fixedMissing()) {
+                <span class="error" data-testid="apportion-fixed-missing">{{
+                  'apportion.fixedRequired' | t
+                }}</span>
+              }
+            </div>
+          }
+          <div class="field">
+            <label for="apportion-year-end">{{ 'apportion.yearEnd' | t }}</label>
+            <select
+              id="apportion-year-end"
+              class="select"
+              formControlName="vatYearEndMonth"
+              data-testid="apportion-year-end"
+            >
+              @for (m of months(); track m.value) {
+                <option [ngValue]="m.value">{{ m.name }}</option>
+              }
+            </select>
+            @if (err('vatYearEndMonth'); as e) {
+              <span class="error">{{ e }}</span>
+            }
+          </div>
+          @if (apportionValues().vatApportionmentMethod === 'AUTOMATIC') {
+            <div class="field">
+              <label class="check" data-testid="apportion-round-up">
+                <input type="checkbox" formControlName="vatRatioRoundUp" />
+                {{ 'apportion.roundUp' | t }}
+              </label>
+              <span class="hint">{{ 'apportion.roundUpHint' | t }}</span>
+            </div>
+          }
         </div>
       </form>
 
@@ -345,6 +496,15 @@ import { Translations } from '../../core/i18n/translations.store';
     .mt {
       margin-top: 18px;
     }
+    .bands td {
+      vertical-align: top;
+    }
+    .bands .input {
+      width: 7rem;
+    }
+    .bands small {
+      display: block;
+    }
     .chips-row {
       display: flex;
       flex-wrap: wrap;
@@ -431,6 +591,14 @@ export default class SettingsPage implements OnInit {
     approvalLimit: [50000, [Validators.required, Validators.min(0)]],
     returnWindowDays: [7, [Validators.required, Validators.min(0), Validators.max(365)]],
     requireOpenShift: [false],
+    /** FRD-19: the owners' and admins' morning digest of the day's sensitive actions. */
+    sensitiveDigest: [true],
+    sharedCounterPcs: [false],
+    expiryProvisionEnabled: [true],
+    vatApportionmentMethod: ['AUTOMATIC' as 'AUTOMATIC' | 'FIXED'],
+    vatFixedRecoverablePercent: [null as number | null, [Validators.min(0), Validators.max(100)]],
+    vatYearEndMonth: [12, [Validators.required, Validators.min(1), Validators.max(12)]],
+    vatRatioRoundUp: [true],
     vatRegistered: [true],
     /** 9 digits, dashes and spaces allowed (the API keeps the digits); verify with TRA. */
     tin: ['', Validators.pattern(/^\s*(\d[\s-]?){8}\d\s*$|^\s*$/)],
@@ -440,6 +608,62 @@ export default class SettingsPage implements OnInit {
   private readonly vatValues = toSignal(this.form.valueChanges, {
     initialValue: this.form.getRawValue(),
   });
+  /** The expiry write-down bands (STD-3), edited as rows. */
+  protected readonly bands = signal<ExpiryProvisionBand[]>([...DEFAULT_PROVISION_BANDS]);
+  protected readonly maxBands = MAX_PROVISION_BANDS;
+  protected readonly apportionValues = computed(() => this.vatValues());
+  /** Why the bands would be refused (a translation key), or null. */
+  protected readonly bandsError = computed(() =>
+    provisionBandsProblem(this.bands(), !!this.vatValues().expiryProvisionEnabled),
+  );
+  /** The fixed method without its percentage. */
+  protected readonly fixedMissing = computed(() => {
+    const v = this.vatValues();
+    return (
+      v.vatApportionmentMethod === 'FIXED' &&
+      (v.vatFixedRecoverablePercent === null ||
+        v.vatFixedRecoverablePercent === undefined ||
+        `${v.vatFixedRecoverablePercent}` === '')
+    );
+  });
+  /** The months of the year in the chosen language, for the financial year end. */
+  protected readonly months = computed(() => {
+    const format = new Intl.DateTimeFormat(this.translations.locale(), { month: 'long' });
+    return Array.from({ length: 12 }, (_, i) => ({
+      value: i + 1,
+      name: format.format(new Date(Date.UTC(2026, i, 15))),
+    }));
+  });
+
+  protected setBand(index: number, field: keyof ExpiryProvisionBand, value: string): void {
+    const number = value === '' ? NaN : Number(value);
+    this.bands.update((list) =>
+      list.map((band, i) => (i === index ? { ...band, [field]: number } : band)),
+    );
+  }
+
+  protected addBand(): void {
+    this.bands.update((list) => {
+      if (list.length >= MAX_PROVISION_BANDS) {
+        return list;
+      }
+      const last = list[list.length - 1];
+      return [
+        ...list,
+        last
+          ? {
+              daysToExpiry: Math.min(last.daysToExpiry + 30, 730),
+              percent: Math.max(last.percent / 2, 0),
+            }
+          : { daysToExpiry: 0, percent: 100 },
+      ];
+    });
+  }
+
+  protected removeBand(index: number): void {
+    this.bands.update((list) => list.filter((_, i) => i !== index));
+  }
+
   /** Registered for VAT without its TIN or VRN: every receipt would lack them. */
   protected readonly numbersMissing = computed(() => {
     const v = this.vatValues();
@@ -464,9 +688,19 @@ export default class SettingsPage implements OnInit {
       ...settings,
       receiptFooter: settings.receiptFooter ?? '',
       vatRegistered: settings.vatRegistered ?? true,
+      sensitiveDigest: settings.sensitiveDigest ?? true,
       tin: settings.tin ?? '',
       vrn: settings.vrn ?? '',
+      sharedCounterPcs: settings.sharedCounterPcs ?? false,
+      expiryProvisionEnabled: settings.expiryProvisionEnabled ?? true,
+      vatApportionmentMethod: settings.vatApportionmentMethod ?? 'AUTOMATIC',
+      vatFixedRecoverablePercent: settings.vatFixedRecoverablePercent ?? null,
+      vatYearEndMonth: settings.vatYearEndMonth ?? 12,
+      vatRatioRoundUp: settings.vatRatioRoundUp ?? true,
     });
+    this.bands.set(
+      (settings.expiryProvisionBands ?? DEFAULT_PROVISION_BANDS).map((band) => ({ ...band })),
+    );
     this.foreign.set((settings.acceptedCurrencies ?? []).filter((c) => c !== settings.currency));
   }
 
@@ -495,7 +729,7 @@ export default class SettingsPage implements OnInit {
   }
 
   protected async save(): Promise<void> {
-    if (!validate(this.form)) {
+    if (!validate(this.form) || this.bandsError() || this.fixedMissing()) {
       return;
     }
     const v = this.form.getRawValue();
@@ -514,6 +748,9 @@ export default class SettingsPage implements OnInit {
           tin: v.tin.trim(),
           vrn: v.vrn.trim().toUpperCase(),
           acceptedCurrencies: [this.settings()?.currency, ...this.foreign()].filter(Boolean),
+          expiryProvisionBands: this.bands(),
+          vatFixedRecoverablePercent:
+            v.vatApportionmentMethod === 'FIXED' ? Number(v.vatFixedRecoverablePercent) : null,
         },
         { silent: true, noBranch: true, headers: ifMatch(version) },
       );

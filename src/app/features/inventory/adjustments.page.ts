@@ -1,10 +1,19 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { AdjustmentReason, Batch, Movement, Product } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { guardUnsavedWork } from '../../core/session/leave-guard';
+import { ConfirmService } from '../../core/ui/confirm';
+import { humanize } from '../../core/format/format';
 import { SessionStore } from '../../core/session/session.store';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
@@ -12,6 +21,19 @@ import { parseSerials } from '../../core/ui/product-types';
 import { ToastService } from '../../core/ui/toast.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
+
+/** An adjustment being typed, as a draft keeps it. */
+interface AdjustmentDraft {
+  value: {
+    productUid?: string;
+    batchUid?: string;
+    reasonCode?: AdjustmentReason;
+    quantityChange?: number;
+    note?: string;
+    serials?: string;
+  };
+  product: Pick<Product, 'uid' | 'name' | 'trackingMode'> | null;
+}
 
 const REASONS: AdjustmentReason[] = [
   'DAMAGE',
@@ -107,6 +129,7 @@ const REASONS: AdjustmentReason[] = [
           <app-lookup
             path="/products"
             [placeholder]="'inventory.searchProducts' | t"
+            #productLookup
             [display]="productName"
             (picked)="pickProduct($event)"
           />
@@ -174,7 +197,10 @@ export default class AdjustmentsPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   protected readonly reasons = REASONS;
+  /** The product picked, for the confirmation. */
+  private readonly pickedName = signal<string | null>(null);
   protected readonly list = pagedList<Movement>(() =>
     this.session.branch() ? { path: '/stock/movements', query: { type: 'ADJUSTMENT' } } : null,
   );
@@ -187,7 +213,23 @@ export default class AdjustmentsPage {
   protected changed(): boolean {
     return this.editing() && (this.form.dirty || !!this.form.controls.productUid.value);
   }
-  private readonly unsaved = guardUnsavedWork(() => this.changed());
+  private readonly productLookup = viewChild<LookupComponent>('productLookup');
+  /** The product picked, as a draft keeps it. */
+  private pickedProduct: Pick<Product, 'uid' | 'name' | 'trackingMode'> | null = null;
+  private readonly unsaved = guardUnsavedWork<AdjustmentDraft>(() => this.changed(), {
+    id: () => 'inventory.adjustment',
+    save: () => ({ value: this.form.getRawValue(), product: this.pickedProduct }),
+    restore: async (draft) => {
+      this.open();
+      if (draft.product) {
+        await this.pickProduct(draft.product as Product);
+        this.productLookup()?.setText(draft.product.name);
+      }
+      this.form.patchValue(draft.value);
+      this.form.markAsDirty();
+    },
+  });
+  private readonly offerOnOpen = afterNextRender(() => void this.unsaved.offerDraft());
   protected readonly form = inject(FormBuilder).nonNullable.group({
     productUid: ['', Validators.required],
     batchUid: ['', Validators.required],
@@ -209,6 +251,10 @@ export default class AdjustmentsPage {
 
   protected async pickProduct(product: Product | null): Promise<void> {
     this.form.patchValue({ productUid: product?.uid ?? '', batchUid: '', serials: '' });
+    this.pickedName.set(product?.name ?? null);
+    this.pickedProduct = product
+      ? { uid: product.uid, name: product.name, trackingMode: product.trackingMode }
+      : null;
     this.serialTracked.set(product?.trackingMode === 'SERIAL');
     this.batches.set(product ? await this.api.get<Batch[]>(`/stock/${product.uid}/batches`) : []);
   }
@@ -225,6 +271,37 @@ export default class AdjustmentsPage {
       // Stock taken off the books always says why (FRD-5).
       this.form.controls.note.setErrors({ api: this.translations.t('errors.note_required') });
       this.form.controls.note.markAsTouched();
+      return;
+    }
+    // The stock changes at once: confirmed with its figures first (UX-12).
+    const raw = this.form.getRawValue();
+    const t = (key: string, params?: Record<string, string | number>) =>
+      this.translations.t(key, params);
+    const change = Number(raw.quantityChange);
+    const batch = this.batches().find((b) => b.uid === raw.batchUid)?.batchNumber;
+    const sure = await this.confirm.ask({
+      title: t('ux.confirm.adjust.title'),
+      text: t('ux.confirm.adjust.text'),
+      icon: change < 0 ? 'warning' : 'question',
+      confirmText: t('ux.confirm.adjust.ok'),
+      details: [
+        ...(this.pickedName()
+          ? [{ label: t('ux.confirm.product'), value: this.pickedName()! }]
+          : []),
+        ...(batch ? [{ label: t('ux.confirm.batch'), value: batch }] : []),
+        {
+          label: t('ux.confirm.change'),
+          value: t(change < 0 ? 'ux.confirm.unitsOff' : 'ux.confirm.unitsOn', {
+            count: Math.abs(change),
+          }),
+        },
+        {
+          label: t('ux.confirm.reason'),
+          value: this.translations.t('enum.' + raw.reasonCode, undefined, humanize(raw.reasonCode)),
+        },
+      ],
+    });
+    if (!sure || this.busy()) {
       return;
     }
     this.busy.set(true);

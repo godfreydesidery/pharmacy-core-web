@@ -17,7 +17,7 @@ describe('API refusal reasons', () => {
     expect(reasons['insufficient_stock']).toEqual(
       expect.arrayContaining(['product', 'available', 'requested']),
     );
-    expect(reasons['approval_required']).toEqual(['action', 'amount']);
+    expect(reasons['approval_required']).toEqual(['action', 'amount', 'selfApproval']);
     expect(reasons['batch_cost_differs']).toEqual(['batchUnitCost']);
   });
 

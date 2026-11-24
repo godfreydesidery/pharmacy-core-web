@@ -5,7 +5,7 @@ export const SHIFTS_SW: Readonly<Record<string, string>> = {
   'shift.sub':
     'Zamu ya kila keshia: fedha za kuanzia, kilichopokelewa, na taslimu iliyohesabiwa wakati wa kufunga.',
   'shift.openSince': 'Zamu imefunguliwa tangu {{time}}',
-  'shift.sales': 'mauzo {{count}}',
+  'shift.sales': 'mauzo {count, plural, other {#}}',
   'shift.none': 'Hakuna zamu iliyofunguliwa. Fungua moja kwa fedha za kuanzia zilizo kwenye droo.',
   'shift.float': 'Fedha za kuanzia',
   'shift.open': 'Fungua zamu',

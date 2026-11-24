@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TWO_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
@@ -28,6 +29,7 @@ import { Translations } from '../../core/i18n/translations.store';
           </div>
         } @else {
           <p class="muted">{{ 'security.resetHint' | t }}</p>
+          <p class="muted" data-testid="reset-min-hint">{{ 'password.resetHint' | t }}</p>
           @if (failure()) {
             <div class="notice tone-red"><app-icon name="alert" /> {{ failure() }}</div>
           }
@@ -81,7 +83,7 @@ export default class ResetPasswordPage {
   protected readonly failure = signal<string | null>(null);
   protected readonly mismatch = signal(false);
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    newPassword: ['', passwordValidators(TWO_FACTOR_MIN_PASSWORD)],
     confirm: ['', Validators.required],
   });
 

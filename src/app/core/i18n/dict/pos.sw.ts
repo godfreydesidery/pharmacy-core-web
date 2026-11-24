@@ -65,8 +65,9 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.keyPay': 'lipa',
   'pos.keySearch': 'tafuta',
   'pos.lineTotal': 'Jumla ya mstari',
-  'pos.linesAndUnits': 'mistari {{lines}} · vipimo {{units}}',
-  'pos.linesCount': 'mistari {{count}}',
+  'pos.linesAndUnits':
+    '{lines, plural, one {mstari #} other {mistari #}} · {units, plural, one {kipimo #} other {vipimo #}}',
+  'pos.linesCount': '{count, plural, one {mstari #} other {mistari #}}',
   'pos.noParkedSales': 'Orodha ya mauzo haina kitu',
   'pos.noParkedSalesHint': 'Weka mauzo kando umhudumie mwingine, kisha uyarudishe hapa.',
   'pos.outOfStock': 'Imeisha',
@@ -90,7 +91,7 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.confirmCompleteText':
     'Hakiki bidhaa na malipo. Mauzo yakikamilika yanaweza kurekebishwa kwa marejesho tu.',
   'pos.selectItem': 'Chagua bidhaa…',
-  'pos.typeAtLeast': 'Andika herufi {{count}} au zaidi',
+  'pos.typeAtLeast': 'Andika {count, plural, one {herufi #} other {herufi # au zaidi}}',
   'pos.leftCount': 'zimebaki {{count}}',
   'pos.sn': 'Na.',
   'pos.code': 'Msimbo',
@@ -125,7 +126,8 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.removeNamed': 'Ondoa {{name}}',
   'pos.customerAttached': 'Mteja ameunganishwa',
   'pos.parkedCustomerGone': 'Mteja wa mauzo haya hakupatikana; sasa ni mauzo ya mteja wa kawaida.',
-  'pos.parkedItemsGone': 'Bidhaa {{count}} za mauzo haya haziuzwi tena hapa na zimeachwa.',
+  'pos.parkedItemsGone':
+    '{count, plural, one {Bidhaa # ya mauzo haya haiuzwi tena hapa na imeachwa.} other {Bidhaa # za mauzo haya haziuzwi tena hapa na zimeachwa.}}',
   'pos.uncertain.title': 'Hatukuweza kuthibitisha mauzo haya',
   'pos.uncertain.text':
     'Huenda yamekamilika. Kikapu kimefungwa ili yasitozwe mara mbili. Kagua tena kunatuma mauzo yaleyale kwa ufunguo uleule: kama yalikamilika utapata risiti yake, kama hayakukamilika yanakamilishwa sasa.',
@@ -135,7 +137,8 @@ export const POS_SW: Readonly<Record<string, string>> = {
   'pos.uncertain.checkAgain': 'Kagua tena',
   'pos.uncertain.checking': 'Inakagua…',
   'pos.uncertain.lookUp': 'Yatafute',
-  'pos.uncertain.lookupHint': 'Mauzo ya tawi hili tangu dakika {{minutes}} kabla hayajatumwa:',
+  'pos.uncertain.lookupHint':
+    'Mauzo ya tawi hili tangu dakika {minutes, plural, other {#}} kabla hayajatumwa:',
   'pos.uncertain.sameTotal': 'Jumla ileile',
   'pos.uncertain.noneFound': 'Hakuna mauzo yaliyorekodiwa katika muda huo.',
   'pos.uncertain.noSalesView':

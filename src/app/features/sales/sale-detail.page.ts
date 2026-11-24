@@ -4,6 +4,7 @@ import { Api } from '../../core/api/api.service';
 import { Sale, SaleLine, SaleReturn } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
 import { formatMoney } from '../../core/format/format';
+import { ConfirmService } from '../../core/ui/confirm';
 import { SettingsStore } from '../../core/format/settings.store';
 import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
@@ -298,13 +299,16 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
           </div>
         }
 
-        <app-attachments
-          class="block mt"
-          ownerType="SALE"
-          [ownerUid]="s.uid"
-          purpose="PRESCRIPTION"
-          [canManage]="session.can('sales.sell')"
-        />
+        <!-- A sale's files are its prescription scans: health data (health.view). -->
+        @if (session.can('health.view')) {
+          <app-attachments
+            class="block mt"
+            ownerType="SALE"
+            [ownerUid]="s.uid"
+            purpose="PRESCRIPTION"
+            [canManage]="session.can('sales.sell')"
+          />
+        }
 
         <app-modal [open]="printing()" [title]="'sales.receipt' | t" (closed)="printing.set(false)">
           <app-receipt [sale]="s" />
@@ -486,6 +490,7 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
 export default class SaleDetailPage {
   protected readonly session = inject(SessionStore);
   private readonly api = inject(Api);
+  private readonly confirm = inject(ConfirmService);
   private readonly toasts = inject(ToastService);
   readonly uid = input.required<string>();
   protected readonly sale = loaded<Sale>(() => ({ path: `/sales/${this.uid()}` }));
@@ -636,6 +641,37 @@ export default class SaleDetailPage {
     }
     if (!this.reason().trim()) {
       this.toasts.error(this.translations.t('toast.returnNeedsReason'));
+      return;
+    }
+    // A refund pays money out and moves stock at once: confirmed with its figures (UX-12).
+    const t = (key: string, params?: Record<string, string | number>) =>
+      this.translations.t(key, params);
+    const units = lines.reduce((sum, l) => sum + l.quantity, 0);
+    const refund = this.returnable().reduce(
+      (sum, l) => sum + ((this.quantities()[l.uid] ?? 0) * l.lineTotal) / l.quantity,
+      0,
+    );
+    const foreign = this.foreignEstimate();
+    const sure = await this.confirm.ask({
+      title: t('ux.confirm.return.title'),
+      text: t('ux.confirm.return.text'),
+      icon: 'warning',
+      confirmText: t('ux.confirm.return.ok'),
+      details: [
+        {
+          label: t('ux.confirm.items'),
+          value: t('pos.linesAndUnits', { lines: lines.length, units }),
+        },
+        {
+          label: t('ux.confirm.refund'),
+          value: foreign
+            ? `${foreign.amount} (${foreign.base})`
+            : formatMoney(refund, this.settings.currency()),
+        },
+        { label: t('ux.confirm.refundWays'), value: this.paidWays() },
+      ],
+    });
+    if (!sure || this.busy()) {
       return;
     }
     this.busy.set(true);

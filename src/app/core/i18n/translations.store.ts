@@ -72,7 +72,8 @@ export class Translations {
 
   /** The text of `key` in the current language; reading it tracks the language signal. */
   t(key: string, params?: Params, fallback?: string): string {
-    return translate(this.loaded()[this.lang()] ?? EN, key, params, fallback);
+    const lang = this.lang();
+    return translate(this.loaded()[lang] ?? EN, key, params, fallback, LOCALES[lang]);
   }
 
   private static stored(): Lang {
@@ -88,19 +89,82 @@ export class Translations {
   }
 }
 
-/** The text of `key` in `dictionary`, falling back to English, then `fallback`, then the key. */
+/**
+ * The text of `key` in `dictionary`, falling back to English, then `fallback`, then the key.
+ * `{{name}}` takes `params.name`. A plural takes the ICU form, chosen by the language's plural rules
+ * (`Intl.PluralRules` of `locale`): `{count, plural, =0 {no lines} one {# line} other {# lines}}`,
+ * `#` being the number; the options may hold `{{placeholders}}` too.
+ */
 export function translate(
   dictionary: Dictionary,
   key: string,
   params?: Params,
   fallback?: string,
+  locale = 'en-TZ',
 ): string {
   const text = dictionary[key] ?? EN[key] ?? fallback ?? key;
   if (!params) {
     return text;
   }
-  return text.replace(/\{\{\s*(\w+)\s*}}/g, (whole, name: string) => {
+  return plurals(text, params, locale).replace(/\{\{\s*(\w+)\s*}}/g, (whole, name: string) => {
     const value = params[name];
     return value === null || value === undefined ? '' : String(value);
   });
+}
+
+const PLURAL_START = /\{\s*(\w+)\s*,\s*plural\s*,/g;
+const pluralRules = new Map<string, Intl.PluralRules>();
+
+/** Each `{name, plural, ...}` block of `text` replaced by the option its number takes. */
+function plurals(text: string, params: Params, locale: string): string {
+  if (!text.includes('plural')) {
+    return text;
+  }
+  let out = '';
+  let from = 0;
+  PLURAL_START.lastIndex = 0;
+  for (let m = PLURAL_START.exec(text); m; m = PLURAL_START.exec(text)) {
+    const end = closing(text, m.index);
+    if (end < 0) {
+      break;
+    }
+    const options = parseOptions(text.slice(m.index + m[0].length, end));
+    const count = Number(params[m[1]] ?? 0);
+    let rules = pluralRules.get(locale);
+    if (!rules) {
+      rules = new Intl.PluralRules(locale);
+      pluralRules.set(locale, rules);
+    }
+    const chosen = options[`=${count}`] ?? options[rules.select(count)] ?? options['other'] ?? '';
+    out += text.slice(from, m.index) + chosen.replace(/#/g, count.toLocaleString(locale));
+    from = end + 1;
+    PLURAL_START.lastIndex = from;
+  }
+  return out + text.slice(from);
+}
+
+/** The index of the `}` closing the `{` at `open`, or -1. */
+function closing(text: string, open: number): number {
+  let depth = 0;
+  for (let i = open; i < text.length; i++) {
+    if (text[i] === '{') depth++;
+    else if (text[i] === '}' && --depth === 0) return i;
+  }
+  return -1;
+}
+
+/** `one {# line} other {# lines}` as `{ one: '# line', other: '# lines' }`. */
+function parseOptions(body: string): Record<string, string> {
+  const options: Record<string, string> = {};
+  const selector = /\s*(=\d+|zero|one|two|few|many|other)\s*\{/g;
+  for (let m = selector.exec(body); m; m = selector.exec(body)) {
+    const open = m.index + m[0].length - 1;
+    const end = closing(body, open);
+    if (end < 0) {
+      break;
+    }
+    options[m[1]] = body.slice(open + 1, end);
+    selector.lastIndex = end + 1;
+  }
+  return options;
 }

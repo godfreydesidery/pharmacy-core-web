@@ -99,36 +99,28 @@ import { ToastService } from '../../core/ui/toast.service';
       (closed)="editing.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field">
-          <label>{{ 'plans.code' | t }}</label>
+        <app-field [label]="'plans.code' | t">
           <input class="input mono" formControlName="code" style="text-transform: uppercase" />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.name' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.name' | t">
           <input class="input" formControlName="name" />
-        </div>
-        <div class="field full">
-          <label>{{ 'plans.description' | t }}</label>
+        </app-field>
+        <app-field class="full" [label]="'plans.description' | t">
           <input class="input" formControlName="description" />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.currency' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.currency' | t">
           <input class="input mono" formControlName="currency" maxlength="3" />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.priceMonthly' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.priceMonthly' | t">
           <input class="input" type="number" min="0" formControlName="priceMonthly" />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.priceYearly' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.priceYearly' | t">
           <input class="input" type="number" min="0" formControlName="priceYearly" />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.trialDays' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.trialDays' | t">
           <input class="input" type="number" min="0" formControlName="trialDays" />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.limit.BRANCHES' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.limit.BRANCHES' | t">
           <input
             class="input"
             type="number"
@@ -136,9 +128,8 @@ import { ToastService } from '../../core/ui/toast.service';
             formControlName="maxBranches"
             [placeholder]="'plans.unlimited' | t"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.limit.USERS' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.limit.USERS' | t">
           <input
             class="input"
             type="number"
@@ -146,9 +137,8 @@ import { ToastService } from '../../core/ui/toast.service';
             formControlName="maxUsers"
             [placeholder]="'plans.unlimited' | t"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.limit.PRODUCTS' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.limit.PRODUCTS' | t">
           <input
             class="input"
             type="number"
@@ -156,9 +146,8 @@ import { ToastService } from '../../core/ui/toast.service';
             formControlName="maxProducts"
             [placeholder]="'plans.unlimited' | t"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.limit.SMS' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.limit.SMS' | t">
           <input
             class="input"
             type="number"
@@ -166,11 +155,10 @@ import { ToastService } from '../../core/ui/toast.service';
             formControlName="smsPerMonth"
             [placeholder]="'plans.unlimited' | t"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.sortOrder' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.sortOrder' | t">
           <input class="input" type="number" formControlName="sortOrder" />
-        </div>
+        </app-field>
         <div class="field full">
           <label>{{ 'plans.modules' | t }}</label>
           <div class="row wrap" style="gap: 14px">

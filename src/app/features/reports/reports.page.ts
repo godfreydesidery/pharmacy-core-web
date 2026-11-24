@@ -9,14 +9,39 @@ import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { BarSeries, DonutSegment } from '../../core/ui/charts';
 
-type Tab = 'sales' | 'products' | 'profit-loss' | 'payments';
+type Tab = 'sales' | 'products' | 'profit-loss' | 'payments' | 'no-sales';
 const TABS: { id: Tab; label: string }[] = [
   { id: 'sales', label: 'Sales' },
   { id: 'products', label: 'Products' },
   { id: 'profit-loss', label: 'Profit & loss' },
   { id: 'payments', label: 'Payments' },
+  { id: 'no-sales', label: 'No-sales' },
 ];
 const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'];
+
+/** GET /api/v1/reports/till-events: one row per day, cashier and kind (FRD-20). */
+interface TillEventRow {
+  day: string;
+  branchUid: string;
+  cashierUid: string | null;
+  cashierName: string | null;
+  kind: 'CART_CANCELLED' | 'CART_CLEARED' | 'PARKED_DISCARDED' | 'NO_SALE';
+  events: number;
+  lines: number;
+  value: number;
+}
+
+/** `day` moved by `days` (YYYY-MM-DD, calendar days). */
+function shiftDay(day: string, days: number): string {
+  const date = new Date(`${day}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+/** The later of two days (YYYY-MM-DD compares as text). */
+function maxDay(a: string, b: string): string {
+  return a > b ? a : b;
+}
 
 @Component({
   selector: 'app-reports',
@@ -318,6 +343,50 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
             </div>
           </div>
         }
+        @case ('no-sales') {
+          <div class="card">
+            <div class="card-head">
+              <h3>{{ 'moneyops.noSalesTitle' | t }}</h3>
+            </div>
+            <p class="card-pad muted">{{ 'moneyops.noSalesHint' | t }}</p>
+            <div class="table-wrap">
+              <table class="table" data-testid="no-sales">
+                <thead>
+                  <tr>
+                    <th>{{ 'moneyops.day' | t }}</th>
+                    <th>{{ 'moneyops.cashier' | t }}</th>
+                    <th>{{ 'moneyops.kind' | t }}</th>
+                    <th class="right">{{ 'moneyops.events' | t }}</th>
+                    <th class="right">{{ 'moneyops.lines' | t }}</th>
+                    <th class="right">{{ 'moneyops.value' | t }}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  @for (r of tillEvents.value() ?? []; track $index) {
+                    <tr>
+                      <td>{{ r.day | day }}</td>
+                      <td class="strong">{{ r.cashierName ?? '—' }}</td>
+                      <td>{{ 'moneyops.kind.' + r.kind | t }}</td>
+                      <td class="right">{{ r.events }}</td>
+                      <td class="right">{{ r.lines }}</td>
+                      <td class="right">{{ r.value | money }}</td>
+                    </tr>
+                  } @empty {
+                    <tr>
+                      <td colspan="6">
+                        <app-empty
+                          [for]="tillEvents"
+                          icon="cart"
+                          [title]="'moneyops.noSalesNone' | t"
+                        />
+                      </td>
+                    </tr>
+                  }
+                </tbody>
+              </table>
+            </div>
+          </div>
+        }
       }
     </div>
   `,
@@ -379,6 +448,15 @@ export default class ReportsPage {
   );
   protected readonly payments = loaded<PaymentReportRow[]>(() =>
     this.tab() === 'payments' ? { path: '/reports/payments', query: this.range() } : null,
+  );
+  /** FRD-20: carts given up and no-sales, per cashier and day (the API covers 92 days at most). */
+  protected readonly tillEvents = loaded<TillEventRow[]>(() =>
+    this.tab() === 'no-sales'
+      ? {
+          path: '/reports/till-events',
+          query: { from: maxDay(this.from(), shiftDay(this.to(), -91)), to: this.to() },
+        }
+      : null,
   );
 
   protected readonly salesLabels = computed(() =>
@@ -520,6 +598,20 @@ export default class ReportsPage {
           name,
           ['Method', 'Payments', 'Amount'],
           (this.payments.value() ?? []).map((p) => [p.method, p.count, p.amount]),
+        );
+        break;
+      case 'no-sales':
+        downloadCsv(
+          name,
+          ['Day', 'Cashier', 'Kind', 'Events', 'Lines', 'Value'],
+          (this.tillEvents.value() ?? []).map((r) => [
+            r.day,
+            r.cashierName ?? '',
+            r.kind,
+            r.events,
+            r.lines,
+            r.value,
+          ]),
         );
         break;
     }

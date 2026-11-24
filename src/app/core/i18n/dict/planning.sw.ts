@@ -9,7 +9,7 @@ export const PLANNING_SW: Readonly<Record<string, string>> = {
   'reorder.cover': 'Stoo ya kutosha (siku)',
   'reorder.formula':
     'Pendekezo = mauzo kwa siku × (muda wa msambazaji kuleta + siku za kutosha), angalau kiwango cha kuagiza, ukiondoa stoo iliyopo na iliyoagizwa.',
-  'reorder.leadTime': 'Huleta ndani ya siku {{days}}',
+  'reorder.leadTime': 'Huleta ndani ya siku {days, plural, other {#}}',
   'reorder.noSupplier': 'Bado hakuna msambazaji',
   'reorder.chooseSupplier': 'Chagua msambazaji…',
   'reorder.total': 'Thamani ya oda',
@@ -26,7 +26,8 @@ export const PLANNING_SW: Readonly<Record<string, string>> = {
     'Hakuna kinachohitaji kuagizwa: stoo na oda zilizo wazi zinatosha mauzo yanayotarajiwa.',
   'reorder.create': 'Tengeneza oda za ununuzi',
   'reorder.nothing': 'Idadi zote ni sifuri, au hakuna msambazaji aliyechaguliwa.',
-  'reorder.created': 'Oda {{n}} za ununuzi zimetengenezwa',
+  'reorder.created':
+    '{n, plural, one {Oda # ya ununuzi imetengenezwa} other {Oda # za ununuzi zimetengenezwa}}',
   'partners.leadTimeDays': 'Muda wa kuleta (siku)',
   'periodLock.title': 'Kufunga kipindi',
   'periodLock.sub':

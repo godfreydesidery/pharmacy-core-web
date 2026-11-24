@@ -41,7 +41,7 @@ const APPROVAL_HEADER = 'X-Approval';
  * after "Confirm it is you") is recorded once. POST /sales carries its own key in the body.
  */
 const IDEMPOTENT =
-  /^\/api\/v1\/(receivables\/(payments|write-offs)|finance\/supplier-payments|expenses|sales\/[^/]+\/returns|sales\/returns\/[^/]+\/lines\/[^/]+\/release|vouchers(\/[^/]+\/void)?|stock\/(adjustments|opening)|transfers(\/[^/]+\/receive)?|insurance\/remittances|goods-receipts|destructions|supplier-returns|pos\/payment-requests)$/;
+  /^\/api\/v1\/(receivables\/(payments|write-offs)|finance\/supplier-payments|expenses|sales\/[^/]+\/returns|sales\/returns\/[^/]+\/lines\/[^/]+\/release|vouchers(\/[^/]+\/void)?|stock\/(adjustments|opening)|transfers(\/[^/]+\/receive)?|insurance\/remittances|goods-receipts|destructions|supplier-returns(\/[^/]+\/credit-note)?|pos\/payment-requests)$/;
 
 /**
  * A save sent with `If-Match` that crossed someone else's change (412, or the product's 409
@@ -162,7 +162,9 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
       // One request may need two (a late return of a damaged controlled medicine): each
       // approval is added to the list header, and an action is never asked for twice.
       const amount = Number(error.extras['amount'] ?? 0);
-      return from(injector.get(ManagerApprovalService).ask({ action, amount })).pipe(
+      // The owner alone able to approve here may approve it themselves (selfApproval).
+      const selfApproval = error.extras['selfApproval'] === true;
+      return from(injector.get(ManagerApprovalService).ask({ action, amount, selfApproval })).pipe(
         switchMap((token) => {
           if (!token) {
             return throwError(() => error);

@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { loaded } from '../../core/data/data';
-import { downloadCsv } from '../../core/format/format';
+import { downloadCsv, isoDay } from '../../core/format/format';
 import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
 
@@ -20,14 +20,26 @@ export interface SupplierBalance {
   /** What the pharmacy owes the supplier, in the base currency (negative: the supplier owes). */
   balance: number;
   lastActivity: string | null;
+  /** Stock sent back whose credit note has not come yet (FRD-16): not yet off the balance. */
+  awaitingCredit?: number;
 }
 
-export type StatementLineType = 'OPENING' | 'RECEIPT' | 'PAYMENT' | 'RETURN';
+/** DEBIT_NOTE: a supplier's debit note raising what is owed (STD-2). */
+export type StatementLineType = 'OPENING' | 'RECEIPT' | 'PAYMENT' | 'RETURN' | 'DEBIT_NOTE';
 
-/** GET /api/v1/suppliers/{uid}/statement (base currency). */
+/**
+ * GET /api/v1/suppliers/{uid}/statement?from&to&cursor (base currency): a period of at most 366
+ * days, read a page at a time; `opening` is what was owed before it, `balance` at its end.
+ */
 export interface SupplierStatement {
   supplierUid: string;
   supplierName: string;
+  from: string;
+  to: string;
+  /** What was owed before `from`. */
+  opening: number;
+  /** The next page of the period's lines; null on its last page. */
+  nextCursor: string | null;
   lines: {
     date: string;
     type: StatementLineType;
@@ -130,7 +142,37 @@ export interface SupplierStatement {
       [subtitle]="'payables.statement' | t"
       (closed)="selected.set(null)"
     >
+      <div class="row period">
+        <app-field [label]="'moneyops.from' | t">
+          <input
+            class="input"
+            type="date"
+            [value]="from()"
+            (change)="from.set($any($event.target).value)"
+            data-testid="statement-from"
+          />
+        </app-field>
+        <app-field [label]="'moneyops.to' | t">
+          <input
+            class="input"
+            type="date"
+            [value]="to()"
+            (change)="to.set($any($event.target).value)"
+            data-testid="statement-to"
+          />
+        </app-field>
+      </div>
+      <p class="hint">{{ 'moneyops.periodHint' | t }}</p>
       @if (statement.value(); as s) {
+        @if (selected()?.awaitingCredit) {
+          <p class="muted" data-testid="awaiting-credit">
+            {{ 'moneyops.awaitingCredit' | t: { amount: (selected()!.awaitingCredit! | money) } }}
+          </p>
+        }
+        <div class="row between closing">
+          <span>{{ 'moneyops.opening' | t }}</span>
+          <b data-testid="statement-opening">{{ s.opening | money }}</b>
+        </div>
         <div class="table-wrap">
           <table class="table statement">
             <thead>
@@ -192,6 +234,10 @@ export interface SupplierStatement {
     .statement td.right {
       white-space: nowrap;
     }
+    .period {
+      gap: 12px;
+      flex-wrap: wrap;
+    }
     .closing {
       padding: 12px 4px 0;
       font-size: 15px;
@@ -208,12 +254,26 @@ export default class SupplierBalancesPage {
     path: '/suppliers/balances',
     options: { noBranch: true },
   }));
-  protected readonly statement = loaded<SupplierStatement>(() => {
-    const supplier = this.selected();
-    return supplier
-      ? { path: `/suppliers/${supplier.supplierUid}/statement`, options: { noBranch: true } }
-      : null;
-  });
+  /** The statement's period (the API's default: the 90 days to today; at most 366 days). */
+  protected readonly to = signal(isoDay());
+  protected readonly from = signal(isoDay(-89));
+  protected readonly statement = loaded<SupplierStatement>(
+    () => {
+      const supplier = this.selected();
+      return supplier
+        ? {
+            path: `/suppliers/${supplier.supplierUid}/statement`,
+            query: { from: this.from(), to: this.to(), limit: 100 },
+            options: { noBranch: true },
+          }
+        : null;
+    },
+    // The period's lines, a page at a time after the last one (PERF-5).
+    {
+      next: (s) => s.nextCursor,
+      join: (s, more) => ({ ...more, opening: s.opening, lines: [...s.lines, ...more.lines] }),
+    },
+  );
 
   /** Largest balances first; settled suppliers hidden unless asked for. */
   protected readonly rows = computed(() => {

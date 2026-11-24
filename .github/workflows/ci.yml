@@ -1,6 +1,6 @@
 name: ci
 
-# Every pull request and every push to main: format, translations, unit tests, the production
+# Every pull request and every push to main: format, translations, unit tests, an axe check, the production
 # build, a dependency audit, the image (scanned) and a CycloneDX SBOM. Actions are pinned to
 # commit SHAs (Dependabot keeps them current).
 on:
@@ -32,6 +32,8 @@ jobs:
         run: npm run a11y:contrast
       - name: Unit tests
         run: npm test
+      - name: Accessibility (axe-core on the shared components and key pages, stub API; serious or critical fails)
+        run: npm run a11y:axe
       - name: Production build
         run: npm run build
       - name: Dependency audit (production dependencies, high and above)

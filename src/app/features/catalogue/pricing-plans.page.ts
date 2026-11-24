@@ -371,8 +371,7 @@ const PLAN_FILTER = {
     <!-- add a medicine to the plan -->
     <app-modal [open]="addOpen()" [title]="'plans.addMedicine' | t" (closed)="addOpen.set(false)">
       <div class="form-grid">
-        <div class="field full">
-          <label>{{ 'plans.medicine' | t }}</label>
+        <app-field class="full" [label]="'plans.medicine' | t">
           <app-lookup
             path="/products"
             data-testid="add-product"
@@ -380,7 +379,7 @@ const PLAN_FILTER = {
             [display]="productName"
             (picked)="pickProduct($event)"
           />
-        </div>
+        </app-field>
         <div class="field">
           <label>{{ 'plans.price' | t }}</label>
           <input
@@ -398,8 +397,7 @@ const PLAN_FILTER = {
             }}</span>
           }
         </div>
-        <div class="field">
-          <label>{{ 'plans.fromQty' | t }}</label>
+        <app-field [label]="'plans.fromQty' | t" [hint]="'plans.fromQtyHint' | t">
           <input
             class="input"
             type="number"
@@ -407,8 +405,7 @@ const PLAN_FILTER = {
             [value]="addMin()"
             (input)="addMin.set(+$any($event.target).value || 1)"
           />
-          <span class="hint">{{ 'plans.fromQtyHint' | t }}</span>
-        </div>
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="addOpen.set(false)">
@@ -435,17 +432,15 @@ const PLAN_FILTER = {
     >
       @if (draft(); as d) {
         <div class="form-grid">
-          <div class="field">
-            <label>{{ 'pricing.name' | t }}</label>
+          <app-field [label]="'pricing.name' | t">
             <input
               class="input"
               data-testid="plan-name"
               [value]="d.name"
               (input)="d.name = $any($event.target).value"
             />
-          </div>
-          <div class="field">
-            <label>{{ 'pricing.appliesTo' | t }}</label>
+          </app-field>
+          <app-field [label]="'pricing.appliesTo' | t">
             <select
               class="select"
               data-testid="plan-target"
@@ -457,7 +452,7 @@ const PLAN_FILTER = {
               <option value="customer">{{ 'pricing.oneCustomer' | t }}</option>
               <option value="insurer">{{ 'pricing.anInsurer' | t }}</option>
             </select>
-          </div>
+          </app-field>
           @switch (d.target) {
             @case ('type') {
               <div class="field">
@@ -476,8 +471,7 @@ const PLAN_FILTER = {
               </div>
             }
             @case ('customer') {
-              <div class="field">
-                <label>{{ 'pricing.customer' | t }}</label>
+              <app-field [label]="'pricing.customer' | t">
                 <app-lookup
                   path="/customers"
                   [placeholder]="d.customerName ?? ('pricing.searchCustomer' | t)"
@@ -486,7 +480,7 @@ const PLAN_FILTER = {
                     d.customerUid = $event?.uid ?? null; d.customerName = $event?.name ?? null
                   "
                 />
-              </div>
+              </app-field>
             }
             @case ('insurer') {
               <div class="field">
@@ -506,8 +500,7 @@ const PLAN_FILTER = {
               </div>
             }
           }
-          <div class="field">
-            <label>{{ 'pricing.noPrice' | t }}</label>
+          <app-field [label]="'pricing.noPrice' | t" [hint]="'pricing.noPriceHint' | t">
             <select
               class="select"
               data-testid="plan-rule"
@@ -517,11 +510,9 @@ const PLAN_FILTER = {
               <option value="block" [selected]="!d.rule">{{ 'pricing.noPrice.block' | t }}</option>
               <option value="rule" [selected]="d.rule">{{ 'pricing.noPrice.rule' | t }}</option>
             </select>
-            <span class="hint">{{ 'pricing.noPriceHint' | t }}</span>
-          </div>
+          </app-field>
           @if (d.rule) {
-            <div class="field">
-              <label>{{ 'pricing.adjustment' | t }}</label>
+            <app-field [label]="'pricing.adjustment' | t" [hint]="'pricing.adjustmentHint' | t">
               <input
                 class="input"
                 type="number"
@@ -530,27 +521,24 @@ const PLAN_FILTER = {
                 [value]="d.adjustmentPercent"
                 (input)="d.adjustmentPercent = +$any($event.target).value"
               />
-              <span class="hint">{{ 'pricing.adjustmentHint' | t }}</span>
-            </div>
+            </app-field>
           }
-          <div class="field">
-            <label>{{ 'pricing.validFrom' | t }}</label>
+          <app-field [label]="'pricing.validFrom' | t">
             <input
               class="input"
               type="date"
               [value]="d.validFrom"
               (change)="d.validFrom = $any($event.target).value"
             />
-          </div>
-          <div class="field">
-            <label>{{ 'pricing.validTo' | t }}</label>
+          </app-field>
+          <app-field [label]="'pricing.validTo' | t">
             <input
               class="input"
               type="date"
               [value]="d.validTo"
               (change)="d.validTo = $any($event.target).value"
             />
-          </div>
+          </app-field>
           <label class="check full">
             <input
               type="checkbox"
@@ -585,8 +573,7 @@ const PLAN_FILTER = {
       (closed)="bulkOpen.set(false)"
     >
       <div class="form-grid">
-        <div class="field">
-          <label>{{ 'plans.bulkPercent' | t }}</label>
+        <app-field [label]="'plans.bulkPercent' | t">
           <input
             class="input"
             type="number"
@@ -595,9 +582,8 @@ const PLAN_FILTER = {
             [value]="bulkPercent()"
             (input)="bulkPercent.set(+$any($event.target).value); bulkResult.set(null)"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.bulkRoundTo' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.bulkRoundTo' | t">
           <input
             class="input"
             type="number"
@@ -605,7 +591,7 @@ const PLAN_FILTER = {
             [value]="bulkRoundTo()"
             (input)="bulkRoundTo.set(+$any($event.target).value); bulkResult.set(null)"
           />
-        </div>
+        </app-field>
         <div class="field">
           <label>{{ 'plans.bulkRounding' | t }}</label>
           <select
@@ -706,24 +692,22 @@ const PLAN_FILTER = {
       (closed)="salesOpen.set(false)"
     >
       <div class="form-grid">
-        <div class="field">
-          <label>{{ 'plans.from' | t }}</label>
+        <app-field [label]="'plans.from' | t">
           <input
             class="input"
             type="date"
             [value]="from()"
             (change)="from.set($any($event.target).value)"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'plans.to' | t }}</label>
+        </app-field>
+        <app-field [label]="'plans.to' | t">
           <input
             class="input"
             type="date"
             [value]="to()"
             (change)="to.set($any($event.target).value)"
           />
-        </div>
+        </app-field>
       </div>
       @if (planSales(); as s) {
         <dl class="dl mt" data-testid="plan-sales-figures">

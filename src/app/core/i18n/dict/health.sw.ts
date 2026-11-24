@@ -9,6 +9,10 @@ export const HEALTH_SW: Readonly<Record<string, string>> = {
   'perm.health.view':
     'Kuona taarifa za afya: vyeti vya daktari, wagonjwa, utambuzi wa ugonjwa, madhara ya dawa',
   'perm.adr.report': 'Kuripoti madhara ya dawa',
+  'perm.insurance.claims_export':
+    'Kuhamisha makundi ya madai ya bima kwa mlipaji (wagonjwa na utambuzi wa ugonjwa)',
+  'perm.partners.create_at_till':
+    'Kuongeza mteja wa papo hapo kwenye kaunta (jina, simu na barua pepe tu)',
 
   // cheti kwenye POS
   'pos.prescriptionDate': 'Tarehe ya cheti',

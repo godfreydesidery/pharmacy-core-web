@@ -2,6 +2,7 @@ import { CheckoutRequest } from '../../core/api/models';
 import {
   PARKED_LIMIT,
   PARKED_TTL_MS,
+  businessDay,
   ParkedSale,
   clearParkedOf,
   expired,
@@ -123,6 +124,46 @@ describe('parked sales expire', () => {
       sale('old', { parkedAt: '2026-11-30T23:59:00Z' }),
     ]);
     expect(readParked(storage, 'k', NOW).map((p) => p.id)).toEqual(['fresh']);
+  });
+});
+
+describe('parked sales on shared counter PCs', () => {
+  const shared = { sharedPc: true, timeZone: 'Africa/Dar_es_Salaam' };
+
+  it('expire at the end of the pharmacy business day, not after 12 hours', () => {
+    // 22:00 in Dar es Salaam (UTC+3) is 19:00 UTC; midnight there is 21:00 UTC.
+    const at = '2026-12-01T19:00:00Z';
+    expect(expired({ parkedAt: at }, Date.parse('2026-12-01T20:59:00Z'), shared)).toBe(false);
+    expect(expired({ parkedAt: at }, Date.parse('2026-12-01T21:00:00Z'), shared)).toBe(true);
+    // Without the setting the same sale lasts its 12 hours.
+    expect(expired({ parkedAt: at }, Date.parse('2026-12-01T21:00:00Z'))).toBe(false);
+    expect(expired({ parkedAt: at }, Date.parse('2026-12-01T21:00:00Z'), { sharedPc: false })).toBe(
+      false,
+    );
+  });
+
+  it('keep a morning sale all day, past 12 hours, until midnight in the pharmacy', () => {
+    const at = '2026-12-01T03:30:00Z'; // 06:30 local
+    expect(expired({ parkedAt: at }, Date.parse('2026-12-01T20:30:00Z'), shared)).toBe(false);
+  });
+
+  it('are dropped when read with the setting on', () => {
+    const storage = memoryStorage();
+    writeParked(storage, 'k', [
+      sale('today', { parkedAt: '2026-12-01T05:00:00Z' }),
+      sale('yesterday', { parkedAt: '2026-11-30T20:00:00Z' }),
+    ]);
+    // 10:00 local: the 23:00 sale of the day before is 11 hours old.
+    const now = Date.parse('2026-12-01T07:00:00Z');
+    expect(readParked(storage, 'k', now, shared).map((p) => p.id)).toEqual(['today']);
+    expect(readParked(storage, 'k', now).map((p) => p.id)).toEqual(['today', 'yesterday']);
+  });
+
+  it('reads the day in the pharmacy time zone', () => {
+    expect(businessDay(Date.parse('2026-12-01T21:30:00Z'), 'Africa/Dar_es_Salaam')).toBe(
+      '2026-12-02',
+    );
+    expect(businessDay(Date.parse('2026-12-01T21:30:00Z'), 'UTC')).toBe('2026-12-01');
   });
 });
 

@@ -44,6 +44,7 @@
     "erase_refused",
     "exchange_rate_mismatch",
     "expiry_after_inputs",
+    "field_not_allowed",
     "file_too_compressed",
     "file_too_large_uncompressed",
     "file_too_many_entries",
@@ -99,6 +100,7 @@
     "refund_method_not_allowed",
     "request_closed",
     "restock_not_allowed",
+    "return_already_credited",
     "return_exceeds_sold",
     "sale_line_not_found",
     "same_product",
@@ -144,7 +146,8 @@
     ],
     "approval_required": [
       "action",
-      "amount"
+      "amount",
+      "selfApproval"
     ],
     "approver_is_requester": [],
     "base_currency_only": [],
@@ -196,6 +199,11 @@
     "controlled_prescription_incomplete": [],
     "count_not_found": [],
     "count_posted": [],
+    "credit_exceeds_receipt": [
+      "currency",
+      "receipt",
+      "total"
+    ],
     "credit_limit_exceeded": [
       "available",
       "currency",
@@ -216,6 +224,10 @@
     "customer_not_found": [],
     "customer_required": [],
     "database_busy": [],
+    "debit_note_base_currency_only": [
+      "currency"
+    ],
+    "debit_note_needs_customer": [],
     "delivery_not_found": [],
     "destruction_not_found": [],
     "direct_creation_disabled": [],
@@ -225,6 +237,9 @@
     ],
     "duplicate_batch": [],
     "duplicate_code": [],
+    "duplicate_credit_note": [
+      "number"
+    ],
     "duplicate_email": [],
     "duplicate_gtin": [],
     "duplicate_item": [],
@@ -250,6 +265,7 @@
     "export_running": [
       "uid"
     ],
+    "field_not_allowed": [],
     "file_not_allowed": [],
     "file_not_found": [],
     "file_too_compressed": [],
@@ -289,6 +305,7 @@
     "invalid_adapter": [],
     "invalid_adjustment": [],
     "invalid_amount": [],
+    "invalid_apportionment_method": [],
     "invalid_atc_code": [],
     "invalid_branch_uids": [],
     "invalid_channel": [],
@@ -310,6 +327,7 @@
     "invalid_dosage_form": [],
     "invalid_effective_on": [],
     "invalid_email": [],
+    "invalid_event_kind": [],
     "invalid_event_types": [],
     "invalid_exchange_rate": [],
     "invalid_expiry": [],
@@ -328,6 +346,7 @@
     "invalid_kind": [],
     "invalid_lead_time": [],
     "invalid_limit": [],
+    "invalid_lines": [],
     "invalid_lock_date": [],
     "invalid_login": [],
     "invalid_look": [],
@@ -348,6 +367,10 @@
     "invalid_phone": [],
     "invalid_port": [],
     "invalid_price": [],
+    "invalid_provision_bands": [
+      "maxBands",
+      "maxDays"
+    ],
     "invalid_purpose": [],
     "invalid_quantity": [],
     "invalid_quantity_change": [],
@@ -356,12 +379,17 @@
     "invalid_reason": [],
     "invalid_received_on": [],
     "invalid_received_quantity": [],
+    "invalid_recoverable_percent": [
+      "max",
+      "min"
+    ],
     "invalid_reorder_level": [],
     "invalid_return_window": [],
     "invalid_rounding": [],
     "invalid_serial": [],
     "invalid_signature": [],
     "invalid_size": [],
+    "invalid_status": [],
     "invalid_therapy_dates": [],
     "invalid_timezone": [],
     "invalid_tin": [],
@@ -374,6 +402,7 @@
     "invalid_vrn": [],
     "invalid_warranty_months": [],
     "invalid_within_days": [],
+    "invalid_year_end_month": [],
     "invitation_not_found": [],
     "invitation_not_open": [],
     "invoice_not_found": [],
@@ -406,6 +435,7 @@
     "not_destination": [],
     "not_managed": [],
     "not_suspended": [],
+    "not_under_legal_hold": [],
     "note_required": [],
     "nothing_held": [],
     "notification_not_found": [],
@@ -425,6 +455,13 @@
     "passkey_rejected": [],
     "password_change_required": [],
     "password_required": [],
+    "password_too_short": [
+      "minLength",
+      "twoFactor"
+    ],
+    "password_too_short_without_two_factor": [
+      "minLength"
+    ],
     "payer_not_found": [],
     "payment_declined": [],
     "payment_mismatch": [
@@ -438,7 +475,9 @@
       "total"
     ],
     "period_locked": [],
-    "period_too_long": [],
+    "period_too_long": [
+      "maxDays"
+    ],
     "permission_not_held": [],
     "phone_needs_verification": [],
     "plan_feature_unavailable": [],
@@ -482,6 +521,7 @@
     "receipt_supplier_mismatch": [],
     "receiver_is_sender": [],
     "recipe_mismatch": [],
+    "recoverable_percent_required": [],
     "recovery_on_hold": [
       "notBefore"
     ],
@@ -501,11 +541,23 @@
     "request_not_found": [],
     "reseal_running": [],
     "restock_not_allowed": [],
+    "return_already_credited": [],
     "return_exceeds_sold": [],
     "return_line_not_found": [],
     "return_not_found": [],
     "role_not_found": [],
     "root_admin_not_found": [],
+    "root_approval_closed": [
+      "status"
+    ],
+    "root_approval_expired": [],
+    "root_approval_not_found": [],
+    "root_approval_pending": [
+      "action"
+    ],
+    "root_approval_required": [
+      "action"
+    ],
     "route_not_found": [],
     "sale_line_not_found": [],
     "sale_not_found": [],
@@ -517,6 +569,7 @@
     "same_product": [],
     "schedule_downgrade": [],
     "scheme_not_found": [],
+    "second_root_admin_required": [],
     "serial_not_in_stock": [],
     "serial_not_of_batch": [],
     "serial_not_on_sale": [],
@@ -586,6 +639,7 @@
     "unsupported_media_type": [],
     "unsupported_type": [],
     "upload_missing": [],
+    "upload_used": [],
     "url_expired": [],
     "user_not_found": [],
     "username_taken": [],
@@ -596,7 +650,9 @@
     "voucher_not_active": [],
     "voucher_not_found": [],
     "voucher_short": [],
-    "weak_password": [],
+    "weak_password": [
+      "maxLength"
+    ],
     "webhook_limit": [],
     "webhook_not_found": [],
     "webhook_url_not_allowed": [],

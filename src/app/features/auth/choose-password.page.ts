@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { SINGLE_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { Router } from '@angular/router';
 import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
@@ -12,6 +13,7 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { IconComponent } from '../../core/ui/icon.component';
 import { ToastService } from '../../core/ui/toast.service';
 import { AUTH_CARD_STYLES } from './auth-card';
+import { TemporaryPasswordHandoff } from './temporary-password';
 
 /**
  * A staff login the pharmacy created signs in on a temporary password and must choose its own
@@ -57,7 +59,7 @@ import { AUTH_CARD_STYLES } from './auth-card';
             autocomplete="new-password"
             [class.invalid]="error('newPassword')"
           />
-          <span class="hint">{{ 'logins.newPasswordHint' | t }}</span>
+          <span class="hint">{{ 'password.minLength' | t: { min: minLength } }}</span>
           @if (error('newPassword'); as message) {
             <span class="error">{{ message }}</span>
           }
@@ -97,21 +99,22 @@ import { AUTH_CARD_STYLES } from './auth-card';
   ],
 })
 export default class ChoosePasswordPage {
+  /** A staff login has no second factor yet when it chooses its first password: 15 (STD-21). */
+  protected readonly minLength = SINGLE_FACTOR_MIN_PASSWORD;
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   private readonly session = inject(SessionStore);
 
-  /** The temporary password typed at sign-in, when the navigation brought it. */
-  protected readonly given: string | null =
-    (this.router.getCurrentNavigation()?.extras.state?.['temporary'] as string | undefined) ?? null;
+  /** The temporary password typed at sign-in, handed over in memory (WEB-16), once. */
+  protected readonly given: string | null = inject(TemporaryPasswordHandoff).take();
   protected readonly busy = signal(false);
   protected readonly failure = signal<string | null>(null);
   protected readonly mismatch = signal(false);
   protected readonly form = inject(FormBuilder).nonNullable.group({
     currentPassword: [this.given ?? '', Validators.required],
-    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    newPassword: ['', passwordValidators(SINGLE_FACTOR_MIN_PASSWORD)],
     confirm: ['', Validators.required],
   });
 

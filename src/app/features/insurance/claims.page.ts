@@ -272,14 +272,14 @@ interface Decision {
               >
             </div>
           }
-          <div class="field">
-            <label>{{ 'insurance.note' | t }}</label><input
+          <app-field [label]="'insurance.note' | t">
+            <input
               class="input"
               [value]="note()"
               (input)="note.set($any($event.target).value)"
               [placeholder]="'insurance.payerReferenceReviewNotes' | t"
             />
-          </div>
+          </app-field>
         }
       }
       <ng-container footer>

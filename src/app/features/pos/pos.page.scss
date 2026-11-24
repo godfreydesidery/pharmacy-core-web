@@ -319,10 +319,16 @@ kbd {
   border: 2px solid var(--primary);
   border-radius: var(--radius-sm);
   background: var(--surface);
-  box-shadow: var(--ring);
   color: var(--primary);
   cursor: pointer;
   text-align: left;
+}
+/* The ring shows only while the picker really has the focus (UX-6): it never looks ready when not. */
+.s2-box:focus-visible,
+.s2-box:focus,
+.s2-box.open {
+  box-shadow: var(--ring);
+  outline: none;
 }
 .s2-value {
   flex: 1;
@@ -826,4 +832,18 @@ kbd {
 .lookup .btn {
   align-self: flex-start;
   margin-top: 4px;
+}
+
+/* Why a typed quantity or discount was changed (UX-5). */
+.clamp-note {
+  display: block;
+  margin-top: 4px;
+  max-width: 220px;
+  color: var(--amber);
+  font-size: 11.5px;
+  line-height: 1.3;
+  white-space: normal;
+}
+.new-customer {
+  margin-top: 6px;
 }

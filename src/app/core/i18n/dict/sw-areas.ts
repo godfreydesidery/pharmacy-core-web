@@ -3,6 +3,7 @@
  * each new `<area>.sw.ts` here and its English pair in `en-areas.ts`.
  */
 import { APPROVALS_SW } from './approvals.sw';
+import { DECISIONS_SW } from './decisions.sw';
 import { A11Y_SW } from './a11y.sw';
 import { PLANNING_SW } from './planning.sw';
 import { PLANS_SW } from './plans.sw';
@@ -15,6 +16,7 @@ import { PLATFORM_SW } from './platform.sw';
 import { RECEIVABLES_SW } from './receivables.sw';
 import { REPORTS_SW } from './reports.sw';
 import { PAYABLES_SW } from './payables.sw';
+import { MONEYOPS_SW } from './moneyops.sw';
 import { ACCOUNTS_SW } from './accounts.sw';
 import { LABELS_SW } from './labels.sw';
 import { TILL_SW } from './till.sw';
@@ -46,9 +48,12 @@ import { SALES_SW } from './sales.sw';
 import { SHELL_SW } from './shell.sw';
 import { UI_SW } from './ui.sw';
 import { STATE_SW } from './state.sw';
+import { UX_SW } from './ux.sw';
 
 export const SW_AREAS: Readonly<Record<string, string>> = {
+  ...DECISIONS_SW,
   ...A11Y_SW,
+  ...UX_SW,
   ...SHELL_SW,
   ...PLANNING_SW,
   ...SECURITY2_SW,
@@ -75,6 +80,7 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...HEALTH_SW,
   ...COUNTS_SW,
   ...PAYABLES_SW,
+  ...MONEYOPS_SW,
   ...ACCOUNTS_SW,
   ...LABELS_SW,
   ...TILL_SW,

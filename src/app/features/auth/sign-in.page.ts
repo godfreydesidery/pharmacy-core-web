@@ -17,6 +17,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { DEV_ACCOUNTS } from './dev-accounts';
 import { retryText } from './retry';
+import { TemporaryPasswordHandoff } from './temporary-password';
 
 @Component({
   selector: 'app-sign-in',
@@ -299,6 +300,7 @@ export default class SignInPage {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly translations = inject(Translations);
+  private readonly handoff = inject(TemporaryPasswordHandoff);
 
   protected readonly dev = isDevMode();
   protected readonly accounts = DEV_ACCOUNTS;
@@ -378,10 +380,10 @@ export default class SignInPage {
   protected async enter(session: Session): Promise<void> {
     this.session.signIn(session);
     if (session.user.passwordChangeRequired) {
-      // A staff login on its pharmacy's temporary password: the one just typed comes along.
-      await this.router.navigateByUrl('/choose-password', {
-        state: { temporary: this.form.getRawValue().password },
-      });
+      // A staff login on its pharmacy's temporary password: the one just typed comes along, in
+      // memory only, never in the browser's history (WEB-16).
+      this.handoff.give(this.form.getRawValue().password);
+      await this.router.navigateByUrl('/choose-password');
       return;
     }
     if (session.user.twoFactorSetupRequired) {

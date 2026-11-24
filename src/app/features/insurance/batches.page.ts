@@ -76,12 +76,17 @@ import { Translations } from '../../core/i18n/translations.store';
                     >
                   </td>
                   <td class="right nowrap">
-                    <button class="btn sm" type="button" (click)="download(b, 'CSV')">
-                      <app-icon name="download" [size]="14" /> CSV
-                    </button>
-                    <button class="btn sm" type="button" (click)="download(b, 'JSON')">
-                      <app-icon name="activity" [size]="14" /> FHIR
-                    </button>
+                    <!-- Claims name patients and carry diagnoses: insurance.claims_export. -->
+                    @if (canExport()) {
+                      <button class="btn sm" type="button" (click)="download(b, 'CSV')">
+                        <app-icon name="download" [size]="14" /> CSV
+                      </button>
+                      <button class="btn sm" type="button" (click)="download(b, 'JSON')">
+                        <app-icon name="activity" [size]="14" /> FHIR
+                      </button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
                   </td>
                 </tr>
               } @empty {
@@ -117,22 +122,22 @@ import { Translations } from '../../core/i18n/translations.store';
             }
           </select>
         </div>
-        <div class="field">
-          <label>{{ 'insurance.from' | t }}</label><input
+        <app-field [label]="'insurance.from' | t">
+          <input
             class="input"
             type="date"
             [value]="from()"
             (change)="from.set($any($event.target).value)"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.to' | t }}</label><input
+        </app-field>
+        <app-field [label]="'insurance.to' | t">
+          <input
             class="input"
             type="date"
             [value]="to()"
             (change)="to.set($any($event.target).value)"
           />
-        </div>
+        </app-field>
         <p class="muted full">
           {{ 'insurance.allOfThePayerS' | t }}
         </p>
@@ -166,6 +171,11 @@ import { Translations } from '../../core/i18n/translations.store';
 })
 export default class BatchesPage {
   protected readonly session = inject(SessionStore);
+
+  /** The export holds patients and diagnoses: it needs its own permission besides finance.view. */
+  protected canExport(): boolean {
+    return this.session.can('finance.view') && this.session.can('insurance.claims_export');
+  }
   private readonly api = inject(Api);
   private readonly http = inject(HttpClient);
   private readonly toasts = inject(ToastService);

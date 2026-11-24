@@ -113,20 +113,15 @@ import { RolesNoticeComponent } from './roles-notice.component';
     </div>
     <app-modal [open]="creating()" [title]="'admin.newRole' | t" (closed)="creating.set(false)">
       <div class="form-grid">
-        <div class="field">
-          <label>{{ 'admin.code' | t }}</label><input
-            class="input"
-            #code
-            placeholder="DISPENSER"
-            style="text-transform:uppercase"
-          />
-        </div>
-        <div class="field">
-          <label>{{ 'admin.name' | t }}</label><input class="input" #name placeholder="Dispenser" />
-        </div>
-        <div class="field full">
-          <label>{{ 'admin.description' | t }}</label><input class="input" #description />
-        </div>
+        <app-field [label]="'admin.code' | t">
+          <input class="input" #code placeholder="DISPENSER" style="text-transform:uppercase" />
+        </app-field>
+        <app-field [label]="'admin.name' | t">
+          <input class="input" #name placeholder="Dispenser" />
+        </app-field>
+        <app-field class="full" [label]="'admin.description' | t">
+          <input class="input" #description />
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="creating.set(false)">

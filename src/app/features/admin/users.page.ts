@@ -177,12 +177,9 @@ import { signInLabel } from '../../core/session/sign-in-label';
           <p class="hint full">{{ 'join.inviteHint' | t }}</p>
         }
         @if (!current() || current()!.managed) {
-          <div class="field">
-            <label>{{ 'ui.users.name' | t }}</label><input class="input" formControlName="name" />
-            @if (err('name'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
+          <app-field [label]="'ui.users.name' | t" [error]="err('name')">
+            <input class="input" formControlName="name" />
+          </app-field>
         }
         @if (managedMode() && !current()) {
           <div class="field">
@@ -206,70 +203,41 @@ import { signInLabel } from '../../core/session/sign-in-label';
           </div>
         }
         @if (!current() && !managedMode()) {
-          <div class="field">
-            <label>{{ 'ui.users.email' | t }}</label><input
-              class="input"
-              type="email"
-              formControlName="email"
-            />
-            @if (err('email'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
+          <app-field [label]="'ui.users.email' | t" [error]="err('email')">
+            <input class="input" type="email" formControlName="email" />
+          </app-field>
         }
         @if (managedMode() || current()?.managed) {
-          <div class="field">
-            <label>{{ 'logins.contactEmail' | t }}</label><input
-              class="input"
-              type="email"
-              formControlName="contactEmail"
-            />
-            <span class="hint">{{ 'logins.contactEmailHint' | t }}</span>
-            @if (err('contactEmail'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
+          <app-field
+            [label]="'logins.contactEmail' | t"
+            [hint]="'logins.contactEmailHint' | t"
+            [error]="err('contactEmail')"
+          >
+            <input class="input" type="email" formControlName="contactEmail" />
+          </app-field>
         }
         @if (current()) {
-          <div class="field">
-            <label>{{ 'staff.number' | t }}</label><input
-              class="input"
-              formControlName="staffNumber"
-              maxlength="40"
-            />
-            @if (err('staffNumber'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
-          <div class="field">
-            <label>{{ 'staff.jobTitle' | t }}</label><input
-              class="input"
-              formControlName="jobTitle"
-              maxlength="80"
-            />
-          </div>
-          <div class="field">
-            <label>{{ 'staff.workPhone' | t }}</label><input
+          <app-field [label]="'staff.number' | t" [error]="err('staffNumber')">
+            <input class="input" formControlName="staffNumber" maxlength="40" />
+          </app-field>
+          <app-field [label]="'staff.jobTitle' | t">
+            <input class="input" formControlName="jobTitle" maxlength="80" />
+          </app-field>
+          <app-field [label]="'staff.workPhone' | t" [error]="err('workPhone')">
+            <input
               class="input"
               type="tel"
               formControlName="workPhone"
               placeholder="0754 000 111"
             />
-            @if (err('workPhone'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
-          <div class="field">
-            <label>{{ 'staff.workEmail' | t }}</label><input
-              class="input"
-              type="email"
-              formControlName="workEmail"
-            />
-            <span class="hint">{{ 'staff.hint' | t }}</span>
-            @if (err('workEmail'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
+          </app-field>
+          <app-field
+            [label]="'staff.workEmail' | t"
+            [hint]="'staff.hint' | t"
+            [error]="err('workEmail')"
+          >
+            <input class="input" type="email" formControlName="workEmail" />
+          </app-field>
         }
         @if (managedMode() || current()?.managed) {
           <div class="field">

@@ -45,6 +45,13 @@ export const PLATFORM_NAV: NavItem[] = [
     rootOnly: true,
   },
   {
+    id: 'platform-approvals',
+    label: 'Pending approvals',
+    icon: 'check',
+    path: '/platform/approvals',
+    rootOnly: true,
+  },
+  {
     id: 'platform-accounts',
     label: 'Account recovery',
     icon: 'shield',
@@ -136,17 +143,7 @@ export const TENANT_NAV: NavItem[] = [
     children: [
       { label: 'Purchase orders', path: '/purchasing/orders', permission: 'purchasing.view' },
       { label: 'Goods receipts', path: '/purchasing/receipts', permission: 'purchasing.view' },
-      {
-        label: 'Supplier returns',
-        path: '/purchasing/supplier-returns',
-        permission: 'purchasing.view',
-      },
       { label: 'Reorder suggestions', path: '/purchasing/reorder', permission: 'purchasing.view' },
-      {
-        label: 'Supplier balances',
-        path: '/purchasing/supplier-balances',
-        permission: 'purchasing.view',
-      },
     ],
   },
   {
@@ -168,12 +165,30 @@ export const TENANT_NAV: NavItem[] = [
     path: '/customers',
     permission: 'partners.view',
   },
+  // Everything about suppliers in one group (UX-18): who they are, what is owed and paid, and
+  // what goes back to them. The pages keep their paths.
   {
     id: 'suppliers',
     label: 'Suppliers',
     icon: 'truck',
-    path: '/suppliers',
-    permission: 'partners.view',
+    children: [
+      { label: 'All suppliers', path: '/suppliers', permission: 'partners.view' },
+      {
+        label: 'Supplier balances',
+        path: '/purchasing/supplier-balances',
+        permission: 'purchasing.view',
+      },
+      {
+        label: 'Supplier payments',
+        path: '/finance/supplier-payments',
+        permission: 'finance.view',
+      },
+      {
+        label: 'Supplier returns',
+        path: '/purchasing/supplier-returns',
+        permission: 'purchasing.view',
+      },
+    ],
   },
   {
     id: 'finance',
@@ -190,11 +205,6 @@ export const TENANT_NAV: NavItem[] = [
         feature: 'ADVANCED_REPORTS',
       },
       { label: 'Z reports', path: '/finance/z-reports', permission: 'finance.view' },
-      {
-        label: 'Supplier payments',
-        path: '/finance/supplier-payments',
-        permission: 'finance.view',
-      },
       {
         label: 'Exchange rates',
         path: '/finance/exchange-rates',

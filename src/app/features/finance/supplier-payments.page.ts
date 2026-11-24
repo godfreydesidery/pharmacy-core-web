@@ -3,12 +3,13 @@ import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { GoodsReceipt, LatestRate, Supplier, SupplierPayment } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
-import { convertMoney, isoDay } from '../../core/format/format';
+import { convertMoney, formatMoney, humanize, isoDay } from '../../core/format/format';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
 import { OverdrawWarningComponent } from './overdraw-warning.component';
@@ -225,7 +226,10 @@ export default class SupplierPaymentsPage {
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   private readonly settings = inject(SettingsStore);
+  private readonly confirm = inject(ConfirmService);
   protected readonly methods = METHODS;
+  /** The supplier picked, for the confirmation. */
+  private readonly supplier = signal<string | null>(null);
   protected readonly today = isoDay();
   protected readonly base = this.settings.currency;
   protected readonly accepted = computed(
@@ -284,6 +288,7 @@ export default class SupplierPaymentsPage {
 
   protected async pickSupplier(supplier: Supplier | null): Promise<void> {
     this.form.controls.supplierUid.setValue(supplier?.uid ?? '');
+    this.supplier.set(supplier?.name ?? null);
     await this.loadReceipts();
   }
 
@@ -343,6 +348,43 @@ export default class SupplierPaymentsPage {
       return;
     }
     const v = this.form.getRawValue();
+    // Money leaves the pharmacy and is booked at once: confirmed with its figures (UX-12).
+    const t = (key: string, params?: Record<string, string | number>) =>
+      this.translations.t(key, params);
+    const amount = formatMoney(Number(v.amount), v.currency || this.base());
+    const sure = await this.confirm.ask({
+      title: t('ux.confirm.payment.title'),
+      text: t('ux.confirm.payment.text'),
+      icon: 'question',
+      confirmText: t('ux.confirm.payment.ok'),
+      details: [
+        ...(this.supplier() ? [{ label: t('ux.confirm.supplier'), value: this.supplier()! }] : []),
+        {
+          label: t('ux.confirm.amount'),
+          value:
+            v.currency && v.currency !== this.base()
+              ? `${amount} (${formatMoney(this.settled(), this.base())})`
+              : amount,
+        },
+        {
+          label: t('ux.confirm.method'),
+          value: this.translations.t(
+            'enum.' + v.paymentMethod,
+            undefined,
+            humanize(v.paymentMethod),
+          ),
+        },
+        {
+          label: t('ux.confirm.receipts'),
+          value: this.chosen().size
+            ? t('ux.confirm.receiptsCount', { count: this.chosen().size })
+            : t('ux.confirm.receiptsNone'),
+        },
+      ],
+    });
+    if (!sure || this.busy()) {
+      return;
+    }
     this.busy.set(true);
     try {
       await this.api.post(

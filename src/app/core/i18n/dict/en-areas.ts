@@ -5,6 +5,7 @@
  * only when chosen, so the two lists live in separate modules.
  */
 import { APPROVALS_EN } from './approvals.en';
+import { DECISIONS_EN } from './decisions.en';
 import { A11Y_EN } from './a11y.en';
 import { PLANNING_EN } from './planning.en';
 import { PLANS_EN } from './plans.en';
@@ -22,6 +23,7 @@ import { PRIVACY_EN } from './privacy.en';
 import { HEALTH_EN } from './health.en';
 import { COUNTS_EN } from './counts.en';
 import { PAYABLES_EN } from './payables.en';
+import { MONEYOPS_EN } from './moneyops.en';
 import { ACCOUNTS_EN } from './accounts.en';
 import { LABELS_EN } from './labels.en';
 import { TILL_EN } from './till.en';
@@ -48,9 +50,12 @@ import { SECURITY2_EN } from './security2.en';
 import { SHELL_EN } from './shell.en';
 import { UI_EN } from './ui.en';
 import { STATE_EN } from './state.en';
+import { UX_EN } from './ux.en';
 
 export const EN_AREAS: Readonly<Record<string, string>> = {
+  ...DECISIONS_EN,
   ...A11Y_EN,
+  ...UX_EN,
   ...SHELL_EN,
   ...PLANNING_EN,
   ...SECURITY2_EN,
@@ -77,6 +82,7 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...HEALTH_EN,
   ...COUNTS_EN,
   ...PAYABLES_EN,
+  ...MONEYOPS_EN,
   ...ACCOUNTS_EN,
   ...LABELS_EN,
   ...TILL_EN,

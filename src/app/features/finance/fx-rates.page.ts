@@ -167,10 +167,9 @@ interface RateCard {
             }
           </select>
         </div>
-        <div class="field">
-          <label>{{ 'finance.effectiveOn' | t }}</label>
+        <app-field [label]="'finance.effectiveOn' | t">
           <input class="input" type="date" formControlName="effectiveOn" [max]="today" />
-        </div>
+        </app-field>
         <div class="field full">
           <label>1 {{ form.controls.base.value }} {{ 'finance.howMany' | t }} {{ base() }}?</label>
           <input class="input lg mono" type="number" min="0" step="any" formControlName="rate" />

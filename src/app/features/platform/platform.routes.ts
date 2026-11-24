@@ -10,6 +10,11 @@ export default [
     loadComponent: () => import('./root-admins.page'),
   },
   {
+    path: 'approvals',
+    title: 'Pending approvals',
+    loadComponent: () => import('./approvals.page'),
+  },
+  {
     path: 'accounts',
     title: 'Account recovery',
     loadComponent: () => import('./account-recovery.page'),

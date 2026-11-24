@@ -39,6 +39,11 @@ export const routes: Routes = [
     loadComponent: () => import('./features/auth/confirm-email.page'),
   },
   {
+    path: 'revert-email',
+    title: 'Undo an email change · Pharmacy Core',
+    loadComponent: () => import('./features/auth/confirm-email.page'),
+  },
+  {
     path: 'cancel-recovery',
     title: 'Cancel account recovery · Pharmacy Core',
     loadComponent: () => import('./features/auth/cancel-recovery.page'),

@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { SessionStore } from '../../core/session/session.store';
 import { FormBuilder, Validators } from '@angular/forms';
+import { SINGLE_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { Api } from '../../core/api/api.service';
 import { User } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
@@ -123,33 +124,20 @@ import { Translations } from '../../core/i18n/translations.store';
         <div class="notice tone-amber">
           <app-icon name="alert" /> {{ 'platform.aRootAdministratorCanSee' | t }}
         </div>
-        <div class="field">
-          <label>{{ 'platform.name' | t }}</label><input class="input" formControlName="name" />
-          @if (err('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'platform.email' | t }}</label><input
-            class="input"
-            type="email"
-            formControlName="email"
-          />
-          @if (err('email'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'platform.password' | t }}</label><input
+        <app-field [label]="'platform.name' | t" [error]="err('name')">
+          <input class="input" formControlName="name" />
+        </app-field>
+        <app-field [label]="'platform.email' | t" [error]="err('email')">
+          <input class="input" type="email" formControlName="email" />
+        </app-field>
+        <app-field [label]="'platform.password' | t" [error]="err('password')">
+          <input
             class="input"
             type="password"
             formControlName="password"
             autocomplete="new-password"
           />
-          @if (err('password'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        </app-field>
       </form>
       <ng-container footer>
         <button class="btn" type="button" (click)="creating.set(false)">
@@ -176,7 +164,7 @@ export default class RootAdminsPage {
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', passwordValidators(SINGLE_FACTOR_MIN_PASSWORD)],
   });
 
   private readonly session = inject(SessionStore);

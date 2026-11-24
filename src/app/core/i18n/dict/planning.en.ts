@@ -9,7 +9,7 @@ export const PLANNING_EN: Readonly<Record<string, string>> = {
   'reorder.cover': 'Stock to cover (days)',
   'reorder.formula':
     'Suggested = daily sales × (supplier lead time + days to cover), at least the reorder level, less stock on hand and on order.',
-  'reorder.leadTime': 'Delivers in {{days}} days',
+  'reorder.leadTime': 'Delivers in {days, plural, one {# day} other {# days}}',
   'reorder.noSupplier': 'No supplier yet',
   'reorder.chooseSupplier': 'Choose a supplier…',
   'reorder.total': 'Order value',
@@ -25,7 +25,8 @@ export const PLANNING_EN: Readonly<Record<string, string>> = {
   'reorder.none': 'Nothing needs reordering: stock and open orders cover expected sales.',
   'reorder.create': 'Create purchase orders',
   'reorder.nothing': 'Every quantity is zero, or no supplier is chosen.',
-  'reorder.created': '{{n}} purchase order(s) created',
+  'reorder.created':
+    '{n, plural, one {# purchase order created} other {# purchase orders created}}',
   'partners.leadTimeDays': 'Lead time (days)',
   'periodLock.title': 'Period lock',
   'periodLock.sub': 'Close the books through a date: nothing can be posted on or before it.',

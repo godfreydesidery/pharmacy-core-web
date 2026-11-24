@@ -7,6 +7,10 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'approval.password': 'Nenosiri la meneja',
   'approval.hint':
     'Ni mtu mwenye ruhusa ya kuidhinisha, si wewe, anayeweza kuidhinisha. Inatumika mara moja.',
+  'approval.selfText':
+    'Ni wewe peke yako hapa unayeweza kuidhinisha {{action}}. Idhinisha mwenyewe kwa nenosiri lako.',
+  'approval.selfHint':
+    'Inarekodiwa kama idhini ya mwenyewe, na inaonekana hivyo kwenye kumbukumbu za ukaguzi na ripoti za mmiliki. Mtu mwingine akiweza kuidhinisha, ni lazima aidhinishe yeye.',
   'approval.approve': 'Idhinisha',
   'approval.action.REFUND': 'marejesho haya ya fedha',
   'approval.action.LATE_RETURN': 'kurudisha bidhaa baada ya muda wa kurudisha',
@@ -98,13 +102,14 @@ export const APPROVALS_SW: Readonly<Record<string, string>> = {
   'errors.invalid_days': 'Siku lazima ziwe kati ya 1 na 365.',
   'errors.invalid_received_quantity': 'Kiasi kilichopokelewa hakiwezi kuzidi kilichotumwa.',
   'transfer.overdue': 'Zilizochelewa',
-  'transfer.daysInTransit': 'Siku {{days}} njiani',
+  'transfer.daysInTransit': 'Siku {days, plural, other {#}} njiani',
   'transfer.receiveTitle': 'Pokea {{number}}',
   'transfer.receiveText':
     'Hesabu kilichofika. Kilichopungua kinaandikwa kama hasara ya tawi lililotuma.',
   'transfer.arrived': 'Kilichofika',
   'transfer.shortNote': 'Nini kilitokea kwa vipande vilivyokosekana?',
-  'transfer.shortHint': 'Vipande {{units}} vimepungua. Hasara kubwa inahitaji idhini ya meneja.',
+  'transfer.shortHint':
+    '{units, plural, one {Kipande # kimepungua} other {Vipande # vimepungua}}. Hasara kubwa inahitaji idhini ya meneja.',
   'controlled.noLonger': 'haidhibitiwi tena',
   'openShift.title': 'Fungua zamu yako',
   'openShift.text':

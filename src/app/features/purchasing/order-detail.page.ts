@@ -140,9 +140,9 @@ import { Translations } from '../../core/i18n/translations.store';
       [title]="'purchasing.cancelPurchaseOrder' | t"
       (closed)="cancelling.set(false)"
     >
-      <div class="field">
-        <label>{{ 'purchasing.reason' | t }}</label><textarea class="input" #reason></textarea>
-      </div>
+      <app-field [label]="'purchasing.reason' | t">
+        <textarea class="input" #reason></textarea>
+      </app-field>
       <ng-container footer>
         <button class="btn" type="button" (click)="cancelling.set(false)">
           {{ 'purchasing.keepOrder' | t }}

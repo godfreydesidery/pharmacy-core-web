@@ -130,16 +130,9 @@ import { Translations } from '../../core/i18n/translations.store';
       (closed)="open.set(false)"
     >
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field">
-          <label>{{ 'admin.name' | t }}</label><input
-            class="input"
-            formControlName="name"
-            [placeholder]="'admin.accountingSync' | t"
-          />
-          @if (err('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        <app-field [label]="'admin.name' | t" [error]="err('name')">
+          <input class="input" formControlName="name" [placeholder]="'admin.accountingSync' | t" />
+        </app-field>
         <div class="field">
           <label>URL</label
           ><input

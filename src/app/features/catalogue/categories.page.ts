@@ -109,12 +109,9 @@ const MAX_DEPTH = 3;
       (closed)="open.set(false)"
     >
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field">
-          <label>{{ 'catalogue.name' | t }}</label><input class="input" formControlName="name" />
-          @if (err('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        <app-field [label]="'catalogue.name' | t" [error]="err('name')">
+          <input class="input" formControlName="name" />
+        </app-field>
         <div class="field">
           <label>{{ 'catalogue.parent' | t }}</label>
           <select class="select" formControlName="parentUid">
@@ -127,12 +124,9 @@ const MAX_DEPTH = 3;
             <span class="error">{{ m }}</span>
           }
         </div>
-        <div class="field">
-          <label>{{ 'catalogue.description' | t }}</label><textarea
-            class="input"
-            formControlName="description"
-          ></textarea>
-        </div>
+        <app-field [label]="'catalogue.description' | t">
+          <textarea class="input" formControlName="description"></textarea>
+        </app-field>
       </form>
       <ng-container footer>
         <button class="btn" type="button" (click)="open.set(false)">
