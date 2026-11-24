@@ -83,7 +83,7 @@ export const UI_SW: Readonly<Record<string, string>> = {
   'ui.import.ready': 'Tayari kuleta: mpya {{creating}}, za kusasisha {{updating}}.',
   'ui.import.problems':
     'Matatizo {{count}} ya kurekebisha. Hakuna kilichohifadhiwa; sahihisha faili na ulichague tena.',
-  'ui.import.more': 'na matatizo mengine {{count}}',
+  'ui.import.more': 'na {count, plural, one {tatizo # jingine} other {matatizo mengine #}}',
   'ui.import.row': 'Safu',
   'ui.import.column': 'Safu wima',
   'ui.import.problem': 'Tatizo',
@@ -245,7 +245,7 @@ export const UI_SW: Readonly<Record<string, string>> = {
 
   // bell and preferences
   'ui.bell.notifications': 'Arifa',
-  'ui.bell.unread': 'Arifa {{count}} hazijasomwa',
+  'ui.bell.unread': '{count, plural, one {Arifa # haijasomwa} other {Arifa # hazijasomwa}}',
   'ui.bell.live': 'Moja kwa moja',
   'ui.bell.new': '{{count}} mpya',
   'ui.bell.markAllRead': 'Weka zote zimesomwa',
@@ -286,8 +286,10 @@ export const UI_SW: Readonly<Record<string, string>> = {
 
   // stock and transfers
   'ui.stock.onHand': 'Bidhaa zilizopo',
-  'ui.stock.onHandHint': 'Bidhaa {{count}} zinafuatiliwa',
-  'ui.transfers.incomingWaiting': 'Uhamisho {{count}} unaoingia unasubiri kupokelewa',
+  'ui.stock.onHandHint':
+    '{count, plural, one {Bidhaa # inafuatiliwa} other {Bidhaa # zinafuatiliwa}}',
+  'ui.transfers.incomingWaiting':
+    '{count, plural, one {Uhamisho # unaoingia unasubiri} other {Uhamisho # unaoingia inasubiri}} kupokelewa',
   'ui.transfers.open': 'Fungua uhamisho',
 
   // reports
@@ -431,7 +433,7 @@ export const UI_SW: Readonly<Record<string, string>> = {
   'ui.l.walkIn': 'Mteja wa kupita',
 
   // sentences with values
-  'ui.t.subCategories': 'makundi madogo {{count}}',
+  'ui.t.subCategories': '{count, plural, one {kundi dogo #} other {makundi madogo #}}',
   'ui.t.serialNotice':
     'Kila kipande hupokelewa na namba yake ya utambulisho na huuzwa kwayo, hivyo kila {{name}} kinaweza kufuatiliwa hadi mauzo na dhamana yake.',
   'ui.t.unit': 'kipande',
@@ -444,7 +446,8 @@ export const UI_SW: Readonly<Record<string, string>> = {
   'ui.t.expires': 'Inaisha {{date}}',
   'ui.t.expired': 'imeisha muda',
   'ui.t.batchNumber': 'Namba ya bechi',
-  'ui.t.serialUnits': 'Namba za utambulisho {{count}} = vipande {{count}}',
+  'ui.t.serialUnits':
+    '{count, plural, one {Namba # ya utambulisho = kipande #} other {Namba # za utambulisho = vipande #}}',
   'ui.t.fefo': 'bechi zinazoisha mapema huuzwa kwanza',
   'ui.t.credit': 'Salio {{amount}}',
   'ui.t.available': 'Inapatikana {{amount}}',
@@ -472,11 +475,11 @@ export const UI_SW: Readonly<Record<string, string>> = {
   'ui.t.orderLocked':
     'Agizo lilifunga {{rate}} {{base}} kwa {{currency}}; libadilishe tu kama msambazaji alitoza kwa kiwango kingine.',
   'ui.t.receiveInto': 'kwenda {{branch}}. Stoo huongezeka mara tu unapohifadhi.',
-  'ui.t.units': 'Vipande {{count}}',
+  'ui.t.units': '{count, plural, one {Kipande #} other {Vipande #}}',
   'ui.t.receiptsSub': 'Mizigo iliyopokelewa {{branch}}, pamoja na bechi na tarehe ya kuisha.',
 
   // POS phone cart bar
-  'ui.pos.cartBar': 'Bidhaa {{count}}',
+  'ui.pos.cartBar': 'Bidhaa {count, plural, other {#}}',
   'ui.pos.pay': 'Lipa',
 
   // a save that crossed someone else's change (412 precondition_failed, STD-10)

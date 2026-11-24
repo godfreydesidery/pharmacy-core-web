@@ -129,14 +129,12 @@ export interface ShiftView {
         </div>
         @if (!report()) {
           <div class="form-grid no-print">
-            <div class="field">
-              <label>{{ 'shift.counted' | t }}</label>
+            <app-field [label]="'shift.counted' | t">
               <input class="input" type="number" min="0" step="any" #counted />
-            </div>
-            <div class="field">
-              <label>{{ 'shift.note' | t }}</label>
+            </app-field>
+            <app-field [label]="'shift.note' | t">
               <input class="input" #note />
-            </div>
+            </app-field>
           </div>
           <div class="row no-print" style="justify-content: flex-end; gap: 8px; margin-top: 12px">
             <button

@@ -61,29 +61,26 @@ function matching(group: AbstractControl): ValidationErrors | null {
         (ngSubmit)="save()"
       >
         <h3>{{ 'ui.account.changePassword' | t }}</h3>
-        <div class="field">
-          <label>{{ 'ui.account.currentPassword' | t }}</label><input
+        <app-field [label]="'ui.account.currentPassword' | t" [error]="err('currentPassword')">
+          <input
             class="input"
             type="password"
             formControlName="currentPassword"
             autocomplete="current-password"
           />
-          @if (err('currentPassword'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'ui.account.newPassword' | t }}</label><input
+        </app-field>
+        <app-field
+          [label]="'ui.account.newPassword' | t"
+          [hint]="'ui.account.atLeast8' | t"
+          [error]="err('newPassword')"
+        >
+          <input
             class="input"
             type="password"
             formControlName="newPassword"
             autocomplete="new-password"
           />
-          <span class="hint">{{ 'ui.account.atLeast8' | t }}</span>
-          @if (err('newPassword'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        </app-field>
         <div class="field">
           <label>{{ 'ui.account.confirmPassword' | t }}</label><input
             class="input"

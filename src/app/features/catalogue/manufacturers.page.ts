@@ -80,19 +80,12 @@ import { Translations } from '../../core/i18n/translations.store';
       (closed)="open.set(false)"
     >
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field">
-          <label>{{ 'catalogue.name' | t }}</label><input class="input" formControlName="name" />
-          @if (err('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'catalogue.country' | t }}</label><input
-            class="input"
-            formControlName="country"
-            placeholder="India"
-          />
-        </div>
+        <app-field [label]="'catalogue.name' | t" [error]="err('name')">
+          <input class="input" formControlName="name" />
+        </app-field>
+        <app-field [label]="'catalogue.country' | t">
+          <input class="input" formControlName="country" placeholder="India" />
+        </app-field>
       </form>
       <ng-container footer>
         <button class="btn" type="button" (click)="open.set(false)">

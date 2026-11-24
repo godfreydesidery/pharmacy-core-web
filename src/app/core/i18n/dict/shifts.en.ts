@@ -4,7 +4,7 @@ export const SHIFTS_EN: Readonly<Record<string, string>> = {
   'shift.title': 'Till shifts',
   'shift.sub': 'Each cashier’s shift: the float, what was taken, and the cash counted at close.',
   'shift.openSince': 'Shift open since {{time}}',
-  'shift.sales': '{{count}} sales',
+  'shift.sales': '{count, plural, one {# sale} other {# sales}}',
   'shift.none': 'No shift open. Open one with the cash float in the drawer.',
   'shift.float': 'Float',
   'shift.open': 'Open shift',

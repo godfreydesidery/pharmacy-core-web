@@ -307,15 +307,14 @@ const SMTP_PORTS = ['587', '465', '2525', '2587', '25'];
     >
       @if (editor(); as e) {
         <div class="stack" data-testid="provider-editor">
-          <div class="field">
-            <label>{{ 'providers.name' | t }}</label>
+          <app-field [label]="'providers.name' | t">
             <input
               class="input"
               [placeholder]="'providers.namePlaceholder' | t"
               [value]="e.name"
               (input)="patch({ name: $any($event.target).value })"
             />
-          </div>
+          </app-field>
           <div class="field">
             <label>{{ 'providers.provider' | t }}</label>
             <select

@@ -1,6 +1,6 @@
 import { CurrencyRateComponent } from '../../core/ui/currency-rate.component';
 import { SettingsStore } from '../../core/format/settings.store';
-import { convertMoney, roundMoney } from '../../core/format/format';
+import { convertMoney, formatMoney, roundMoney } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,8 +32,24 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { TRACKING_MODES, defaultTracking, parseSerials } from '../../core/ui/product-types';
 import { ToastService } from '../../core/ui/toast.service';
+import { ConfirmService } from '../../core/ui/confirm';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
+
+/** A receipt being typed, as a draft keeps it (no names of people, no health details). */
+interface ReceiptDraft {
+  value: {
+    purchaseOrderUid?: string;
+    supplierUid?: string;
+    supplierInvoiceNumber?: string;
+    note?: string;
+    vatAmount?: number;
+    lines?: ReturnType<ReceiptLine['getRawValue']>[];
+  };
+  currency: string;
+  rate: number;
+  supplier: string | null;
+}
 
 type ReceiptLine = FormGroup<{
   productUid: FormControl<string>;
@@ -80,7 +96,10 @@ type ReceiptLine = FormGroup<{
                   path="/suppliers"
                   [placeholder]="'purchasing.searchSuppliers' | t"
                   [display]="supplierName"
-                  (picked)="form.controls.supplierUid.setValue($event?.uid ?? '')"
+                  (picked)="
+                    form.controls.supplierUid.setValue($event?.uid ?? '');
+                    pickedSupplier.set($event?.name ?? null)
+                  "
                 />
               }
             </app-field>
@@ -317,8 +336,11 @@ export default class ReceiptFormPage implements OnInit {
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   private readonly router = inject(Router);
+  private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder).nonNullable;
   readonly po = input<string | undefined>();
+  /** The supplier picked in the box (an order brings its own), for the confirmation. */
+  protected readonly pickedSupplier = signal<string | null>(null);
   protected readonly order = signal<PurchaseOrder | null>(null);
   protected readonly busy = signal(false);
   protected readonly today = isoDay();
@@ -378,17 +400,49 @@ export default class ReceiptFormPage implements OnInit {
     convertMoney(this.total(), this.rate(), this.base()),
   );
   /** Leaving with a receipt half typed asks first (UX-4). */
-  private readonly unsaved = guardUnsavedWork(
+  private readonly unsaved = guardUnsavedWork<ReceiptDraft>(
     () =>
       this.form.dirty ||
       (!this.order() && (this.lines.length > 0 || !!this.form.controls.supplierUid.value)),
+    {
+      // Kept over a forced sign-out and offered back after the next sign-in (Batch 8 leftover).
+      id: () => `purchasing.receipt.${this.po() ?? 'new'}`,
+      save: () => ({
+        value: this.form.getRawValue(),
+        currency: this.currency(),
+        rate: this.rate(),
+        supplier: this.order()?.supplierName ?? this.pickedSupplier(),
+      }),
+      restore: (draft) => this.restoreDraft(draft),
+    },
   );
+
+  /** Puts a kept draft back: its lines (as typed), supplier, currency and rate. */
+  private restoreDraft(draft: ReceiptDraft): void {
+    this.lines.clear();
+    for (const l of draft.value.lines ?? []) {
+      const line = this.line(l.productUid, l.productName, l.quantity, l.unitCost, l.tracking);
+      line.patchValue(l);
+      this.lines.push(line);
+    }
+    const { lines: _lines, ...rest } = draft.value;
+    this.form.patchValue(rest);
+    if (draft.currency) this.currency.set(draft.currency);
+    this.rate.set(draft.rate || 1);
+    if (draft.supplier && !this.order()) {
+      this.pickedSupplier.set(draft.supplier);
+      this.supplierLookup()?.setText(draft.supplier);
+    }
+    this.form.markAsDirty();
+    this.touch();
+  }
   protected readonly supplierName = (s: Supplier) => s.name;
   protected readonly productName = (p: Product) => p.name;
 
   async ngOnInit(): Promise<void> {
     const uid = this.po();
     if (!uid) {
+      await this.unsaved.offerDraft();
       return;
     }
     const order = await this.api.get<PurchaseOrder>(`/purchase-orders/${uid}`);
@@ -498,6 +552,32 @@ export default class ReceiptFormPage implements OnInit {
       return;
     }
     const value = this.form.getRawValue();
+    // Receiving adds stock and what the pharmacy owes at once: it is confirmed with its figures
+    // (UX-12).
+    const t = (key: string, params?: Record<string, string | number>) =>
+      this.translations.t(key, params);
+    const units = value.lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+    const supplier = this.order()?.supplierName ?? this.pickedSupplier();
+    const sure = await this.confirm.ask({
+      title: t('ux.confirm.receipt.title'),
+      text: t('ux.confirm.receipt.text'),
+      icon: 'question',
+      confirmText: t('ux.confirm.receipt.ok'),
+      details: [
+        ...(supplier ? [{ label: t('ux.confirm.supplier'), value: supplier }] : []),
+        {
+          label: t('ux.confirm.items'),
+          value: t('pos.linesAndUnits', { lines: value.lines.length, units }),
+        },
+        { label: t('ux.confirm.total'), value: formatMoney(this.total(), this.currency()) },
+        ...(this.vat() > 0
+          ? [{ label: t('ux.confirm.vat'), value: formatMoney(this.vat(), this.currency()) }]
+          : []),
+      ],
+    });
+    if (!sure || this.busy()) {
+      return;
+    }
     this.busy.set(true);
     try {
       const receipt = await this.api.post<GoodsReceipt>(

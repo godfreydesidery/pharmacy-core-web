@@ -48,9 +48,11 @@ import { SECURITY2_EN } from './security2.en';
 import { SHELL_EN } from './shell.en';
 import { UI_EN } from './ui.en';
 import { STATE_EN } from './state.en';
+import { UX_EN } from './ux.en';
 
 export const EN_AREAS: Readonly<Record<string, string>> = {
   ...A11Y_EN,
+  ...UX_EN,
   ...SHELL_EN,
   ...PLANNING_EN,
   ...SECURITY2_EN,

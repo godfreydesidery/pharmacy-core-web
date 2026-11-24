@@ -108,7 +108,7 @@ export const SW: Readonly<Record<string, string>> = {
   'workspace.noTenants': 'Hakuna duka linalolingana.',
   'workspace.noMemberships':
     'Bado wewe si mwanachama wa duka lolote la dawa. Muombe msimamizi wako akuongeze.',
-  'workspace.branches': 'Matawi {{count}}',
+  'workspace.branches': '{count, plural, one {Tawi #} other {Matawi #}}',
   'workspace.platformHome': 'Muhtasari wa jukwaa',
   'workspace.back': 'Rudi',
 
@@ -118,7 +118,7 @@ export const SW: Readonly<Record<string, string>> = {
 
   // dashboard
   'dashboard.title': 'Dashibodi',
-  'dashboard.lastDays': 'siku {{days}} zilizopita',
+  'dashboard.lastDays': 'siku {days, plural, other {#}} zilizopita',
   'dashboard.newSale': 'Mauzo mapya',
   'dashboard.sales': 'Mauzo',
   'dashboard.purchases': 'Manunuzi',
@@ -217,7 +217,7 @@ export const SW: Readonly<Record<string, string>> = {
   'security.inviteClosed': 'Mwaliko huu ni {{status}}. Omba mwingine.',
   'security.retryIn': 'Jaribu tena baada ya sekunde {{seconds}}.',
   'security.retryInMinute': 'Jaribu tena baada ya dakika 1.',
-  'security.retryInMinutes': 'Jaribu tena baada ya dakika {{minutes}}.',
+  'security.retryInMinutes': 'Jaribu tena baada ya dakika {minutes, plural, other {#}}.',
   // per-area dictionaries (dict/)
   ...SW_AREAS,
 };

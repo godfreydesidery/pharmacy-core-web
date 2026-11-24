@@ -123,33 +123,20 @@ import { Translations } from '../../core/i18n/translations.store';
         <div class="notice tone-amber">
           <app-icon name="alert" /> {{ 'platform.aRootAdministratorCanSee' | t }}
         </div>
-        <div class="field">
-          <label>{{ 'platform.name' | t }}</label><input class="input" formControlName="name" />
-          @if (err('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'platform.email' | t }}</label><input
-            class="input"
-            type="email"
-            formControlName="email"
-          />
-          @if (err('email'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'platform.password' | t }}</label><input
+        <app-field [label]="'platform.name' | t" [error]="err('name')">
+          <input class="input" formControlName="name" />
+        </app-field>
+        <app-field [label]="'platform.email' | t" [error]="err('email')">
+          <input class="input" type="email" formControlName="email" />
+        </app-field>
+        <app-field [label]="'platform.password' | t" [error]="err('password')">
+          <input
             class="input"
             type="password"
             formControlName="password"
             autocomplete="new-password"
           />
-          @if (err('password'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        </app-field>
       </form>
       <ng-container footer>
         <button class="btn" type="button" (click)="creating.set(false)">

@@ -658,4 +658,139 @@ describe('POS page', () => {
       );
     });
   });
+
+  describe('usability and accessibility (Batch 10)', () => {
+    /** Waits for the page's focus moves, which run after a render. */
+    async function afterFocus(): Promise<void> {
+      for (let i = 0; i < 4; i++) {
+        await new Promise((resolve) => setTimeout(resolve, 70));
+        await settle();
+      }
+    }
+
+    it('a quantity above what can be sold shows the quantity kept and says why (UX-5)', async () => {
+      await cart();
+      fixture.detectChanges();
+      const box = element('.cart-table .qty input') as HTMLInputElement;
+      box.value = '500';
+      box.dispatchEvent(new Event('change'));
+      await settle();
+      expect(page.lines()[0].quantity).toBe(50);
+      expect(box.value).toBe('50');
+      const note = element('[data-testid="qty-note"]');
+      expect(note?.getAttribute('role')).toBe('status');
+      expect(note?.textContent).toContain('Only 50 of Paracetamol 500mg can be sold here');
+      expect(box.getAttribute('aria-describedby')).toBe(note?.id);
+      // A blank box puts the quantity back instead of removing the line.
+      box.value = '';
+      box.dispatchEvent(new Event('change'));
+      await settle();
+      expect(page.lines()[0].quantity).toBe(50);
+      expect(box.value).toBe('50');
+      // A quantity that fits clears the note.
+      box.value = '3';
+      box.dispatchEvent(new Event('change'));
+      await settle();
+      expect(page.lines()[0].quantity).toBe(3);
+      expect(element('[data-testid="qty-note"]')).toBeNull();
+    });
+
+    it('a discount outside 0–100 % is written back and explained (UX-5)', async () => {
+      await cart();
+      const input = element('input.discount') as HTMLInputElement;
+      input.value = '150';
+      input.dispatchEvent(new Event('change'));
+      await settle();
+      expect(page.discountPercent()).toBe(100);
+      expect(input.value).toBe('100');
+      expect(element('[data-testid="discount-note"]')?.textContent).toContain('set to 100%');
+      input.value = '5';
+      input.dispatchEvent(new Event('change'));
+      await settle();
+      expect(element('[data-testid="discount-note"]')).toBeNull();
+    });
+
+    it('puts the cursor on the item picker when the till opens and after its dialogs (UX-6)', async () => {
+      await afterFocus();
+      const picker = element('#till-picker');
+      expect(document.activeElement).toBe(picker);
+      (element('.page-head .actions .btn') as HTMLButtonElement).focus();
+      (page as unknown as { parkedOpen: WritableSignal<boolean> }).parkedOpen.set(true);
+      await settle();
+      (page as unknown as { closeParked(): void }).closeParked();
+      await afterFocus();
+      expect(document.activeElement).toBe(element('#till-picker'));
+    });
+
+    it('the picker search is an ARIA combobox with an active descendant (A11Y-5)', async () => {
+      (page as unknown as { openPicker(typed?: string): void }).openPicker('Par');
+      await settle();
+      await new Promise((resolve) => setTimeout(resolve, 260));
+      await settle();
+      const search = element('#till-search') as HTMLInputElement;
+      expect(search.getAttribute('role')).toBe('combobox');
+      expect(search.getAttribute('aria-controls')).toBe('till-options');
+      expect(element('#till-options')?.getAttribute('role')).toBe('listbox');
+      const active = search.getAttribute('aria-activedescendant');
+      expect(active).toBe('till-option-0');
+      expect(element('#' + active)?.getAttribute('aria-selected')).toBe('true');
+      expect(element('#' + active)?.textContent).toContain('Paracetamol');
+    });
+
+    it('announces the total politely (A11Y-5)', async () => {
+      await cart();
+      const live = element('[data-testid="pos-total-live"]');
+      expect(live?.getAttribute('aria-live')).toBe('polite');
+      expect(live?.textContent).toContain('1 line,');
+      expect(live?.textContent).toContain('2 units');
+    });
+
+    it('labels a controlled drug "CD" and a prescription medicine "Rx", in words too (A11Y-6)', async () => {
+      page.lines.set([
+        { product: { ...PARACETAMOL, schedule: 'CONTROLLED' }, quantity: 1 },
+        { product: { ...AMOXICILLIN, schedule: 'PRESCRIPTION' }, quantity: 1 },
+      ]);
+      await settle();
+      const cd = element('[data-testid="schedule-cd"]');
+      const rx = element('[data-testid="schedule-rx"]');
+      expect(cd?.querySelector('[aria-hidden="true"]')?.textContent).toBe('CD');
+      expect(cd?.querySelector('.sr-only')?.textContent).toContain('Controlled drug');
+      expect(rx?.querySelector('[aria-hidden="true"]')?.textContent).toBe('Rx');
+      expect(rx?.querySelector('.sr-only')?.textContent).toContain('Prescription only');
+    });
+
+    it('creates a customer from the till and attaches them to the sale (UX-11)', async () => {
+      const created = {
+        uid: 'c9',
+        code: 'CUS-000009',
+        name: 'Neema Juma',
+        phone: '0712 345 678',
+        type: 'RETAIL',
+      };
+      api.posts.set('/customers', () => Promise.resolve(created));
+      api.gets.set('/receivables/accounts/', () => Promise.reject(notFound()));
+      element('[data-testid="pos-new-customer"]')?.click();
+      await settle();
+      const name = element('[data-testid="nc-name"]') as HTMLInputElement;
+      const phone = element('[data-testid="nc-phone"]') as HTMLInputElement;
+      expect(name).not.toBeNull();
+      name.value = 'Neema Juma';
+      name.dispatchEvent(new Event('input'));
+      phone.value = '0712 345 678';
+      phone.dispatchEvent(new Event('input'));
+      element('[data-testid="nc-save"]')?.click();
+      await settle();
+      const post = api.sent.find((s) => s.method === 'POST' && s.path === '/customers');
+      expect(post?.body).toEqual({
+        name: 'Neema Juma',
+        phone: '0712 345 678',
+        type: 'RETAIL',
+        active: true,
+      });
+      expect(
+        (page as unknown as { customer: Signal<{ uid: string } | null> }).customer()?.uid,
+      ).toBe('c9');
+      expect(element('[data-testid="nc-name"]')).toBeNull();
+    });
+  });
 });

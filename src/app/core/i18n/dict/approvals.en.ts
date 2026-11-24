@@ -98,13 +98,14 @@ export const APPROVALS_EN: Readonly<Record<string, string>> = {
   'errors.invalid_days': 'Days must be between 1 and 365.',
   'errors.invalid_received_quantity': 'The received quantity cannot be more than was sent.',
   'transfer.overdue': 'Overdue',
-  'transfer.daysInTransit': '{{days}} days in transit',
+  'transfer.daysInTransit': '{days, plural, one {# day} other {# days}} in transit',
   'transfer.receiveTitle': 'Receive {{number}}',
   'transfer.receiveText':
     'Count what arrived. Anything short is recorded as a loss of the branch that sent it.',
   'transfer.arrived': 'Arrived',
   'transfer.shortNote': 'What happened to the missing units?',
-  'transfer.shortHint': '{{units}} units short. A large loss needs a manager to approve.',
+  'transfer.shortHint':
+    '{units, plural, one {# unit} other {# units}} short. A large loss needs a manager to approve.',
   'controlled.noLonger': 'no longer controlled',
   'openShift.title': 'Open your shift',
   'openShift.text':

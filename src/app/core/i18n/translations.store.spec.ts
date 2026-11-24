@@ -15,6 +15,24 @@ describe('translate', () => {
   it('fills {{placeholders}}, leaving missing ones empty', () => {
     expect(translate({ k: 'last {{days}} days{{x}}' }, 'k', { days: 30 })).toBe('last 30 days');
   });
+
+  it('chooses the plural form by the language rules (i18n-1: no "1 lines")', () => {
+    const lines = '{n, plural, =0 {no lines} one {# line} other {# lines}}';
+    expect(translate({ k: lines }, 'k', { n: 0 })).toBe('no lines');
+    expect(translate({ k: lines }, 'k', { n: 1 })).toBe('1 line');
+    expect(translate({ k: lines }, 'k', { n: 2 })).toBe('2 lines');
+    expect(translate({ k: lines }, 'k', { n: 1200 })).toBe('1,200 lines');
+    expect(translate(EN, 'pos.linesAndUnits', { lines: 1, units: 1 })).toBe('1 line · 1 unit');
+    expect(translate(EN, 'pos.linesAndUnits', { lines: 2, units: 5 })).toBe('2 lines · 5 units');
+    expect(translate(SW, 'pos.linesAndUnits', { lines: 1, units: 3 }, undefined, 'sw-TZ')).toBe(
+      'mstari 1 · vipimo 3',
+    );
+  });
+
+  it('fills {{placeholders}} inside a plural option', () => {
+    const text = '{{who}}: {n, plural, one {# claim for {{who}}} other {# claims}}';
+    expect(translate({ k: text }, 'k', { who: 'NHIF', n: 1 })).toBe('NHIF: 1 claim for NHIF');
+  });
 });
 
 describe('dictionaries', () => {
@@ -31,7 +49,13 @@ describe('dictionaries', () => {
   });
 
   it('uses the same placeholders in English and Swahili', () => {
-    const names = (text: string) => [...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]).sort();
+    const names = (text: string) =>
+      [
+        ...[...text.matchAll(/\{\{(\w+)\}\}/g)].map((m) => m[1]),
+        ...[...text.matchAll(/\{(\w+), plural,/g)].map((m) => m[1]),
+      ]
+        .filter((name, i, all) => all.indexOf(name) === i)
+        .sort();
     const mismatched = Object.keys(SW).filter(
       (key) => key in EN && names(SW[key]).join() !== names(EN[key]).join(),
     );

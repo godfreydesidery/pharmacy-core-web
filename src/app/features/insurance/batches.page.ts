@@ -117,22 +117,22 @@ import { Translations } from '../../core/i18n/translations.store';
             }
           </select>
         </div>
-        <div class="field">
-          <label>{{ 'insurance.from' | t }}</label><input
+        <app-field [label]="'insurance.from' | t">
+          <input
             class="input"
             type="date"
             [value]="from()"
             (change)="from.set($any($event.target).value)"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.to' | t }}</label><input
+        </app-field>
+        <app-field [label]="'insurance.to' | t">
+          <input
             class="input"
             type="date"
             [value]="to()"
             (change)="to.set($any($event.target).value)"
           />
-        </div>
+        </app-field>
         <p class="muted full">
           {{ 'insurance.allOfThePayerS' | t }}
         </p>

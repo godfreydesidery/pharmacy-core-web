@@ -132,44 +132,26 @@ const PRODUCT_TYPES = [
       (closed)="payerOpen.set(false)"
     >
       <form class="form-grid" [formGroup]="payerForm">
-        <div class="field">
-          <label>{{ 'insurance.code' | t }}</label><input
+        <app-field [label]="'insurance.code' | t" [error]="perr('code')">
+          <input
             class="input mono"
             formControlName="code"
             placeholder="NHIF"
             [readonly]="!!payer()"
           />
-          @if (perr('code'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.name' | t }}</label><input class="input" formControlName="name" />
-          @if (perr('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.contact' | t }}</label><input
-            class="input"
-            formControlName="contact"
-          />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.email' | t }}</label><input
-            class="input"
-            type="email"
-            formControlName="email"
-          />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.paysWithinDays' | t }}</label><input
-            class="input"
-            type="number"
-            min="0"
-            formControlName="paymentTermsDays"
-          />
-        </div>
+        </app-field>
+        <app-field [label]="'insurance.name' | t" [error]="perr('name')">
+          <input class="input" formControlName="name" />
+        </app-field>
+        <app-field [label]="'insurance.contact' | t">
+          <input class="input" formControlName="contact" />
+        </app-field>
+        <app-field [label]="'insurance.email' | t">
+          <input class="input" type="email" formControlName="email" />
+        </app-field>
+        <app-field [label]="'insurance.paysWithinDays' | t">
+          <input class="input" type="number" min="0" formControlName="paymentTermsDays" />
+        </app-field>
         <label class="check"
           ><input type="checkbox" formControlName="requiresPreauth" />
           {{ 'insurance.requiresPreAuthorisation' | t }}</label
@@ -202,24 +184,20 @@ const PRODUCT_TYPES = [
             }
           </select>
         </div>
-        <div class="field">
-          <label>{{ 'insurance.schemeName' | t }}</label><input
+        <app-field [label]="'insurance.schemeName' | t" [error]="serr('name')">
+          <input
             class="input"
             formControlName="name"
             [placeholder]="'insurance.nhifStandard' | t"
           />
-          @if (serr('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.coPay' | t }}</label>
+        </app-field>
+        <app-field [label]="'insurance.coPay' | t">
           <select class="select" formControlName="copayType">
             <option value="NONE">{{ 'common.none' | t }}</option>
             <option value="PERCENT">{{ 'insurance.percentOfCoveredItems' | t }}</option>
             <option value="FIXED">{{ 'insurance.fixedAmountPerClaim' | t }}</option>
           </select>
-        </div>
+        </app-field>
         <div class="field">
           <label>{{
             schemeForm.controls.copayType.value === 'PERCENT'
@@ -238,8 +216,8 @@ const PRODUCT_TYPES = [
             <span class="error">{{ m }}</span>
           }
         </div>
-        <div class="field">
-          <label>{{ 'insurance.annualLimitPerMember' | t }}</label><input
+        <app-field [label]="'insurance.annualLimitPerMember' | t">
+          <input
             class="input"
             type="number"
             min="0"
@@ -247,7 +225,7 @@ const PRODUCT_TYPES = [
             formControlName="annualLimit"
             [placeholder]="'insurance.leave0ForNoLimit' | t"
           />
-        </div>
+        </app-field>
         <div class="field full">
           <label>{{ 'insurance.notCovered' | t }}</label>
           <div class="chips">

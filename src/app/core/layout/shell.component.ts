@@ -3,11 +3,13 @@ import {
   ChangeDetectionStrategy,
   DestroyRef,
   Component,
+  ElementRef,
   computed,
   effect,
   inject,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { NavigationEnd, Router, RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
@@ -34,6 +36,25 @@ import { NgTemplateOutlet } from '@angular/common';
 import { NavItem, PLATFORM_NAV, TENANT_NAV } from './nav';
 import { KnownSuspension, suspensionFromProbe, suspensionView } from './suspension';
 
+/** Where the sidebar's folded state is kept in this browser. */
+export const SIDEBAR_KEY = 'pharmacy.sidebar.collapsed';
+
+function readCollapsed(): boolean {
+  try {
+    return localStorage.getItem(SIDEBAR_KEY) === '1';
+  } catch {
+    return false; // no storage (private mode): the sidebar starts open
+  }
+}
+
+function writeCollapsed(collapsed: boolean): void {
+  try {
+    localStorage.setItem(SIDEBAR_KEY, collapsed ? '1' : '0');
+  } catch {
+    /* no storage: remembered for this visit only */
+  }
+}
+
 @Component({
   selector: 'app-shell',
   imports: [
@@ -54,7 +75,7 @@ import { KnownSuspension, suspensionFromProbe, suspensionView } from './suspensi
     '[class.collapsed]': 'collapsed()',
     '[class.mobile-open]': 'mobileOpen()',
     '(document:click)': 'closeFlyout($event)',
-    '(document:keydown.escape)': 'flyout.set(null)',
+    '(document:keydown.escape)': 'escape()',
   },
 })
 export class ShellComponent {
@@ -80,9 +101,13 @@ export class ShellComponent {
     return this.pharmacyExport.run();
   }
 
-  protected readonly collapsed = signal(false);
+  /** The sidebar folded to its icons; remembered in this browser (UX-18). */
+  protected readonly collapsed = signal(readCollapsed());
+  private readonly rememberCollapsed = effect(() => writeCollapsed(this.collapsed()));
   protected readonly mobileOpen = signal(false);
   protected readonly userMenu = signal(false);
+  private readonly userChip = viewChild<ElementRef<HTMLButtonElement>>('userChip');
+  private readonly userMenuEl = viewChild<ElementRef<HTMLElement>>('userMenuEl');
   private readonly openGroups = signal<Set<string>>(new Set());
   /** The group whose links float beside the collapsed sidebar, anchored to its icon. */
   protected readonly flyout = signal<{
@@ -289,9 +314,113 @@ export class ShellComponent {
   }
 
   protected closeFlyout(event: Event): void {
-    if (this.flyout() && !(event.target as Element | null)?.closest?.('.group')) {
+    const target = event.target as Element | null;
+    if (this.flyout() && !target?.closest?.('.group')) {
       this.flyout.set(null);
     }
+    if (this.userMenu() && !target?.closest?.('.user')) {
+      this.userMenu.set(false);
+    }
+  }
+
+  /** Escape closes the flyout, and the user menu with the focus back on its button (UX-16). */
+  protected escape(): void {
+    this.flyout.set(null);
+    if (this.userMenu()) {
+      this.closeUserMenu(true);
+    }
+  }
+
+  // ---------------------------------------------------------------- user menu (UX-16)
+
+  /** The menu's items, in order. */
+  private menuItems(): HTMLElement[] {
+    const menu = this.userMenuEl()?.nativeElement;
+    return menu ? Array.from(menu.querySelectorAll<HTMLElement>('[role="menuitem"]')) : [];
+  }
+
+  /** Opens the menu with the focus on its first (or last) item. */
+  protected openUserMenu(focus: 'first' | 'last' = 'first'): void {
+    this.userMenu.set(true);
+    setTimeout(() => {
+      const items = this.menuItems();
+      (focus === 'first' ? items[0] : items[items.length - 1])?.focus();
+    });
+  }
+
+  protected toggleUserMenu(): void {
+    if (this.userMenu()) {
+      this.closeUserMenu(true);
+    } else {
+      this.openUserMenu();
+    }
+  }
+
+  protected closeUserMenu(refocus: boolean): void {
+    this.userMenu.set(false);
+    if (refocus) {
+      this.userChip()?.nativeElement.focus();
+    }
+  }
+
+  /** On the menu's button: Down, Enter or Space open on the first item, Up on the last. */
+  protected chipKey(event: KeyboardEvent): void {
+    if (event.key === 'ArrowDown' || event.key === 'Enter' || event.key === ' ') {
+      event.preventDefault();
+      this.openUserMenu('first');
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      this.openUserMenu('last');
+    }
+  }
+
+  /**
+   * In the menu (WAI-ARIA menu button): arrows move and wrap, Home and End jump, a letter moves to
+   * the next item starting with it, Escape closes with the focus back on the button, Tab leaves it.
+   */
+  protected menuKey(event: KeyboardEvent): void {
+    const items = this.menuItems();
+    const index = items.indexOf(document.activeElement as HTMLElement);
+    const move = (to: number) => {
+      event.preventDefault();
+      items[(to + items.length) % items.length]?.focus();
+    };
+    switch (event.key) {
+      case 'ArrowDown':
+        return move(index + 1);
+      case 'ArrowUp':
+        return move(index - 1);
+      case 'Home':
+        return move(0);
+      case 'End':
+        return move(items.length - 1);
+      case 'Escape':
+        event.preventDefault();
+        event.stopPropagation();
+        return this.closeUserMenu(true);
+      case 'Tab':
+        return this.closeUserMenu(false);
+      default:
+        if (event.key.length === 1 && /\S/.test(event.key)) {
+          const letter = event.key.toLowerCase();
+          const order = [...items.slice(index + 1), ...items.slice(0, index + 1)];
+          const next = order.find((item) =>
+            (item.textContent ?? '').trim().toLowerCase().startsWith(letter),
+          );
+          if (next) {
+            event.preventDefault();
+            next.focus();
+          }
+        }
+    }
+  }
+
+  /** "Skip to content": the focus goes to the page itself, past the menus (UX-17). */
+  protected skipToContent(event: Event): void {
+    event.preventDefault();
+    const main = document.getElementById('main-content');
+    main?.focus();
+    main?.scrollIntoView?.({ block: 'start' });
   }
 
   /** The i18n key of a sidebar link: `/sales/returns` → `nav.sales.returns`, `/sales` → `nav.sales.history`. */

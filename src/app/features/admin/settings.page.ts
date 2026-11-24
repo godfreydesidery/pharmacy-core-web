@@ -45,33 +45,22 @@ import { Translations } from '../../core/i18n/translations.store';
         <div class="card card-pad stack">
           <h3>{{ 'admin.locale' | t }}</h3>
           <div class="form-grid">
-            <div class="field">
-              <label>{{ 'admin.currency' | t }}</label><input
-                class="input"
-                [value]="settings()?.currency ?? ''"
-                disabled
-              /><span class="hint">{{ 'admin.setWhenThePharmacyWas' | t }}</span>
-            </div>
-            <div class="field">
-              <label>{{ 'admin.timeZone' | t }}</label><input
-                class="input"
-                [value]="settings()?.timezone ?? ''"
-                disabled
-              />
-            </div>
+            <app-field [label]="'admin.currency' | t" [hint]="'admin.setWhenThePharmacyWas' | t">
+              <input class="input" [value]="settings()?.currency ?? ''" disabled />
+            </app-field>
+            <app-field [label]="'admin.timeZone' | t">
+              <input class="input" [value]="settings()?.timezone ?? ''" disabled />
+            </app-field>
           </div>
           <h3>{{ 'admin.invoicesAmpTax' | t }}</h3>
           <div class="form-grid">
-            <div class="field">
-              <label>{{ 'admin.invoicePrefix' | t }}</label><input
+            <app-field [label]="'admin.invoicePrefix' | t" [error]="err('invoicePrefix')">
+              <input
                 class="input"
                 formControlName="invoicePrefix"
                 style="text-transform:uppercase"
               />
-              @if (err('invoicePrefix'); as m) {
-                <span class="error">{{ m }}</span>
-              }
-            </div>
+            </app-field>
             <div class="field">
               <label for="standard-vat-rate">{{ 'vat.standardRate' | t }}</label><input
                 id="standard-vat-rate"
@@ -126,26 +115,22 @@ import { Translations } from '../../core/i18n/translations.store';
                 </div>
               </div>
             }
-            <div class="field full">
-              <label>{{ 'admin.receiptFooter' | t }}</label><textarea
-                class="input"
-                formControlName="receiptFooter"
-              ></textarea>
-            </div>
+            <app-field class="full" [label]="'admin.receiptFooter' | t">
+              <textarea class="input" formControlName="receiptFooter"></textarea>
+            </app-field>
           </div>
         </div>
         <div class="card card-pad stack">
           <h3>{{ 'admin.pointOfSale' | t }}</h3>
-          <div class="field">
-            <label>{{ 'admin.maximumDiscount' | t }}</label><input
+          <app-field [label]="'admin.maximumDiscount' | t" [hint]="'admin.theMostACashierWith' | t">
+            <input
               class="input"
               type="number"
               min="0"
               max="100"
               formControlName="maxDiscountPercent"
             />
-            <span class="hint">{{ 'admin.theMostACashierWith' | t }}</span>
-          </div>
+          </app-field>
           <h3>{{ 'controls.title' | t }}</h3>
           <div class="field">
             <label for="approval-limit">{{ 'controls.approvalLimit' | t }}</label><input
@@ -209,15 +194,15 @@ import { Translations } from '../../core/i18n/translations.store';
             }
           </div>
           <h3>{{ 'admin.alerts' | t }}</h3>
-          <div class="field">
-            <label>{{ 'admin.expiryAlertWindowDays' | t }}</label><input
+          <app-field [label]="'admin.expiryAlertWindowDays' | t">
+            <input
               class="input"
               type="number"
               min="1"
               max="730"
               formControlName="expiryAlertDays"
             />
-          </div>
+          </app-field>
           <label class="row" style="justify-content:space-between">
             <span
               ><b style="font-weight:550">{{ 'admin.lowStockAlerts' | t }}</b
