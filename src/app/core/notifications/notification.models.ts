@@ -99,5 +99,6 @@ export const TEMPLATE_LABELS: Record<string, string> = {
   'tenant.welcome': 'Welcome',
   'tenant.subscription_due': 'Subscription invoice due',
   'tenant.subscription_past_due': 'Subscription past due',
+  'tenant.sensitive_digest': 'Sensitive actions digest',
   'provider.test': 'Provider test message',
 };

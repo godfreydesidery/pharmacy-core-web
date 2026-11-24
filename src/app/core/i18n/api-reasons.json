@@ -99,6 +99,7 @@
     "refund_method_not_allowed",
     "request_closed",
     "restock_not_allowed",
+    "return_already_credited",
     "return_exceeds_sold",
     "sale_line_not_found",
     "same_product",
@@ -196,6 +197,11 @@
     "controlled_prescription_incomplete": [],
     "count_not_found": [],
     "count_posted": [],
+    "credit_exceeds_receipt": [
+      "currency",
+      "receipt",
+      "total"
+    ],
     "credit_limit_exceeded": [
       "available",
       "currency",
@@ -225,6 +231,9 @@
     ],
     "duplicate_batch": [],
     "duplicate_code": [],
+    "duplicate_credit_note": [
+      "number"
+    ],
     "duplicate_email": [],
     "duplicate_gtin": [],
     "duplicate_item": [],
@@ -310,6 +319,7 @@
     "invalid_dosage_form": [],
     "invalid_effective_on": [],
     "invalid_email": [],
+    "invalid_event_kind": [],
     "invalid_event_types": [],
     "invalid_exchange_rate": [],
     "invalid_expiry": [],
@@ -328,6 +338,7 @@
     "invalid_kind": [],
     "invalid_lead_time": [],
     "invalid_limit": [],
+    "invalid_lines": [],
     "invalid_lock_date": [],
     "invalid_login": [],
     "invalid_look": [],
@@ -362,6 +373,7 @@
     "invalid_serial": [],
     "invalid_signature": [],
     "invalid_size": [],
+    "invalid_status": [],
     "invalid_therapy_dates": [],
     "invalid_timezone": [],
     "invalid_tin": [],
@@ -438,7 +450,9 @@
       "total"
     ],
     "period_locked": [],
-    "period_too_long": [],
+    "period_too_long": [
+      "maxDays"
+    ],
     "permission_not_held": [],
     "phone_needs_verification": [],
     "plan_feature_unavailable": [],
@@ -501,6 +515,7 @@
     "request_not_found": [],
     "reseal_running": [],
     "restock_not_allowed": [],
+    "return_already_credited": [],
     "return_exceeds_sold": [],
     "return_line_not_found": [],
     "return_not_found": [],

@@ -173,6 +173,8 @@ export interface Settings {
   /** Taxpayer Identification Number (9 digits, kept without dashes) and VAT Registration Number. */
   tin?: string | null;
   vrn?: string | null;
+  /** FRD-19: the owners' and admins' morning digest of sensitive actions (on by default). */
+  sensitiveDigest?: boolean;
   /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
   version: number;
 }

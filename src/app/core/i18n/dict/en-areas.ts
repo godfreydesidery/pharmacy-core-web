@@ -22,6 +22,7 @@ import { PRIVACY_EN } from './privacy.en';
 import { HEALTH_EN } from './health.en';
 import { COUNTS_EN } from './counts.en';
 import { PAYABLES_EN } from './payables.en';
+import { MONEYOPS_EN } from './moneyops.en';
 import { ACCOUNTS_EN } from './accounts.en';
 import { LABELS_EN } from './labels.en';
 import { TILL_EN } from './till.en';
@@ -77,6 +78,7 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...HEALTH_EN,
   ...COUNTS_EN,
   ...PAYABLES_EN,
+  ...MONEYOPS_EN,
   ...ACCOUNTS_EN,
   ...LABELS_EN,
   ...TILL_EN,

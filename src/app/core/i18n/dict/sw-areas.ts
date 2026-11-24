@@ -15,6 +15,7 @@ import { PLATFORM_SW } from './platform.sw';
 import { RECEIVABLES_SW } from './receivables.sw';
 import { REPORTS_SW } from './reports.sw';
 import { PAYABLES_SW } from './payables.sw';
+import { MONEYOPS_SW } from './moneyops.sw';
 import { ACCOUNTS_SW } from './accounts.sw';
 import { LABELS_SW } from './labels.sw';
 import { TILL_SW } from './till.sw';
@@ -75,6 +76,7 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...HEALTH_SW,
   ...COUNTS_SW,
   ...PAYABLES_SW,
+  ...MONEYOPS_SW,
   ...ACCOUNTS_SW,
   ...LABELS_SW,
   ...TILL_SW,

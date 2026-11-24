@@ -1,0 +1,50 @@
+/** Kundi 10: noti za mkopo za wasambazaji, taarifa kwa kipindi, muhtasari wa vitendo nyeti, mauzo yasiyofanyika. */
+export const MONEYOPS_SW: Readonly<Record<string, string>> = {
+  'moneyops.status': 'Hali',
+  'moneyops.PENDING_CREDIT': 'Inasubiri noti ya mkopo',
+  'moneyops.CREDITED': 'Imepunguzwa',
+  'moneyops.creditNote': 'Noti ya mkopo',
+  'moneyops.recordCredit': 'Weka noti ya mkopo',
+  'moneyops.creditHint':
+    'Weka noti ya mkopo ya msambazaji kwa marejesho haya. Hadi iwekwe, marejesho hayapunguzi deni lako kwa msambazaji.',
+  'moneyops.creditNumber': 'Namba ya noti ya mkopo ya msambazaji',
+  'moneyops.creditDate': 'Tarehe iliyo kwenye noti',
+  'moneyops.creditAmount': 'Kiasi kilichopunguzwa (kwa sarafu ya upokeaji wa bidhaa)',
+  'moneyops.creditIncomplete': 'Weka namba ya noti na kiasi kilicho juu ya sifuri.',
+  'moneyops.credited': 'Noti ya mkopo imewekwa: deni lako kwa msambazaji limepungua.',
+  'moneyops.appliedToReceipt': '{{amount}} kimetolewa kwenye upokeaji wa bidhaa',
+  'moneyops.pendingHint':
+    'Marejesho haya yanasubiri noti ya mkopo ya msambazaji; iweke ikifika, na kiasi kitatolewa kwenye deni lako.',
+  'moneyops.from': 'Kuanzia',
+  'moneyops.to': 'Hadi',
+  'moneyops.periodHint': 'Taarifa moja inahusu hadi mwaka mmoja.',
+  'moneyops.opening': 'Deni mwanzoni mwa kipindi',
+  'moneyops.awaitingCredit': '{{amount}} za bidhaa zilizorudishwa zinasubiri noti ya mkopo.',
+  'moneyops.sensitiveDigest': 'Tuma muhtasari wa kila siku wa vitendo nyeti',
+  'moneyops.sensitiveDigestHint':
+    'Kila asubuhi, wamiliki na wasimamizi hupokea marejesho ya fedha, ufutaji wa bidhaa, idhini, mabadiliko ya majukumu, ufunguaji wa vipindi, vocha, punguzo kubwa, mabadiliko ya daraja la dawa na madeni yaliyofutwa ya siku iliyopita, kwenye programu na kwa barua pepe.',
+  'ui.reports.tab.no-sales': 'Mauzo yasiyofanyika',
+  'moneyops.noSalesTitle': 'Mauzo yasiyofanyika na vikapu vilivyoachwa',
+  'moneyops.noSalesHint':
+    'Vikapu vilivyofutwa vikiwa na bidhaa na mauzo yaliyosimamishwa yaliyotupwa, kwa kila mhudumu na siku (hadi siku 92).',
+  'moneyops.noSalesNone':
+    'Hakuna vikapu vilivyofutwa wala mauzo yasiyofanyika katika kipindi hiki.',
+  'moneyops.day': 'Siku',
+  'moneyops.cashier': 'Mhudumu',
+  'moneyops.kind': 'Kilichotokea',
+  'moneyops.events': 'Mara',
+  'moneyops.lines': 'Bidhaa',
+  'moneyops.value': 'Thamani',
+  'moneyops.kind.CART_CANCELLED': 'Kikapu kimefutwa',
+  'moneyops.kind.CART_CLEARED': 'Kikapu kimesafishwa',
+  'moneyops.kind.PARKED_DISCARDED': 'Mauzo yaliyosimamishwa yametupwa',
+  'moneyops.kind.NO_SALE': 'Droo imefunguliwa bila mauzo',
+  'tpl.tenant.sensitive_digest': 'Muhtasari wa vitendo nyeti',
+  'errors.return_already_credited': 'Marejesho haya tayari yana noti ya mkopo ya msambazaji.',
+  'errors.duplicate_credit_note': 'Noti ya mkopo {{number}} ya msambazaji huyu tayari imewekwa.',
+  'errors.credit_exceeds_receipt':
+    'Noti ya mkopo ni zaidi ya thamani ya upokeaji wa bidhaa {{receipt}}.',
+  'errors.invalid_status': 'Chagua hali sahihi.',
+  'errors.invalid_event_kind': 'Kituo cha mauzo kimetuma tukio la aina isiyojulikana.',
+  'errors.invalid_lines': 'Idadi ya bidhaa iwe kati ya 0 na 1,000.',
+};

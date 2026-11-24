@@ -184,6 +184,13 @@ import { Translations } from '../../core/i18n/translations.store';
             </label>
             <span class="hint">{{ 'controls.requireOpenShiftHint' | t }}</span>
           </div>
+          <div class="field">
+            <label class="check" data-testid="sensitive-digest">
+              <input type="checkbox" formControlName="sensitiveDigest" />
+              {{ 'moneyops.sensitiveDigest' | t }}
+            </label>
+            <span class="hint">{{ 'moneyops.sensitiveDigestHint' | t }}</span>
+          </div>
           <h3>{{ 'idle.security' | t }}</h3>
           <div class="field">
             <label>{{ 'idle.setting' | t }}</label><input
@@ -431,6 +438,8 @@ export default class SettingsPage implements OnInit {
     approvalLimit: [50000, [Validators.required, Validators.min(0)]],
     returnWindowDays: [7, [Validators.required, Validators.min(0), Validators.max(365)]],
     requireOpenShift: [false],
+    /** FRD-19: the owners' and admins' morning digest of the day's sensitive actions. */
+    sensitiveDigest: [true],
     vatRegistered: [true],
     /** 9 digits, dashes and spaces allowed (the API keeps the digits); verify with TRA. */
     tin: ['', Validators.pattern(/^\s*(\d[\s-]?){8}\d\s*$|^\s*$/)],
@@ -464,6 +473,7 @@ export default class SettingsPage implements OnInit {
       ...settings,
       receiptFooter: settings.receiptFooter ?? '',
       vatRegistered: settings.vatRegistered ?? true,
+      sensitiveDigest: settings.sensitiveDigest ?? true,
       tin: settings.tin ?? '',
       vrn: settings.vrn ?? '',
     });
