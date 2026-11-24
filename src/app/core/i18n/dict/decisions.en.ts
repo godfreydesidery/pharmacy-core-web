@@ -132,6 +132,7 @@ export const DECISIONS_EN: Readonly<Record<string, string>> = {
     'This needs a second root administrator to approve it, and there is only one. Add another root administrator first.',
   'errors.root_approval_pending': 'A request for this is already waiting for approval.',
   'errors.not_under_legal_hold': 'This pharmacy is not under a legal hold.',
+  'errors.root_approval_not_found': 'That approval request is no longer there; reload the list.',
   'errors.root_approval_closed': 'This request is no longer waiting: it was done or cancelled.',
   'errors.root_approval_expired': 'This request expired before it was approved; ask again.',
   'errors.root_approval_required':

@@ -216,7 +216,9 @@
     "customer_not_found": [],
     "customer_required": [],
     "database_busy": [],
-    "debit_note_base_currency_only": [],
+    "debit_note_base_currency_only": [
+      "currency"
+    ],
     "debit_note_needs_customer": [],
     "delivery_not_found": [],
     "destruction_not_found": [],
@@ -527,9 +529,14 @@
     "return_not_found": [],
     "role_not_found": [],
     "root_admin_not_found": [],
-    "root_approval_closed": [],
+    "root_approval_closed": [
+      "status"
+    ],
     "root_approval_expired": [],
-    "root_approval_pending": [],
+    "root_approval_not_found": [],
+    "root_approval_pending": [
+      "action"
+    ],
     "root_approval_required": [
       "action"
     ],
@@ -624,7 +631,9 @@
     "voucher_not_active": [],
     "voucher_not_found": [],
     "voucher_short": [],
-    "weak_password": [],
+    "weak_password": [
+      "maxLength"
+    ],
     "webhook_limit": [],
     "webhook_not_found": [],
     "webhook_url_not_allowed": [],

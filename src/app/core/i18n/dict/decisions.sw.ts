@@ -132,6 +132,7 @@ export const DECISIONS_SW: Readonly<Record<string, string>> = {
     'Hili linahitaji idhini ya msimamizi mkuu wa pili, na yupo mmoja tu. Ongeza msimamizi mkuu mwingine kwanza.',
   'errors.root_approval_pending': 'Ombi la hili tayari linasubiri idhini.',
   'errors.not_under_legal_hold': 'Duka hili la dawa halina zuio la kisheria.',
+  'errors.root_approval_not_found': 'Ombi hilo la idhini halipo tena; pakia orodha upya.',
   'errors.root_approval_closed': 'Ombi hili halisubiri tena: limefanyika au limeghairiwa.',
   'errors.root_approval_expired': 'Ombi hili liliisha muda kabla ya kuidhinishwa; omba tena.',
   'errors.root_approval_required':
