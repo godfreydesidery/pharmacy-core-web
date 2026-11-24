@@ -28,6 +28,7 @@ import { SHIFTS_EN } from './shifts.en';
 import { PAYMENTS_EN } from './payments.en';
 import { REPACK_EN } from './repack.en';
 import { PRICING_EN } from './pricing.en';
+import { FISCAL_EN } from './fiscal.en';
 import { STATEMENTS_EN } from './statements.en';
 import { ENUM_EN } from './enum.en';
 import { ERRORS_EN } from './errors.en';
@@ -80,6 +81,7 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...PAYMENTS_EN,
   ...REPACK_EN,
   ...PRICING_EN,
+  ...FISCAL_EN,
   ...STATEMENTS_EN,
   ...PARTNERS_EN,
   ...ENUM_EN,

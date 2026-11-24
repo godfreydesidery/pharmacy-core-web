@@ -24,6 +24,7 @@ import { SHIFTS_SW } from './shifts.sw';
 import { PAYMENTS_SW } from './payments.sw';
 import { REPACK_SW } from './repack.sw';
 import { PRICING_SW } from './pricing.sw';
+import { FISCAL_SW } from './fiscal.sw';
 import { STATEMENTS_SW } from './statements.sw';
 import { CONTROLLED_SW } from './controlled.sw';
 import { CATALOGUE_SW } from './catalogue.sw';
@@ -78,6 +79,7 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...PAYMENTS_SW,
   ...REPACK_SW,
   ...PRICING_SW,
+  ...FISCAL_SW,
   ...STATEMENTS_SW,
   ...PARTNERS_SW,
   ...ENUM_SW,

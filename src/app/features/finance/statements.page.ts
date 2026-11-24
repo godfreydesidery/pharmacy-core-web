@@ -33,12 +33,27 @@ interface BalanceSheet {
   liabilitiesAndEquity: number;
   balanced: boolean;
 }
+/** One VAT category's sales and returns, net of VAT and their VAT (STD-2). */
+interface VatCategoryLine {
+  category: 'STANDARD' | 'ZERO_RATED' | 'EXEMPT';
+  salesNet: number;
+  salesTax: number;
+  returnsNet: number;
+  returnsTax: number;
+  net: number;
+  tax: number;
+}
 interface Vat {
   from: string;
   to: string;
   outputVat: number;
   vatReversed: number;
+  /** Output VAT less returns, input VAT on purchases and expenses (older APIs: absent). */
+  netOutputVat?: number;
+  inputVat?: number;
+  /** Output less returns less input; below zero is a credit. */
   netPayable: number;
+  categories?: VatCategoryLine[];
 }
 interface BranchStock {
   branchUid: string;
@@ -228,12 +243,54 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                 tone="amber"
               />
               <app-stat
+                [label]="'vat.inputVat' | t"
+                [value]="v.inputVat ?? 0 | money"
+                icon="truck"
+                tone="purple"
+              />
+              <app-stat
                 [label]="'statements.netPayable' | t"
                 [value]="v.netPayable | money"
                 icon="wallet"
-                tone="green"
+                [tone]="v.netPayable < 0 ? 'amber' : 'green'"
+                [caption]="'vat.netPayableHint' | t"
               />
             </div>
+            @if (v.categories?.length) {
+              <div class="card mt" data-testid="vat-categories">
+                <div class="card-head">
+                  <h3>{{ 'vat.byCategory' | t }}</h3>
+                </div>
+                <div class="table-wrap">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'vat.category' | t }}</th>
+                        <th class="right">{{ 'vat.salesNet' | t }}</th>
+                        <th class="right">{{ 'vat.salesTax' | t }}</th>
+                        <th class="right">{{ 'vat.returnsNet' | t }}</th>
+                        <th class="right">{{ 'vat.returnsTax' | t }}</th>
+                        <th class="right">{{ 'vat.net' | t }}</th>
+                        <th class="right">{{ 'vat.tax' | t }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (c of v.categories; track c.category) {
+                        <tr>
+                          <td>{{ 'enum.' + c.category | t }}</td>
+                          <td class="right">{{ c.salesNet | money }}</td>
+                          <td class="right">{{ c.salesTax | money }}</td>
+                          <td class="right">{{ c.returnsNet | money }}</td>
+                          <td class="right">{{ c.returnsTax | money }}</td>
+                          <td class="right strong">{{ c.net | money }}</td>
+                          <td class="right strong">{{ c.tax | money }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
           }
         }
         @case ('stock') {
@@ -395,8 +452,31 @@ export default class StatementsPage {
         if (v)
           downloadCsv(
             `vat-${v.from}-${v.to}.csv`,
-            [t('statements.outputVat'), t('statements.vatReversed'), t('statements.netPayable')],
-            [[v.outputVat, v.vatReversed, v.netPayable]],
+            [
+              t('vat.category'),
+              t('vat.salesNet'),
+              t('vat.salesTax'),
+              t('vat.returnsNet'),
+              t('vat.returnsTax'),
+              t('statements.outputVat'),
+              t('statements.vatReversed'),
+              t('vat.inputVat'),
+              t('statements.netPayable'),
+            ],
+            [
+              ...(v.categories ?? []).map((c) => [
+                t('enum.' + c.category),
+                c.salesNet,
+                c.salesTax,
+                c.returnsNet,
+                c.returnsTax,
+                '',
+                '',
+                '',
+                '',
+              ]),
+              ['', '', '', '', '', v.outputVat, v.vatReversed, v.inputVat ?? 0, v.netPayable],
+            ],
           );
         break;
       }

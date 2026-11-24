@@ -23,7 +23,10 @@ import {
   UnitOfMeasure,
   PlanPriceView,
   PriceChange,
+  TAX_CATEGORIES,
+  TaxCategory,
 } from '../../core/api/models';
+import { SettingsStore } from '../../core/format/settings.store';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -271,15 +274,17 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                 formControlName="sellingPrice"
               />
             </app-field>
-            <app-field [label]="'catalogue.taxRate' | t">
-              <input
-                class="input"
-                type="number"
-                min="0"
-                max="100"
-                step="any"
-                formControlName="taxRatePercent"
-              />
+            <app-field [label]="'vat.category' | t">
+              <select class="select" formControlName="taxCategory" data-testid="tax-category">
+                @for (c of taxCategories; track c) {
+                  <option [value]="c">{{ 'enum.' + c | t }}</option>
+                }
+              </select>
+              <span class="hint" data-testid="tax-rate-hint">{{
+                vatRegistered()
+                  ? ('vat.soldAt' | t: { rate: taxRate() })
+                  : ('vat.notRegisteredHint' | t)
+              }}</span>
             </app-field>
             <app-field [label]="'catalogue.reorderLevel' | t">
               <input class="input" type="number" min="0" formControlName="reorderLevel" />
@@ -530,7 +535,8 @@ export default class ProductFormPage implements OnInit {
     requiresSerialAtSale: [true],
     costPrice: [0, [Validators.required, Validators.min(0)]],
     sellingPrice: [0, [Validators.required, Validators.min(0)]],
-    taxRatePercent: [0, [Validators.min(0), Validators.max(100)]],
+    /** STD-2: the category decides the VAT; the rate is derived (the standard rate or 0). */
+    taxCategory: ['EXEMPT' as TaxCategory, Validators.required],
     reorderLevel: [0, Validators.min(0)],
     active: [true],
   });
@@ -541,6 +547,21 @@ export default class ProductFormPage implements OnInit {
   private readonly trackingValue = toSignal(this.form.controls.trackingMode.valueChanges, {
     initialValue: this.form.controls.trackingMode.value,
   });
+  private readonly settings = inject(SettingsStore);
+  protected readonly taxCategories = TAX_CATEGORIES;
+  private readonly categoryValue = toSignal(this.form.controls.taxCategory.valueChanges, {
+    initialValue: this.form.controls.taxCategory.value,
+  });
+  /** Whether the pharmacy charges VAT at all (its settings; registered until they say otherwise). */
+  protected readonly vatRegistered = computed(
+    () => this.settings.settings()?.vatRegistered ?? true,
+  );
+  /** The VAT rate the product is sold at: the standard rate for STANDARD, else 0. */
+  protected readonly taxRate = computed(() =>
+    this.categoryValue() === 'STANDARD'
+      ? (this.settings.settings()?.defaultTaxRatePercent ?? 0)
+      : 0,
+  );
   protected readonly type = computed(() => this.typeValue());
   protected readonly tracking = computed(() => this.trackingValue());
   protected readonly medicine = computed(() => this.type() === 'MEDICINE');
@@ -606,6 +627,7 @@ export default class ProductFormPage implements OnInit {
       model: product.model ?? '',
       warrantyMonths: product.warrantyMonths ?? null,
       requiresSerialAtSale: product.requiresSerialAtSale ?? true,
+      taxCategory: product.taxCategory ?? (product.taxRatePercent > 0 ? 'STANDARD' : 'EXEMPT'),
     });
   }
 
@@ -654,7 +676,9 @@ export default class ProductFormPage implements OnInit {
       storage: v.storage,
       costPrice: Number(v.costPrice),
       sellingPrice: Number(v.sellingPrice),
-      taxRatePercent: Number(v.taxRatePercent),
+      taxCategory: v.taxCategory,
+      // Kept for older readers; the API derives it from the category.
+      taxRatePercent: v.taxCategory === 'STANDARD' ? this.taxRate() : 0,
       reorderLevel: Number(v.reorderLevel),
       productType: v.productType,
       trackingMode: v.trackingMode,
