@@ -73,7 +73,7 @@ import { SHARED } from '../../core/shared';
         } @empty {
           <div class="card">
             <app-empty
-              [loading]="list.loading()"
+              [for]="list"
               icon="book"
               [title]="'finance.noJournalEntries' | t"
               [text]="'ui.empty.journal' | t"

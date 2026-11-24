@@ -96,11 +96,13 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               </thead>
               <tbody>
                 @for (s of shown(); track s.uid) {
-                  <tr class="clickable" [routerLink]="[s.uid]">
+                  <tr class="clickable" appRowLink>
                     <td>
                       <div class="cell-main">
                         <span class="thumb tone-blue"><app-icon name="receipt" [size]="16" /></span
-                        ><b>{{ s.number }}</b>
+                        ><a class="row-link" [routerLink]="[s.uid]"
+                          ><b>{{ s.number }}</b></a
+                        >
                       </div>
                     </td>
                     <td>{{ s.customerName ?? ('ui.l.walkIn' | t) }}</td>
@@ -115,7 +117,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                   <tr>
                     <td colspan="8">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="receipt"
                         [title]="'sales.noSales' | t"
                         [text]="'ui.empty.sales' | t"

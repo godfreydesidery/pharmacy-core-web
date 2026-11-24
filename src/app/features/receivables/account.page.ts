@@ -10,6 +10,7 @@ import {
   ReceivePaymentInput,
   SchemeView,
   Statement,
+  WHOLE_STATEMENT,
 } from '../../core/api/credit.models';
 import { loaded } from '../../core/data/data';
 import { SettingsStore } from '../../core/format/settings.store';
@@ -279,23 +280,17 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
         (closed)="paying.set(false)"
       >
         <form class="form-grid" [formGroup]="payment" (ngSubmit)="receive()">
-          <div class="field">
-            <label>{{ 'receivables.amount' | t }}</label>
+          <app-field [label]="'receivables.amount' | t" [error]="err('amount')">
             <input class="input" type="number" min="0" step="any" formControlName="amount" />
-            @if (err('amount'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
-          <div class="field">
-            <label>{{ 'receivables.method' | t }}</label>
+          </app-field>
+          <app-field [label]="'receivables.method' | t">
             <select class="select" formControlName="method">
               @for (m of methods; track m) {
                 <option [value]="m">{{ m | label }}</option>
               }
             </select>
-          </div>
-          <div class="field full">
-            <label>{{ 'receivables.currency' | t }}</label>
+          </app-field>
+          <app-field class="full" [label]="'receivables.currency' | t">
             <app-currency-rate [(currency)]="currency" [(rate)]="rate" [compact]="true" />
             @if (foreign()) {
               <small class="muted"
@@ -303,19 +298,17 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
                 {{ 'receivables.toTheAccountAtThis' | t }}</small
               >
             }
-          </div>
-          <div class="field">
-            <label>{{ 'receivables.reference' | t }}</label
-            ><input
+          </app-field>
+          <app-field [label]="'receivables.reference' | t">
+            <input
               class="input"
               formControlName="reference"
               [placeholder]="'receivables.mPesaCodeCheque' | t"
             />
-          </div>
-          <div class="field">
-            <label>{{ 'receivables.date' | t }}</label
-            ><input class="input" type="date" formControlName="date" />
-          </div>
+          </app-field>
+          <app-field [label]="'receivables.date' | t">
+            <input class="input" type="date" formControlName="date" />
+          </app-field>
           <div class="field full">
             <label>{{ 'receivables.allocateTo' | t }}</label>
             <div class="alloc-list">
@@ -328,6 +321,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
                 />
                 {{ 'receivables.oldestInvoicesFirst' | t }}</label
               >
+
               @for (c of openCharges(); track c.uid) {
                 <label class="check">
                   <input
@@ -365,18 +359,16 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
         (closed)="writingOff.set(false)"
       >
         <form class="form-grid" [formGroup]="writeOffForm">
-          <div class="field">
-            <label>{{ 'receivables.amount' | t }}</label
-            ><input class="input" type="number" min="0" step="any" formControlName="amount" />
-          </div>
-          <div class="field full">
-            <label>{{ 'receivables.reason' | t }}</label
-            ><textarea
+          <app-field [label]="'receivables.amount' | t">
+            <input class="input" type="number" min="0" step="any" formControlName="amount" />
+          </app-field>
+          <app-field class="full" [label]="'receivables.reason' | t">
+            <textarea
               class="input"
               formControlName="reason"
               [placeholder]="'receivables.whyTheDebtCannotBe' | t"
             ></textarea>
-          </div>
+          </app-field>
           <p class="muted full">
             {{ 'receivables.postsDrBadDebtsCr' | t }}
           </p>
@@ -397,8 +389,8 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
         (closed)="limiting.set(false)"
       >
         <div class="field">
-          <label for="new-credit-limit">{{ 'partners.creditLimit' | t }}</label
-          ><input
+          <label for="new-credit-limit">{{ 'partners.creditLimit' | t }}</label>
+          <input
             id="new-credit-limit"
             class="input"
             type="number"
@@ -430,15 +422,14 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
         (closed)="holding.set(false)"
       >
         @if (!a.onHold) {
-          <div class="field">
-            <label>{{ 'receivables.reason' | t }}</label
-            ><input
+          <app-field [label]="'receivables.reason' | t">
+            <input
               class="input"
               [value]="holdReason()"
               (input)="holdReason.set($any($event.target).value)"
               [placeholder]="'receivables.overdueOver60Days' | t"
             />
-          </div>
+          </app-field>
           <p class="muted">{{ 'receivables.noNewCreditSalesWhile' | t }}</p>
         } @else {
           <p>{{ 'receivables.newCreditSalesWillBe' | t }}</p>
@@ -459,35 +450,30 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
         (closed)="enrolling.set(false)"
       >
         <form class="form-grid" [formGroup]="enrolForm">
-          <div class="field full">
-            <label>{{ 'receivables.scheme' | t }}</label>
+          <app-field class="full" [label]="'receivables.scheme' | t">
             <select class="select" formControlName="schemeUid">
               <option value="">{{ 'receivables.choose' | t }}</option>
               @for (s of schemes.value() ?? []; track s.uid) {
                 <option [value]="s.uid">{{ s.payerName }} · {{ s.name }}</option>
               }
             </select>
-          </div>
-          <div class="field">
-            <label>{{ 'receivables.memberNumber' | t }}</label
-            ><input class="input" formControlName="memberNumber" />
-          </div>
-          <div class="field">
-            <label>{{ 'receivables.principalMember' | t }}</label
-            ><input
+          </app-field>
+          <app-field [label]="'receivables.memberNumber' | t">
+            <input class="input" formControlName="memberNumber" />
+          </app-field>
+          <app-field [label]="'receivables.principalMember' | t">
+            <input
               class="input"
               formControlName="principalName"
               [placeholder]="'receivables.ifADependant' | t"
             />
-          </div>
-          <div class="field">
-            <label>{{ 'receivables.validFrom' | t }}</label
-            ><input class="input" type="date" formControlName="validFrom" />
-          </div>
-          <div class="field">
-            <label>{{ 'receivables.validUntil' | t }}</label
-            ><input class="input" type="date" formControlName="validUntil" />
-          </div>
+          </app-field>
+          <app-field [label]="'receivables.validFrom' | t">
+            <input class="input" type="date" formControlName="validFrom" />
+          </app-field>
+          <app-field [label]="'receivables.validUntil' | t">
+            <input class="input" type="date" formControlName="validUntil" />
+          </app-field>
         </form>
         <ng-container footer>
           <button class="btn" type="button" (click)="enrolling.set(false)">
@@ -500,11 +486,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
       </app-modal>
     } @else {
       <div class="page">
-        <app-empty
-          [loading]="account.loading()"
-          icon="wallet"
-          [title]="'receivables.noSuchAccount' | t"
-        />
+        <app-empty [for]="account" icon="wallet" [title]="'receivables.noSuchAccount' | t" />
       </div>
     }
   `,
@@ -606,11 +588,15 @@ export default class CustomerAccountPage {
     path: `/receivables/accounts/${this.customerUid}`,
     options: { noBranch: true },
   }));
-  protected readonly statement = loaded<Statement>(() => ({
-    path: `/receivables/accounts/${this.customerUid}/statement`,
-    query: { from: this.from(), to: this.to(), limit: 100 },
-    options: { noBranch: true },
-  }));
+  // The whole period, every page: open charges further down must not be missed (PERF-17).
+  protected readonly statement = loaded<Statement>(
+    () => ({
+      path: `/receivables/accounts/${this.customerUid}/statement`,
+      query: { from: this.from(), to: this.to(), limit: 100 },
+      options: { noBranch: true },
+    }),
+    WHOLE_STATEMENT,
+  );
   protected readonly members = loaded<{ items: MemberView[] }>(() =>
     this.session.can('partners.view')
       ? {

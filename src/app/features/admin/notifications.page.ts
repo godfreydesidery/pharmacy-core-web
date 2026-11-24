@@ -22,6 +22,7 @@ import {
   TEMPLATE_LABELS,
 } from '../../core/notifications/notification.models';
 import { SHARED } from '../../core/shared';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
 import { DeliveryDetailComponent } from './delivery-detail.component';
@@ -260,7 +261,9 @@ type Tab = 'templates' | 'deliveries' | 'providers';
                 @for (d of deliveries.items(); track d.uid) {
                   <tr class="clickable" (click)="selectedDelivery.set(d.uid)">
                     <td>
-                      <b>{{ label(d.templateKey) }}</b>
+                      <button type="button" class="row-link">
+                        <b>{{ label(d.templateKey) }}</b>
+                      </button>
                       @if ($any(d).reason === 'sms_cap_reached') {
                         <small class="text-amber block">{{ 'delivery.smsCapReached' | t }}</small>
                       } @else if (d.lastError) {
@@ -283,7 +286,7 @@ type Tab = 'templates' | 'deliveries' | 'providers';
                   <tr>
                     <td colspan="7">
                       <app-empty
-                        [loading]="deliveries.loading()"
+                        [for]="deliveries"
                         icon="activity"
                         [title]="'admin.noMessagesYet' | t"
                       />
@@ -477,6 +480,7 @@ export default class NotificationsAdminPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   private readonly sanitizer = inject(DomSanitizer);
 
   protected readonly channels = CHANNELS;
@@ -596,11 +600,13 @@ export default class NotificationsAdminPage {
     const unknown = this.unknownParams();
     if (
       unknown.length &&
-      !confirm(
-        this.translations.t('ui.tpl.unknownPlaceholders', { names: unknown.join(', ') }) +
-          '\n\n' +
-          this.translations.t('ui.tpl.saveAnyway'),
-      )
+      !(await this.confirm.ask({
+        icon: 'warning',
+        title: this.translations.t('ui.tpl.saveAnyway'),
+        text: this.translations.t('ui.tpl.unknownPlaceholders', { names: unknown.join(', ') }),
+        confirmText: this.translations.t('common.save'),
+        focus: 'cancel',
+      }))
     ) {
       return;
     }

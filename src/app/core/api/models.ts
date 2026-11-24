@@ -8,6 +8,8 @@ export interface Page<T> {
   items: T[];
   nextCursor: string | null;
   total: number | null;
+  /** The total was capped (more rows than {@link total}, which is then 10,000): show "10,000+". */
+  totalCapped?: boolean | null;
 }
 
 /* ---------- auth ---------- */
@@ -31,6 +33,8 @@ export interface Membership {
   branches: BranchRef[];
   /** The pharmacy's admin may create staff logins directly (set by the root administrator). */
   directUserCreation?: boolean;
+  /** Why a SUSPENDED pharmacy is suspended, once the API sends it (the shell asks otherwise). */
+  suspensionKind?: SuspensionKind | null;
 }
 
 export interface SessionUser {
@@ -56,6 +60,8 @@ export type Me = Omit<Session, 'token' | 'expiresAt'>;
 /* ---------- platform ---------- */
 /** CLOSED: nobody works in it, its admins may read and export; ERASED: only a tombstone is left. */
 export type TenantStatus = 'ACTIVE' | 'SUSPENDED' | 'CLOSED' | 'ERASED';
+/** Why a pharmacy is suspended (tenancy SuspensionKind): DISPUTE is a legal hold. */
+export type SuspensionKind = 'UNPAID' | 'DISPUTE' | 'ABUSE' | 'OTHER';
 
 export interface Tenant {
   uid: Uid;
@@ -68,7 +74,7 @@ export interface Tenant {
   status: TenantStatus;
   statusReason: string | null;
   /** Why it is suspended: UNPAID (admins read-only), DISPUTE (legal hold), ABUSE, OTHER. */
-  suspensionKind?: 'UNPAID' | 'DISPUTE' | 'ABUSE' | 'OTHER' | null;
+  suspensionKind?: SuspensionKind | null;
   /** A dispute, a regulator's or a court's order: its data may not be erased while it holds. */
   legalHold?: boolean;
   legalHoldReason?: string | null;
@@ -979,7 +985,10 @@ export interface PriceList {
   validFrom: string | null;
   validTo: string | null;
   active: boolean;
-  items: PriceListItem[];
+  /** Null in the list of plans (Batch 7): read one plan, `GET /price-lists/{uid}`, for its items. */
+  items: PriceListItem[] | null;
+  /** How many prices the plan has. */
+  itemCount?: number;
   /** An insurer's plan: the default for its members' sales. */
   payerUid?: Uid | null;
   payerName?: string | null;

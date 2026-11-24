@@ -6,7 +6,7 @@ import { TranslatePipe } from '../i18n/t.pipe';
 import { Translations } from '../i18n/translations.store';
 import { IconComponent } from './icon.component';
 import { Toast, ToastService } from './toast.service';
-import { PAGE_SIZES, PagedList } from '../data/data';
+import { LoadState, PAGE_SIZES, PagedList } from '../data/data';
 
 /** A status as a coloured pill, such as COMPLETED or LOW_STOCK. */
 @Component({
@@ -65,19 +65,30 @@ export class StatComponent {
   protected readonly abs = computed(() => Math.abs(this.change() ?? 0).toFixed(1));
 }
 
-/** The empty or loading state of a list. */
+/**
+ * The empty, loading or failed state of a list. Given the list (`[for]="list"`, a
+ * {@link LoadState} such as a `pagedList` or `loaded` value), it follows its loading and, when
+ * the last read failed, says so with the reason and Retry instead of "nothing here".
+ */
 @Component({
   selector: 'app-empty',
   imports: [IconComponent, TranslatePipe],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="empty">
-      @if (loading()) {
+    <div class="empty" [attr.role]="failure() ? 'alert' : null">
+      @if (busy()) {
         <div class="stack" style="max-width:420px;margin:0 auto">
           <div class="skeleton"></div>
           <div class="skeleton" style="width:80%"></div>
           <div class="skeleton" style="width:60%"></div>
         </div>
+      } @else if (failure(); as error) {
+        <app-icon name="alert" [size]="34" [stroke]="1.4" />
+        <b>{{ 'state.list.failed' | t }}</b>
+        <span>{{ error.message }}</span>
+        <button class="btn sm" type="button" data-testid="list-retry" (click)="retry()">
+          <app-icon name="refresh" [size]="14" /> {{ 'common.retry' | t }}
+        </button>
       } @else {
         <app-icon [name]="icon()" [size]="34" [stroke]="1.4" />
         <b>{{ title() ?? ('ui.empty.nothing' | t) }}</b>
@@ -87,10 +98,19 @@ export class StatComponent {
   `,
 })
 export class EmptyComponent {
+  /** The list this is the empty state of: its loading and its failure come from it. */
+  readonly for = input<LoadState | null>(null);
   readonly loading = input(false);
   readonly icon = input('box');
   readonly title = input<string | null>(null);
   readonly text = input('');
+
+  protected readonly busy = computed(() => this.loading() || !!this.for()?.loading());
+  protected readonly failure = computed(() => this.for()?.error() ?? null);
+
+  protected retry(): void {
+    void this.for()?.reload();
+  }
 }
 
 /**
@@ -106,7 +126,8 @@ export class EmptyComponent {
     <div class="table-foot pager">
       <span class="range">{{
         list().total()
-          ? ('ui.pager.range' | t: { from: from(), to: to(), total: list().total() })
+          ? ((list().capped() ? 'ui.pager.rangeMore' : 'ui.pager.range')
+            | t: { from: from(), to: to(), total: list().total() })
           : ('ui.pager.none' | t)
       }}</span>
       <label class="size"
@@ -214,7 +235,7 @@ export class EmptyComponent {
     .num.on {
       background: var(--primary);
       border-color: var(--primary);
-      color: #fff;
+      color: var(--on-primary);
     }
     .gap {
       padding: 0 4px;
@@ -267,7 +288,7 @@ export class PagerComponent {
   imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
-    <div class="toasts" aria-live="polite">
+    <div class="toasts" aria-live="polite" data-dialog-outside>
       @for (toast of toasts.toasts(); track toast.id) {
         <div
           class="toast"

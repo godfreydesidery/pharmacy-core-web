@@ -56,7 +56,7 @@ import { LANGUAGES, Lang, Translations } from './translations.store';
     }
     .lang-switch button.on {
       background: var(--primary);
-      color: #fff;
+      color: var(--on-primary);
     }
   `,
 })

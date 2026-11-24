@@ -26,11 +26,12 @@ import { IconComponent } from './icon.component';
       <label class="search" [class.sm]="small()">
         <app-icon name="search" [size]="15" />
         <input
+          [attr.id]="inputId()"
           [placeholder]="placeholder() ?? ('ui.lookup.search' | t)"
           [value]="text()"
           (input)="type($any($event.target).value)"
           (focus)="focus()"
-          (keydown.escape)="open.set(false)"
+          (keydown.escape)="escape($event)"
           (keydown.enter)="$event.preventDefault(); pickFirst()"
         />
         @if (text()) {
@@ -122,6 +123,8 @@ export class LookupComponent {
   readonly path = input.required<string>();
   readonly query = input<Query>({});
   readonly placeholder = input<string | null>(null);
+  /** The search box's id, so a label outside the lookup can name it (its for attribute). */
+  readonly inputId = input<string | null>(null);
   readonly small = input(false);
   readonly display = input<(item: any) => string>((item) => String(item?.name ?? ''));
   readonly detail = input<(item: any) => string | null>(() => null);
@@ -144,6 +147,14 @@ export class LookupComponent {
   protected focus(): void {
     this.open.set(true);
     void this.search(this.keepText() ? '' : this.text());
+  }
+
+  /** Escape closes the results; with them closed it is left to the dialog around, if any. */
+  protected escape(event: Event): void {
+    if (this.open()) {
+      event.preventDefault();
+      this.open.set(false);
+    }
   }
 
   protected type(value: string): void {

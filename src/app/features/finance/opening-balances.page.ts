@@ -2,8 +2,10 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { Api } from '../../core/api/api.service';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
+import { guardUnsavedWork } from '../../core/session/leave-guard';
 import { SessionStore } from '../../core/session/session.store';
 import { LookupComponent } from '../../core/ui/lookup.component';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
 
@@ -134,18 +136,16 @@ interface Row {
             <div class="card card-pad stack">
               <h3>{{ 'admin2.moneyAndStock' | t }}</h3>
               <div class="form-grid">
-                <div class="field">
-                  <label>{{ 'admin2.asOf' | t }}</label
-                  ><input
+                <app-field [label]="'admin2.asOf' | t">
+                  <input
                     class="input"
                     type="date"
                     [value]="asOf()"
                     (input)="asOf.set($any($event.target).value)"
                   />
-                </div>
-                <div class="field">
-                  <label>{{ 'admin2.cash' | t }}</label
-                  ><input
+                </app-field>
+                <app-field [label]="'admin2.cash' | t">
+                  <input
                     class="input"
                     type="number"
                     min="0"
@@ -153,10 +153,9 @@ interface Row {
                     [value]="cash()"
                     (input)="cash.set(+$any($event.target).value)"
                   />
-                </div>
-                <div class="field">
-                  <label>{{ 'admin2.bank' | t }}</label
-                  ><input
+                </app-field>
+                <app-field [label]="'admin2.bank' | t">
+                  <input
                     class="input"
                     type="number"
                     min="0"
@@ -164,10 +163,9 @@ interface Row {
                     [value]="bank()"
                     (input)="bank.set(+$any($event.target).value)"
                   />
-                </div>
-                <div class="field">
-                  <label>{{ 'admin2.mobileMoney' | t }}</label
-                  ><input
+                </app-field>
+                <app-field [label]="'admin2.mobileMoney' | t">
+                  <input
                     class="input"
                     type="number"
                     min="0"
@@ -175,10 +173,9 @@ interface Row {
                     [value]="mobileMoney()"
                     (input)="mobileMoney.set(+$any($event.target).value)"
                   />
-                </div>
-                <div class="field full">
-                  <label>{{ 'admin2.inventory' | t }}</label
-                  ><input
+                </app-field>
+                <app-field class="full" [label]="'admin2.inventory' | t">
+                  <input
                     class="input"
                     type="number"
                     min="0"
@@ -189,7 +186,7 @@ interface Row {
                   <span class="hint">{{
                     'admin2.inventoryHint' | t: { value: (s.stockAtCost | money) }
                   }}</span>
-                </div>
+                </app-field>
               </div>
             </div>
 
@@ -274,7 +271,7 @@ interface Row {
           </div>
         }
       } @else {
-        <app-empty [loading]="status.loading()" icon="wallet" [title]="''" />
+        <app-empty [for]="status" icon="wallet" [title]="''" />
       }
     </div>
   `,
@@ -291,6 +288,7 @@ export default class OpeningBalancesPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   private readonly session = inject(SessionStore);
   protected readonly status = loaded<Status>(() => ({
     path: '/opening-balances',
@@ -305,6 +303,13 @@ export default class OpeningBalancesPage {
   protected readonly receivables = signal<Row[]>([]);
   protected readonly payables = signal<Row[]>([]);
   protected readonly canPost = computed(() => this.session.can('finance.manage'));
+  /** Amounts typed but not posted: leaving the page asks first (UX-4). */
+  private readonly unsaved = guardUnsavedWork(
+    () =>
+      !!(this.cash() || this.bank() || this.mobileMoney() || this.inventory() !== null) ||
+      this.receivables().length > 0 ||
+      this.payables().length > 0,
+  );
 
   protected capital(stockAtCost: number): number {
     const sum = (rows: Row[]) => rows.reduce((total, r) => total + (r.amount || 0), 0);
@@ -337,7 +342,13 @@ export default class OpeningBalancesPage {
   }
 
   protected async post(stockAtCost: number): Promise<void> {
-    if (!confirm(this.translations.t('admin2.confirmOpening'))) {
+    const sure = await this.confirm.ask({
+      icon: 'warning',
+      title: this.translations.t('common.areYouSure'),
+      text: this.translations.t('admin2.confirmOpening'),
+      focus: 'cancel',
+    });
+    if (!sure) {
       return;
     }
     const lines = (rows: Row[]) =>
@@ -358,6 +369,7 @@ export default class OpeningBalancesPage {
         { noBranch: true },
       );
       this.toasts.success(this.translations.t('admin2.openingSaved'));
+      this.unsaved.done();
       await this.status.reload();
     } finally {
       this.busy.set(false);

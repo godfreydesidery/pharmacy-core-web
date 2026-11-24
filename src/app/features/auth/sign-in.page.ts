@@ -8,7 +8,7 @@ import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
 import { Session } from '../../core/api/models';
 import { LogoComponent } from '../../core/layout/logo.component';
-import { usableReturnUrl } from '../../core/session/guards';
+import { returnUrlFor } from '../../core/session/sign-out';
 import { SessionStore } from '../../core/session/session.store';
 import { controlError, validate } from '../../core/ui/forms';
 import { IconComponent } from '../../core/ui/icon.component';
@@ -124,7 +124,12 @@ import { retryText } from './retry';
             <button class="btn primary lg block" type="submit" [disabled]="busy()">
               {{ (busy() ? 'auth.signingIn' : 'auth.signIn') | t }}
             </button>
-            <a class="forgot" routerLink="/forgot-password">{{ 'security.forgot' | t }}</a>
+            <a
+              class="forgot"
+              routerLink="/forgot-password"
+              [state]="{ login: form.controls.email.value }"
+              >{{ 'security.forgot' | t }}</a
+            >
             @if (passkeys) {
               <div class="divider">
                 <span>{{ 'security.or' | t }}</span>
@@ -383,7 +388,13 @@ export default class SignInPage {
       await this.router.navigateByUrl('/account?setup=2fa');
       return;
     }
-    const returnUrl = usableReturnUrl(this.route.snapshot.queryParamMap.get('returnUrl'));
+    // A page kept at sign-out reopens only for the person who was on it.
+    const query = this.route.snapshot.queryParamMap;
+    const returnUrl = returnUrlFor(
+      query.get('returnUrl'),
+      query.get('returnFor'),
+      session.user.uid,
+    );
     await this.router.navigateByUrl(
       returnUrl ? `/workspace?returnUrl=${encodeURIComponent(returnUrl)}` : '/workspace',
     );

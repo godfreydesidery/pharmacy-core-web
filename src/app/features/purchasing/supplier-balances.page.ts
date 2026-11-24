@@ -102,7 +102,9 @@ export interface SupplierStatement {
             <tbody>
               @for (b of rows(); track b.supplierUid) {
                 <tr class="clickable" (click)="open(b)">
-                  <td class="strong">{{ b.supplierName }}</td>
+                  <td class="strong">
+                    <button type="button" class="row-link">{{ b.supplierName }}</button>
+                  </td>
                   <td class="muted">{{ b.lastActivity ? (b.lastActivity | day) : '—' }}</td>
                   <td class="right strong" [class.text-green]="b.balance < 0">
                     {{ b.balance | money }}
@@ -111,11 +113,7 @@ export interface SupplierStatement {
               } @empty {
                 <tr>
                   <td colspan="3">
-                    <app-empty
-                      [loading]="balances.loading()"
-                      icon="truck"
-                      [title]="'payables.none' | t"
-                    />
+                    <app-empty [for]="balances" icon="truck" [title]="'payables.none' | t" />
                   </td>
                 </tr>
               }
@@ -174,7 +172,7 @@ export interface SupplierStatement {
           <b>{{ s.balance | money }}</b>
         </div>
       } @else {
-        <app-empty [loading]="statement.loading()" icon="file" [title]="'payables.statement' | t" />
+        <app-empty [for]="statement" icon="file" [title]="'payables.statement' | t" />
       }
     </app-drawer>
   `,

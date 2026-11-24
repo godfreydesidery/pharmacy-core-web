@@ -121,7 +121,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
         />
       } @else {
         <app-empty
-          [loading]="receipt.loading()"
+          [for]="receipt"
           icon="download"
           [title]="'purchasing.goodsReceiptNotFound' | t"
         />

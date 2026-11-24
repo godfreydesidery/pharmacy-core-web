@@ -84,7 +84,7 @@ export const PLANS_EN: Readonly<Record<string, string>> = {
   'plans.outstanding': 'Outstanding',
   'plans.openInvoices': 'Open invoices',
   'errors.plan_limit_reached':
-    'Your plan allows no more of these. Ask the platform administrator to upgrade your plan.',
+    'Your plan allows no more than {{limit}}. Ask the platform administrator to upgrade it.',
   'errors.plan_feature_unavailable': 'Your plan does not include this feature.',
   'errors.plan_not_found': 'That plan does not exist.',
   'errors.subscription_not_found': 'This pharmacy has no subscription.',

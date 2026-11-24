@@ -10,6 +10,7 @@ import { Api } from '../../core/api/api.service';
 import { Page, Product, Transfer, TransferLine } from '../../core/api/models';
 import { loaded, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
+import { guardUnsavedWork } from '../../core/session/leave-guard';
 import { SessionStore } from '../../core/session/session.store';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { ToastService } from '../../core/ui/toast.service';
@@ -143,7 +144,7 @@ interface DraftLine {
                   <tr>
                     <td colspan="8">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="transfer"
                         [title]="'inventory.noTransfers' | t"
                       />
@@ -229,18 +230,17 @@ interface DraftLine {
 
     <app-modal
       [open]="creating()"
+      [dirty]="changed()"
       [title]="'inventory.newTransfer' | t"
       [wide]="true"
       (closed)="creating.set(false)"
     >
       <div class="stack">
         <div class="form-grid">
-          <div class="field">
-            <label>{{ 'inventory.from' | t }}</label
-            ><input class="input" [value]="session.branch()?.name ?? ''" disabled />
-          </div>
-          <div class="field">
-            <label>{{ 'inventory.toBranch' | t }}</label>
+          <app-field [label]="'inventory.from' | t">
+            <input class="input" [value]="session.branch()?.name ?? ''" disabled />
+          </app-field>
+          <app-field [label]="'inventory.toBranch' | t">
             <select
               class="select"
               [value]="toBranchUid()"
@@ -251,9 +251,8 @@ interface DraftLine {
                 <option [value]="b.uid">{{ b.name }}</option>
               }
             </select>
-          </div>
-          <div class="field full">
-            <label>{{ 'inventory.addMedicine' | t }}</label>
+          </app-field>
+          <app-field class="full" [label]="'inventory.addMedicine' | t">
             <app-lookup
               path="/stock"
               [placeholder]="'inventory.searchStockAtThisBranch' | t"
@@ -262,7 +261,7 @@ interface DraftLine {
               [keepText]="false"
               (picked)="addLine($event)"
             />
-          </div>
+          </app-field>
         </div>
         <div class="table-wrap" style="border:1px solid var(--border);border-radius:12px">
           <table class="table compact">
@@ -288,7 +287,12 @@ interface DraftLine {
                     />
                   </td>
                   <td class="right">
-                    <button class="icon-btn sm" type="button" (click)="removeLine(i)">
+                    <button
+                      class="icon-btn sm"
+                      type="button"
+                      (click)="removeLine(i)"
+                      [attr.aria-label]="'common.remove' | t"
+                    >
                       <app-icon name="x" [size]="14" />
                     </button>
                   </td>
@@ -303,10 +307,9 @@ interface DraftLine {
             </tbody>
           </table>
         </div>
-        <div class="field">
-          <label>{{ 'inventory.note' | t }}</label
-          ><input class="input" [value]="note()" (input)="note.set($any($event.target).value)" />
-        </div>
+        <app-field [label]="'inventory.note' | t">
+          <input class="input" [value]="note()" (input)="note.set($any($event.target).value)" />
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="creating.set(false)">
@@ -368,6 +371,11 @@ export default class TransfersPage {
   protected readonly toBranchUid = signal('');
   protected readonly note = signal('');
   protected readonly lines = signal<DraftLine[]>([]);
+  /** A transfer being typed: closing the dialog or leaving the page asks first (UX-4). */
+  protected changed(): boolean {
+    return this.creating() && (this.lines().length > 0 || !!this.note().trim());
+  }
+  private readonly unsaved = guardUnsavedWork(() => this.changed());
   protected readonly stockName = (s: { productName: string }) => s.productName;
   protected readonly stockDetail = (s: { quantity: number }) => `${s.quantity} on hand`;
 

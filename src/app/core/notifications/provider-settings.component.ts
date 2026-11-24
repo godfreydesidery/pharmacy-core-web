@@ -272,9 +272,10 @@ const SMTP_PORTS = ['587', '465', '2525', '2587', '25'];
           </div>
 
           <div class="card-pad test">
-            <label>{{ 'providers.testTo' | t }}</label>
+            <label [for]="'provider-test-' + c.channel">{{ 'providers.testTo' | t }}</label>
             <div class="row" style="gap: 8px">
               <input
+                [id]="'provider-test-' + c.channel"
                 class="input"
                 [placeholder]="c.channel === 'EMAIL' ? 'name@example.com' : '+255712345678'"
                 [value]="to()[c.channel] ?? ''"

@@ -179,7 +179,8 @@ import { Translations } from '../../core/i18n/translations.store';
                           ><app-icon [name]="typeOf(item).icon" [size]="16"
                         /></span>
                         <div>
-                          <b>{{ item.productName }}</b
+                          <button type="button" class="row-link">
+                            <b>{{ item.productName }}</b></button
                           ><small
                             >{{ item.genericName ?? ''
                             }}{{ item.sku ? ' · ' + item.sku : '' }}</small
@@ -219,7 +220,7 @@ import { Translations } from '../../core/i18n/translations.store';
                   <tr>
                     <td colspan="10">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="box"
                         [title]="'inventory.noStock' | t"
                         [text]="'ui.empty.stock' | t"
@@ -354,8 +355,7 @@ import { Translations } from '../../core/i18n/translations.store';
       (closed)="opening.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="saveOpening()">
-        <div class="field full">
-          <label>{{ 'inventory.product' | t }}</label>
+        <app-field class="full" [label]="'inventory.product' | t" [error]="err('productUid')">
           <app-lookup
             path="/products"
             [placeholder]="'inventory.searchProducts' | t"
@@ -363,34 +363,31 @@ import { Translations } from '../../core/i18n/translations.store';
             [detail]="productDetail"
             (picked)="pickProduct($event)"
           />
-          @if (err('productUid'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        </app-field>
         @if (openingTracking() !== 'QUANTITY') {
           <div class="field">
             <label
               >{{ 'ui.t.batchNumber' | t
               }}{{ openingTracking() === 'SERIAL' ? ('ui.l.preOptional' | t) : '' }}</label
-            ><input class="input" formControlName="batchNumber" />
+            >
+            <input class="input" formControlName="batchNumber" />
             @if (err('batchNumber'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
         }
         @if (openingTracking() === 'BATCH_EXPIRY') {
-          <div class="field">
-            <label>{{ 'inventory.expiryDate' | t }}</label
-            ><input class="input" type="date" formControlName="expiryDate" [min]="today" />
-            @if (err('expiryDate'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
+          <app-field [label]="'inventory.expiryDate' | t" [error]="err('expiryDate')">
+            <input class="input" type="date" formControlName="expiryDate" [min]="today" />
+          </app-field>
         }
         @if (openingTracking() === 'SERIAL') {
-          <div class="field full">
-            <label>{{ 'inventory.serialNumbersOnePerLineOr' | t }}</label
-            ><textarea
+          <app-field
+            class="full"
+            [label]="'inventory.serialNumbersOnePerLineOr' | t"
+            [error]="err('serialNumbers')"
+          >
+            <textarea
               class="input mono"
               rows="4"
               formControlName="serials"
@@ -398,31 +395,20 @@ import { Translations } from '../../core/i18n/translations.store';
               (input)="syncSerialCount()"
             ></textarea>
             <span class="hint">{{ 'ui.t.serialUnits' | t: { count: serialCount() } }}</span>
-            @if (err('serialNumbers'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
+          </app-field>
         }
-        <div class="field">
-          <label>{{ 'inventory.quantity' | t }}</label
-          ><input
+        <app-field [label]="'inventory.quantity' | t" [error]="err('quantity')">
+          <input
             class="input"
             type="number"
             min="1"
             formControlName="quantity"
             [readonly]="openingTracking() === 'SERIAL'"
           />
-          @if (err('quantity'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'inventory.unitCost' | t }}</label
-          ><input class="input" type="number" min="0" step="any" formControlName="unitCost" />
-          @if (err('unitCost'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        </app-field>
+        <app-field [label]="'inventory.unitCost' | t" [error]="err('unitCost')">
+          <input class="input" type="number" min="0" step="any" formControlName="unitCost" />
+        </app-field>
       </form>
       <ng-container footer>
         <button class="btn" type="button" (click)="opening.set(false)">

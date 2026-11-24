@@ -120,6 +120,66 @@ export function baseValue(payment: SalePayment): number {
   return round2((Number(payment.amount) || 0) * (payment.exchangeRate ?? 1));
 }
 
+/**
+ * An amount as a whole number of the currency's minor units (cents), rounded half up. The product
+ * is cleaned to six places first: 10.075 × 100 is 1007.4999999999999 in floating point, which a
+ * plain Math.round would take down to 1007.
+ */
+export function toMinor(amount: number, digits: number): number {
+  const scaled = Number(((Number(amount) || 0) * 10 ** digits).toFixed(6));
+  return Math.sign(scaled) * Math.round(Math.abs(scaled));
+}
+
+/** A whole number of minor units back as an amount with exactly that many decimals. */
+export function fromMinor(minor: number, digits: number): number {
+  return Number((minor / 10 ** digits).toFixed(digits));
+}
+
+/**
+ * The smallest amount in a currency (with `digits` decimals, at `rate` base units each) whose base
+ * value covers `due`, worked in whole minor units so no float error adds a cent. With no rate the
+ * amount is in the base itself: `due`, rounded to the base's minor unit.
+ */
+export function coveringAmount(
+  due: number,
+  rate: number | null | undefined,
+  digits: number,
+  baseDigits = 2,
+): number {
+  const dueMinor = Math.max(toMinor(due, baseDigits), 0);
+  if (!rate || rate === 1) {
+    return fromMinor(toMinor(fromMinor(dueMinor, baseDigits), digits), digits);
+  }
+  const covers = (minor: number) =>
+    toMinor(fromMinor(minor, digits) * rate, baseDigits) >= dueMinor;
+  // A first guess from the division, cleaned of float noise, then moved to the exact edge.
+  let minor = Math.ceil(Number(((dueMinor / 10 ** baseDigits / rate) * 10 ** digits).toFixed(6)));
+  while (!covers(minor)) minor++;
+  while (minor > 0 && covers(minor - 1)) minor--;
+  return fromMinor(minor, digits);
+}
+
+/**
+ * "Exact": what the first payment must be for the payments to cover the total. The other payments'
+ * base values are taken off in whole minor units, then the rest is converted at the first
+ * payment's rate (rounding up, so a foreign payment never falls a cent short).
+ */
+export function exactTender(
+  total: number,
+  payments: readonly SalePayment[],
+  digits: number,
+  baseDigits = 2,
+): number {
+  const others = payments.slice(1).reduce((sum, p) => sum + toMinor(baseValue(p), baseDigits), 0);
+  const dueMinor = Math.max(toMinor(total, baseDigits) - others, 0);
+  return coveringAmount(
+    fromMinor(dueMinor, baseDigits),
+    payments[0]?.exchangeRate,
+    digits,
+    baseDigits,
+  );
+}
+
 /** What the payments cover in the base currency, whatever currencies they are in. */
 export function paidTotal(payments: readonly SalePayment[]): number {
   return round2(payments.reduce((sum, p) => sum + baseValue(p), 0));

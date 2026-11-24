@@ -94,11 +94,7 @@ const MAX_DEPTH = 3;
               } @empty {
                 <tr>
                   <td colspan="3">
-                    <app-empty
-                      [loading]="list.loading()"
-                      icon="layers"
-                      [title]="'catalogue.noCategories' | t"
-                    />
+                    <app-empty [for]="list" icon="layers" [title]="'catalogue.noCategories' | t" />
                   </td>
                 </tr>
               }

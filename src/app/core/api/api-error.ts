@@ -82,14 +82,38 @@ export class ApiError extends Error {
   }
 }
 
-/**
- * The error with its message in the user's language. The API writes `detail` in English, naming
- * the product, amount or field; English users keep it. In another language the refusal's
- * `errors.<reason>` line replaces it, and a reason with no line keeps the server's detail.
- */
 /** Reasons whose server wording is technical, so even English shows the dictionary text. */
 const FRIENDLY_IN_EVERY_LANGUAGE = new Set(['invalid_uid', 'batch_quarantined']);
 
+/** Returned by `t` when the dictionary has no line, so a missing line is told from a found one. */
+const MISSING = '\u0000errors.missing';
+
+/**
+ * The placeholders a refusal's line may use: the problem's extra members that are plain values
+ * (such as `batchUnitCost` on `batch_cost_differs`), numbers in the language's digits. The API
+ * lists each reason's members in `src/app/core/i18n/api-reasons.json`; `npm run i18n:check`
+ * refuses a line that uses one the reason does not carry.
+ */
+export function errorParams(error: ApiError, lang: Lang): Params {
+  const params: Record<string, string> = {};
+  const locale = lang === 'sw' ? 'sw-TZ' : 'en-TZ';
+  for (const [name, value] of Object.entries(error.extras)) {
+    if (typeof value === 'number') {
+      params[name] = value.toLocaleString(locale, { maximumFractionDigits: 2 });
+    } else if (typeof value === 'string' || typeof value === 'boolean') {
+      params[name] = String(value);
+    }
+  }
+  return params;
+}
+
+/**
+ * The error with its message in the user's language. The API writes `detail` in English, naming
+ * the product, amount or field; English users keep it. In another language the refusal's
+ * `errors.<reason>` line replaces it, its `{{name}}` placeholders filled from the problem's extra
+ * members. An `invalid_<field>` reason with no line of its own (the API's generic input checks)
+ * takes `errors.invalid_input`; any other reason with no line keeps the server's detail.
+ */
 export function localizeError(
   error: ApiError,
   lang: Lang,
@@ -98,8 +122,12 @@ export function localizeError(
   if (lang === 'en' && !FRIENDLY_IN_EVERY_LANGUAGE.has(error.reason)) {
     return error;
   }
-  const message = t(`errors.${error.reason}`, undefined, error.message);
-  if (message === error.message) {
+  const params = errorParams(error, lang);
+  let message = t(`errors.${error.reason}`, params, MISSING);
+  if (message === MISSING && error.reason.startsWith('invalid_')) {
+    message = t('errors.invalid_input', params, MISSING);
+  }
+  if (message === MISSING || message === error.message) {
     return error;
   }
   return new ApiError(

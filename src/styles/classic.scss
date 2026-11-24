@@ -20,7 +20,8 @@ $blue-grey: #a9b0be; // frame lines
 $border: #8e8f91; // control borders
 $selection: #39698a; // the selected row or item
 $selection-dark: #2c5370;
-$focus: #73a4d1; // the focus ring
+$field-border: #6e7074; // text fields: 3:1 against the panels (WCAG 1.4.11)
+$focus: #33689c; // the focus ring: 3:1 against the panels and the fields
 $hover: #e3e9f1;
 $alt-row: #f2f2f2;
 
@@ -48,8 +49,8 @@ $alt-row: #f2f2f2;
 /* A text field: white, a thin border a shade darker on top, a faint inner shadow. */
 @mixin field {
   background-color: #fff;
-  border: 1px solid $border;
-  border-top-color: #73767a;
+  border: 1px solid $field-border;
+  border-top-color: #5f6266;
   border-radius: 3px;
   box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.1);
 }
@@ -89,7 +90,8 @@ html:root[data-look='classic'] {
   --text: #000000;
   --text-2: #1a1a1a;
   --muted: #4d5560;
-  --faint: #767b82;
+  --faint: #575d6b;
+  --input-border: #{$field-border};
 
   --primary: #{$selection};
   --primary-strong: #{$selection-dark};
@@ -97,11 +99,11 @@ html:root[data-look='classic'] {
   --primary-soft-2: #c3d4e5;
   --on-primary: #ffffff;
 
-  --green: #3d7a17;
+  --green: #33690f;
   --green-soft: #e4efdb;
-  --amber: #8f6100;
+  --amber: #7f5600;
   --amber-soft: #f6eccf;
-  --orange: #b35a00;
+  --orange: #9a4c00;
   --orange-soft: #f6e3d2;
   --red: #a92e22;
   --red-soft: #f4dcd9;
@@ -109,6 +111,10 @@ html:root[data-look='classic'] {
   --purple-soft: #e8e1f2;
   --teal: #2a7373;
   --teal-soft: #d9ecec;
+  /* The classic look has no dark mode: its filled buttons keep white text in a dark theme too. */
+  --on-green: #ffffff;
+  --on-red: #ffffff;
+  --on-amber: #ffffff;
 
   --radius-sm: 3px;
   --radius: 6px;

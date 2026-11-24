@@ -1,15 +1,13 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   Injectable,
   computed,
-  effect,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { TranslatePipe } from '../i18n/t.pipe';
+import { DialogDirective, uniqueId } from './dialog';
 
 /** question (blue ?), warning (amber !) or danger (red !: deleting, voiding, cancelling). */
 export type ConfirmIcon = 'question' | 'warning' | 'danger';
@@ -28,75 +26,126 @@ export interface ConfirmOptions {
   key?: string;
   /** False: only the two buttons answer it, not Escape or a click beside it. */
   dismissible?: boolean;
+  /**
+   * Which button takes the focus, so Enter (or a barcode scanner's Enter) answers it: the safe
+   * one, Cancel, for a danger dialog; the confirm button otherwise.
+   */
+  focus?: 'confirm' | 'cancel';
+  /**
+   * Shown at once, in front of a dialog already open (which waits, unanswered, until this one is
+   * answered): the inactivity warning, which cannot wait its turn.
+   */
+  urgent?: boolean;
 }
 
-interface Open extends ConfirmOptions {
-  resolve: (ok: boolean) => void;
+/** A question waiting in the queue, or on screen. */
+export interface OpenConfirm extends ConfirmOptions {
+  readonly id: number;
+  readonly resolve: (ok: boolean) => void;
+  /** What had the focus when it was asked: the focus goes back there afterwards. */
+  readonly opener: HTMLElement | null;
+}
+
+let nextConfirm = 0;
+
+function focused(): HTMLElement | null {
+  const active = typeof document === 'undefined' ? null : document.activeElement;
+  return active instanceof HTMLElement && active !== document.body ? active : null;
 }
 
 /**
  * Asks the user to confirm, in an animated dialog instead of the browser's confirm box:
  * `if (!(await confirm.ask({ title, text, icon: 'danger' }))) return;`
+ *
+ * One question shows at a time. Another asked meanwhile waits its turn and never answers the one
+ * on screen; an `urgent` one (the inactivity warning) goes in front, and the one it covered shows
+ * again, still unanswered, once it is answered.
  */
 @Injectable({ providedIn: 'root' })
 export class ConfirmService {
-  private readonly state = signal<Open | null>(null);
-  readonly current = this.state.asReadonly();
+  private readonly queue = signal<readonly OpenConfirm[]>([]);
+  /** The question on screen. */
+  readonly current = computed<OpenConfirm | null>(() => this.queue()[0] ?? null);
+  /** How many questions are waiting, the one on screen included. */
+  readonly waiting = computed(() => this.queue().length);
 
   ask(options: ConfirmOptions): Promise<boolean> {
-    this.state()?.resolve(false);
-    return new Promise((resolve) => this.state.set({ icon: 'question', ...options, resolve }));
+    return new Promise((resolve) => {
+      const entry: OpenConfirm = {
+        icon: 'question',
+        ...options,
+        id: ++nextConfirm,
+        resolve,
+        opener: focused(),
+      };
+      this.queue.update((queue) => (options.urgent ? [entry, ...queue] : [...queue, entry]));
+    });
   }
 
-  /** Changes the open dialog named {@code key}, such as a countdown in its text. */
+  /** Changes the dialog named {@code key}, shown or waiting, such as a countdown in its text. */
   update(key: string, changes: Partial<ConfirmOptions>): void {
-    this.state.update((open) => (open?.key === key ? { ...open, ...changes } : open));
+    this.queue.update((queue) =>
+      queue.map((open) => (open.key === key ? { ...open, ...changes } : open)),
+    );
   }
 
-  /** Closes the dialog named {@code key}, if open, answering it "no". */
+  /** Closes the dialog named {@code key}, shown or waiting, answering it "no". */
   dismiss(key: string): void {
-    if (this.state()?.key === key) {
-      this.settle(false);
+    for (const open of this.queue().filter((o) => o.key === key)) {
+      this.answer(open.id, false);
     }
   }
 
-  /** Called by the dialog once its closing animation has played. */
+  /** Answers the question {@code id} (and only it), wherever it is in the queue. */
+  answer(id: number, ok: boolean): void {
+    const open = this.queue().find((o) => o.id === id);
+    if (!open) {
+      return;
+    }
+    this.queue.update((queue) => queue.filter((o) => o.id !== id));
+    open.resolve(ok);
+  }
+
+  /** Answers the question on screen. */
   settle(ok: boolean): void {
-    const open = this.state();
-    this.state.set(null);
-    open?.resolve(ok);
+    const open = this.current();
+    if (open) {
+      this.answer(open.id, ok);
+    }
   }
 }
 
 /** The dialog for {@link ConfirmService}, placed once at the app root. */
 @Component({
   selector: 'app-confirm',
-  imports: [TranslatePipe],
+  imports: [TranslatePipe, DialogDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: {
-    '(document:keydown.escape)': 'current() && current()?.dismissible !== false && close(false)',
-  },
   template: `
-    @if (current(); as c) {
+    @for (c of shown(); track c.id) {
       <div
         class="backdrop"
-        [class.closing]="closing()"
-        (click)="c.dismissible !== false && close(false)"
+        [class.closing]="closingId() === c.id"
+        (click)="c.dismissible !== false && close(c, false)"
       >
         <div
           class="popup"
-          [class.closing]="closing()"
+          [class.closing]="closingId() === c.id"
           role="alertdialog"
-          aria-modal="true"
-          [attr.aria-label]="c.title"
+          appDialog
+          [appDialogFocus]="safeFirst(c) ? '.cancel' : '.ok'"
+          [appDialogReturn]="c.opener"
+          [attr.aria-labelledby]="titleId"
+          [attr.aria-describedby]="c.text ? textId : null"
+          [attr.data-key]="c.key ?? null"
+          (dialogEscape)="c.dismissible !== false && close(c, false)"
           (click)="$event.stopPropagation()"
         >
-          <div class="icon" [class]="'icon ' + c.icon">
+          <div class="icon" [class]="'icon ' + c.icon" aria-hidden="true">
             <span class="glyph">{{ c.icon === 'question' ? '?' : '!' }}</span>
           </div>
-          <h2>{{ c.title }}</h2>
+          <h2 [id]="titleId">{{ c.title }}</h2>
           @if (c.text) {
-            <p>{{ c.text }}</p>
+            <p [id]="textId">{{ c.text }}</p>
           }
           @if (c.details?.length) {
             <dl>
@@ -109,10 +158,10 @@ export class ConfirmService {
             </dl>
           }
           <div class="actions">
-            <button type="button" class="cancel" (click)="close(false)">
+            <button type="button" class="cancel" (click)="close(c, false)">
               {{ c.cancelText ?? ('common.cancel' | t) }}
             </button>
-            <button #ok type="button" class="ok" [class]="'ok ' + c.icon" (click)="close(true)">
+            <button type="button" class="ok" [class]="'ok ' + c.icon" (click)="close(c, true)">
               {{ c.confirmText ?? ('common.confirm' | t) }}
             </button>
           </div>
@@ -124,7 +173,7 @@ export class ConfirmService {
     .backdrop {
       position: fixed;
       inset: 0;
-      z-index: 300;
+      z-index: 320;
       display: grid;
       place-items: center;
       padding: 16px;
@@ -236,23 +285,23 @@ export class ConfirmService {
     }
     .actions button:focus-visible {
       outline: none;
-      box-shadow: 0 0 0 3px var(--primary-soft-2);
+      box-shadow: var(--ring);
     }
     .cancel {
       background: var(--surface-2);
       color: var(--text);
     }
-    .ok {
-      color: #fff;
-    }
     .ok.question {
       background: var(--green);
+      color: var(--on-green);
     }
     .ok.warning {
       background: var(--amber);
+      color: var(--on-amber);
     }
     .ok.danger {
       background: var(--red);
+      color: var(--on-red);
     }
     @keyframes fade-in {
       from {
@@ -312,29 +361,29 @@ export class ConfirmService {
 })
 export class ConfirmDialogComponent {
   private readonly confirm = inject(ConfirmService);
-  protected readonly current = this.confirm.current;
-  protected readonly closing = signal(false);
-  private readonly ok = viewChild<ElementRef<HTMLButtonElement>>('ok');
+  /** The question on screen, as a list of one: a new question is a new dialog (focus, animation). */
+  protected readonly shown = computed(() => {
+    const current = this.confirm.current();
+    return current ? [current] : [];
+  });
+  protected readonly closingId = signal<number | null>(null);
+  protected readonly titleId = uniqueId('confirm-title');
+  protected readonly textId = uniqueId('confirm-text');
 
-  /** The open dialog itself, unchanged by {@link ConfirmService.update} (a countdown's ticks). */
-  private readonly opened = computed(() => this.current()?.resolve);
-
-  constructor() {
-    // Enter confirms: the confirm button takes the focus when the dialog opens.
-    effect(() => {
-      if (this.opened()) {
-        this.closing.set(false);
-        setTimeout(() => this.ok()?.nativeElement.focus());
-      }
-    });
+  /** A danger question, or one asked so, starts on Cancel: a stray Enter never confirms it. */
+  protected safeFirst(c: OpenConfirm): boolean {
+    return c.focus ? c.focus === 'cancel' : c.icon === 'danger';
   }
 
-  /** Plays the closing animation, then answers. */
-  protected close(ok: boolean): void {
-    if (this.closing()) {
+  /** Plays the closing animation, then answers that question (not whichever shows by then). */
+  protected close(c: OpenConfirm, ok: boolean): void {
+    if (this.closingId() !== null) {
       return;
     }
-    this.closing.set(true);
-    setTimeout(() => this.confirm.settle(ok), 150);
+    this.closingId.set(c.id);
+    setTimeout(() => {
+      this.closingId.set(null);
+      this.confirm.answer(c.id, ok);
+    }, 150);
   }
 }

@@ -54,7 +54,7 @@ import { RolesNoticeComponent } from './roles-notice.component';
               }
             </button>
           } @empty {
-            <app-empty [loading]="roles.loading()" icon="shield" [title]="'admin.noRoles' | t" />
+            <app-empty [for]="roles" icon="shield" [title]="'admin.noRoles' | t" />
           }
         </div>
         @if (selected(); as role) {

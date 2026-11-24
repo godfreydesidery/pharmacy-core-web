@@ -3,6 +3,7 @@
  * each new `<area>.sw.ts` here and its English pair in `en-areas.ts`.
  */
 import { APPROVALS_SW } from './approvals.sw';
+import { A11Y_SW } from './a11y.sw';
 import { PLANNING_SW } from './planning.sw';
 import { PLANS_SW } from './plans.sw';
 import { PROVIDERS_SW } from './providers.sw';
@@ -41,8 +42,10 @@ import { SECURITY2_SW } from './security2.sw';
 import { SALES_SW } from './sales.sw';
 import { SHELL_SW } from './shell.sw';
 import { UI_SW } from './ui.sw';
+import { STATE_SW } from './state.sw';
 
 export const SW_AREAS: Readonly<Record<string, string>> = {
+  ...A11Y_SW,
   ...SHELL_SW,
   ...PLANNING_SW,
   ...SECURITY2_SW,
@@ -82,4 +85,5 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...APPROVALS_SW,
   ...MESSAGES_SW,
   ...UI_SW,
+  ...STATE_SW,
 };

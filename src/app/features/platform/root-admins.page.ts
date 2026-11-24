@@ -6,6 +6,7 @@ import { User } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
+import { ConfirmService } from '../../core/ui/confirm';
 import { ToastService } from '../../core/ui/toast.service';
 import { Translations } from '../../core/i18n/translations.store';
 
@@ -100,7 +101,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 <tr>
                   <td colspan="5">
                     <app-empty
-                      [loading]="admins.loading()"
+                      [for]="admins"
                       icon="key"
                       [title]="'platform.noRootAdministrators' | t"
                     />
@@ -164,6 +165,7 @@ export default class RootAdminsPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly confirm = inject(ConfirmService);
   protected readonly admins = pagedList<User>(() => ({
     path: '/platform/root-admins',
     options: { noBranch: true },
@@ -180,7 +182,14 @@ export default class RootAdminsPage {
   protected readonly me = computed(() => this.session.user()?.uid ?? null);
 
   protected async setActive(u: User, active: boolean): Promise<void> {
-    if (!active && !confirm(this.translations.t('admin2.confirmDeactivate', { name: u.name }))) {
+    if (
+      !active &&
+      !(await this.confirm.ask({
+        icon: 'danger',
+        title: this.translations.t('common.areYouSure'),
+        text: this.translations.t('admin2.confirmDeactivate', { name: u.name }),
+      }))
+    ) {
       return;
     }
     await this.act(
@@ -191,7 +200,13 @@ export default class RootAdminsPage {
   }
 
   protected async remove(u: User): Promise<void> {
-    if (!confirm(this.translations.t('admin2.confirmRemove', { name: u.name }))) {
+    const sure = await this.confirm.ask({
+      icon: 'danger',
+      title: this.translations.t('common.areYouSure'),
+      text: this.translations.t('admin2.confirmRemove', { name: u.name }),
+      confirmText: this.translations.t('admin2.remove'),
+    });
+    if (!sure) {
       return;
     }
     await this.act(`/platform/root-admins/${u.uid}`, 'delete', 'admin2.rootRemoved');

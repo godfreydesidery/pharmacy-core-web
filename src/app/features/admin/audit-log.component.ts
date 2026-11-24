@@ -72,7 +72,9 @@ interface Change {
           <tbody>
             @for (entry of list.items(); track entry.uid) {
               <tr class="clickable" (click)="selected.set(entry)">
-                <td class="nowrap">{{ entry.at | date: 'medium' }}</td>
+                <td class="nowrap">
+                  <button type="button" class="row-link">{{ entry.at | date: 'medium' }}</button>
+                </td>
                 <td>{{ entry.actor }}</td>
                 <td>
                   <span class="action" [class]="tone(entry.action)">{{ label(entry.action) }}</span>

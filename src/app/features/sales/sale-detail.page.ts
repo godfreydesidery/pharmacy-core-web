@@ -228,7 +228,7 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
           >
         </app-modal>
       } @else {
-        <app-empty [loading]="sale.loading()" icon="receipt" [title]="'sales.saleNotFound' | t" />
+        <app-empty [for]="sale" icon="receipt" [title]="'sales.saleNotFound' | t" />
       }
     </div>
 
@@ -311,26 +311,23 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
           </table>
         </div>
         <div class="form-grid">
-          <div class="field">
-            <label>{{ 'sales.reason' | t }}</label
-            ><input
+          <app-field [label]="'sales.reason' | t">
+            <input
               class="input"
               [value]="reason()"
               (input)="reason.set($any($event.target).value)"
               [placeholder]="'sales.wrongItemAdverseReaction' | t"
             />
-          </div>
-          <div class="field">
-            <label>{{ 'sales.refundMethod' | t }}</label>
+          </app-field>
+          <app-field [label]="'sales.refundMethod' | t">
             <!-- The refund goes back the way the sale was paid (owner's rule, 23 Nov 2026): the
                  server splits it; the cashier does not choose. -->
             <p class="refund-ways" data-testid="refund-ways">
               {{ 'sales.refundGoesBack' | t }} <b>{{ paidWays() }}</b>
             </p>
-          </div>
+          </app-field>
           @if (foreignTenders().length) {
-            <div class="field">
-              <label>{{ 'sales.refundIn' | t }}</label>
+            <app-field [label]="'sales.refundIn' | t">
               <select
                 class="select"
                 [value]="refundCurrency() ?? ''"
@@ -342,7 +339,7 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
                   <option [value]="tender.currency">{{ tender.currency }}</option>
                 }
               </select>
-            </div>
+            </app-field>
           }
         </div>
         @if (foreignTenders().length && !foreignRefundAllowed()) {

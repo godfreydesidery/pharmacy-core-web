@@ -13,10 +13,24 @@ import { SESSION_STORAGE_KEY, SessionStore } from './session.store';
 export type SignOutReason = 'user' | 'idle' | 'expired' | 'elsewhere';
 
 /**
+ * The page to open after signing in. A page kept at sign-out names whose it is (`returnFor`, the
+ * user's uid): only that person goes back to it, and anyone else signing in at the same computer
+ * starts from the workspace. A page with no owner (a link opened while signed out) is anyone's.
+ */
+export function returnUrlFor(
+  returnUrl: string | null | undefined,
+  returnFor: string | null | undefined,
+  userUid: string,
+): string | null {
+  const usable = usableReturnUrl(returnUrl);
+  return usable && (!returnFor || returnFor === userUid) ? usable : null;
+}
+
+/**
  * Ends the session the same way whatever the reason. Unsaved work is kept first, while the session
  * still says where it belongs: the POS parks an unfinished sale. Unless the person signed out
- * themselves, the sign-in page says why and brings them back to the page they were on. Signing out
- * in one tab signs out the others.
+ * themselves, the sign-in page says why and brings them back to the page they were on (that
+ * person only: see {@link returnUrlFor}). Signing out in one tab signs out the others.
  */
 @Injectable({ providedIn: 'root' })
 export class SignOutService {
@@ -41,7 +55,8 @@ export class SignOutService {
     }
     this.ending = true;
     try {
-      const mayLeave = await this.leave.canLeave();
+      // Only the person signing out can be asked; otherwise the page keeps what it can at once.
+      const mayLeave = await this.leave.canLeave(reason === 'user');
       if (!mayLeave && reason === 'user') {
         return false;
       }
@@ -52,11 +67,15 @@ export class SignOutService {
           .catch(() => undefined);
       }
       const returnUrl = reason === 'user' ? null : usableReturnUrl(this.router.url);
+      // Parked sales stay (the owner's rule: leaving the till, signing out or an idle sign-out
+      // parks the sale so the cashier carries on after signing in). They hold only uids, are kept
+      // per user, pharmacy and branch, and expire after 12 hours (WEB-5).
+      const owner = this.session.user()?.uid;
       this.session.signOut();
       await this.router.navigate(['/sign-in'], {
         queryParams: {
           ...(reason === 'idle' ? { idle: 1 } : reason === 'expired' ? { expired: 1 } : {}),
-          ...(returnUrl ? { returnUrl } : {}),
+          ...(returnUrl ? { returnUrl, ...(owner ? { returnFor: owner } : {}) } : {}),
         },
       });
       return true;

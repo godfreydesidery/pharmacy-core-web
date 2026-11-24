@@ -13,7 +13,11 @@
     "serve:prod": "node scripts/serve-prod.mjs",
     "e2e": "playwright test",
     "e2e:headless": "playwright test --headed=false",
-    "i18n:check": "node scripts/i18n-check.mjs"
+    "i18n:check": "node scripts/i18n-check.mjs",
+    "i18n:reasons": "node scripts/api-reasons.mjs",
+    "lint:dialogs": "node scripts/no-browser-dialogs.mjs",
+    "a11y:contrast": "node scripts/contrast.mjs",
+    "a11y:labels": "node scripts/a11y-labels.mjs --list"
   },
   "private": true,
   "packageManager": "npm@10.9.4",

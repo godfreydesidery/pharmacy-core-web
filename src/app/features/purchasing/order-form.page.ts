@@ -16,6 +16,7 @@ import { Api } from '../../core/api/api.service';
 import { Product, PurchaseOrder, Supplier } from '../../core/api/models';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
+import { guardUnsavedWork } from '../../core/session/leave-guard';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { ToastService } from '../../core/ui/toast.service';
@@ -43,25 +44,13 @@ type LineGroup = FormGroup<{
           <h1 style="margin-top:6px">{{ 'purchasing.newPurchaseOrder' | t }}</h1>
           <p class="sub">{{ 'ui.t.forBranch' | t: { branch: session.branch()?.name ?? '—' } }}</p>
         </div>
-        <div class="actions">
-          <a class="btn" routerLink="/purchasing/orders">{{ 'purchasing.cancel' | t }}</a>
-          <button
-            class="btn primary"
-            type="button"
-            [disabled]="busy() || !session.branch()"
-            (click)="save()"
-          >
-            <app-icon name="check" [size]="16" /> {{ 'purchasing.placeOrder' | t }}
-          </button>
-        </div>
       </div>
       @if (!session.branch()) {
         <app-branch-required [what]="'ui.what.ordering' | t" />
       } @else {
         <form [formGroup]="form" class="stack">
           <div class="card card-pad form-grid three">
-            <div class="field">
-              <label>{{ 'purchasing.supplier' | t }}</label>
+            <app-field [label]="'purchasing.supplier' | t" [error]="err('supplierUid')">
               <app-lookup
                 path="/suppliers"
                 [placeholder]="'purchasing.searchSuppliers' | t"
@@ -69,22 +58,16 @@ type LineGroup = FormGroup<{
                 [detail]="supplierDetail"
                 (picked)="form.controls.supplierUid.setValue($event?.uid ?? '')"
               />
-              @if (err('supplierUid'); as m) {
-                <span class="error">{{ m }}</span>
-              }
-            </div>
-            <div class="field">
-              <label>{{ 'purchasing.expectedDelivery' | t }}</label
-              ><input class="input" type="date" formControlName="expectedDate" />
-            </div>
-            <div class="field">
-              <label>{{ 'purchasing.note' | t }}</label
-              ><input class="input" formControlName="note" />
-            </div>
-            <div class="field full">
-              <label>{{ 'purchasing.currency' | t }}</label>
+            </app-field>
+            <app-field [label]="'purchasing.expectedDelivery' | t">
+              <input class="input" type="date" formControlName="expectedDate" />
+            </app-field>
+            <app-field [label]="'purchasing.note' | t">
+              <input class="input" formControlName="note" />
+            </app-field>
+            <app-field class="full" [label]="'purchasing.currency' | t">
               <app-currency-rate [(currency)]="currency" [(rate)]="rate" />
-            </div>
+            </app-field>
           </div>
           <div class="card">
             <div class="card-head">
@@ -143,7 +126,12 @@ type LineGroup = FormGroup<{
                         }}
                       </td>
                       <td class="right">
-                        <button class="icon-btn sm" type="button" (click)="removeLine(i)">
+                        <button
+                          class="icon-btn sm"
+                          type="button"
+                          (click)="removeLine(i)"
+                          [attr.aria-label]="'common.remove' | t"
+                        >
                           <app-icon name="trash" [size]="14" />
                         </button>
                       </td>
@@ -178,6 +166,12 @@ type LineGroup = FormGroup<{
                 </tfoot>
               </table>
             </div>
+          </div>
+          <div class="sticky-actions">
+            <a class="btn" routerLink="/purchasing/orders">{{ 'purchasing.cancel' | t }}</a>
+            <button class="btn primary" type="button" [disabled]="busy()" (click)="save()">
+              <app-icon name="check" [size]="16" /> {{ 'purchasing.placeOrder' | t }}
+            </button>
           </div>
         </form>
       }
@@ -226,6 +220,10 @@ export default class OrderFormPage {
     convertHalfEven(this.total(), this.rate(), this.base()),
   );
 
+  /** Leaving with an order half typed asks first (UX-4). */
+  private readonly unsaved = guardUnsavedWork(
+    () => this.form.dirty || this.lines.length > 0 || !!this.form.controls.supplierUid.value,
+  );
   protected readonly supplierName = (s: Supplier) => s.name;
   protected readonly supplierDetail = (s: Supplier) => [s.code, s.paymentTerms].join(' · ');
   protected readonly productName = (p: Product) => p.name;
@@ -299,6 +297,7 @@ export default class OrderFormPage {
         { silent: true },
       );
       this.toasts.success(this.translations.t('toast.orderPlaced', { number: order.number }));
+      this.unsaved.done();
       await this.router.navigate(['/purchasing/orders', order.uid]);
     } catch (failure) {
       if (!applyApiError(this.form, failure)) {

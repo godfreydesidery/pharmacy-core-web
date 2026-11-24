@@ -62,7 +62,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 <tr>
                   <td colspan="6">
                     <app-empty
-                      [loading]="remittances.loading()"
+                      [for]="remittances"
                       icon="cash"
                       [title]="'insurance.noRemittancesYet' | t"
                     />
@@ -83,8 +83,7 @@ import { Translations } from '../../core/i18n/translations.store';
       (closed)="open.set(false)"
     >
       <div class="form-grid">
-        <div class="field">
-          <label>{{ 'insurance.payer' | t }}</label>
+        <app-field [label]="'insurance.payer' | t">
           <select
             class="select"
             [value]="payerUid()"
@@ -94,10 +93,9 @@ import { Translations } from '../../core/i18n/translations.store';
               <option [value]="p.uid">{{ p.name }}</option>
             }
           </select>
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.amount' | t }}</label
-          ><input
+        </app-field>
+        <app-field [label]="'insurance.amount' | t">
+          <input
             class="input"
             type="number"
             min="0"
@@ -105,25 +103,23 @@ import { Translations } from '../../core/i18n/translations.store';
             [value]="amount()"
             (input)="amount.set(+$any($event.target).value)"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.reference' | t }}</label
-          ><input
+        </app-field>
+        <app-field [label]="'insurance.reference' | t">
+          <input
             class="input"
             [value]="reference()"
             (input)="reference.set($any($event.target).value)"
             [placeholder]="'insurance.eftChequeNumber' | t"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.date' | t }}</label
-          ><input
+        </app-field>
+        <app-field [label]="'insurance.date' | t">
+          <input
             class="input"
             type="date"
             [value]="date()"
             (change)="date.set($any($event.target).value)"
           />
-        </div>
+        </app-field>
       </div>
       <div class="payable">
         <div class="head">

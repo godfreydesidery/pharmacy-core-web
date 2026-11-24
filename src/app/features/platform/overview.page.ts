@@ -117,12 +117,13 @@ import { DonutSegment } from '../../core/ui/charts';
               <table class="table compact">
                 <tbody>
                   @for (tenant of tenants.items(); track tenant.uid) {
-                    <tr class="clickable" [routerLink]="['/platform/tenants', tenant.uid]">
+                    <tr class="clickable" appRowLink>
                       <td>
                         <div class="cell-main">
                           <span class="thumb tone-blue strong">{{ tenant.code.slice(0, 2) }}</span>
                           <div>
-                            <b>{{ tenant.name }}</b
+                            <a class="row-link" [routerLink]="['/platform/tenants', tenant.uid]"
+                              ><b>{{ tenant.name }}</b></a
                             ><small>{{ tenant.code }} · {{ tenant.country }}</small>
                           </div>
                         </div>
@@ -134,7 +135,7 @@ import { DonutSegment } from '../../core/ui/charts';
                     <tr>
                       <td>
                         <app-empty
-                          [loading]="tenants.loading()"
+                          [for]="tenants"
                           icon="building"
                           [title]="'platform.noPharmaciesYet' | t"
                         />
@@ -147,11 +148,7 @@ import { DonutSegment } from '../../core/ui/charts';
           </div>
         </div>
       } @else {
-        <app-empty
-          [loading]="overview.loading()"
-          icon="globe"
-          [title]="'platform.overviewUnavailable' | t"
-        />
+        <app-empty [for]="overview" icon="globe" [title]="'platform.overviewUnavailable' | t" />
       }
     </div>
   `,

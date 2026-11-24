@@ -4,6 +4,7 @@ import { Api } from '../../core/api/api.service';
 import { AdjustmentReason, Batch, Movement, Product } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
+import { guardUnsavedWork } from '../../core/session/leave-guard';
 import { SessionStore } from '../../core/session/session.store';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
@@ -80,7 +81,7 @@ const REASONS: AdjustmentReason[] = [
                   <tr>
                     <td colspan="8">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="clipboard"
                         [title]="'inventory.noAdjustments' | t"
                       />
@@ -98,23 +99,19 @@ const REASONS: AdjustmentReason[] = [
     <app-modal
       [open]="editing()"
       [title]="'inventory.newStockAdjustment' | t"
+      [dirty]="changed()"
       (closed)="editing.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field full">
-          <label>{{ 'inventory.product' | t }}</label>
+        <app-field class="full" [label]="'inventory.product' | t" [error]="err('productUid')">
           <app-lookup
             path="/products"
             [placeholder]="'inventory.searchProducts' | t"
             [display]="productName"
             (picked)="pickProduct($event)"
           />
-          @if (err('productUid'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field full">
-          <label>{{ 'inventory.batch' | t }}</label>
+        </app-field>
+        <app-field class="full" [label]="'inventory.batch' | t" [error]="err('batchUid')">
           <select class="select" formControlName="batchUid">
             <option value="" disabled>
               {{ batches().length ? ('ui.l.chooseABatch' | t) : ('ui.l.pickAProductFirst' | t) }}
@@ -127,48 +124,39 @@ const REASONS: AdjustmentReason[] = [
               </option>
             }
           </select>
-          @if (err('batchUid'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'inventory.reason' | t }}</label>
+        </app-field>
+        <app-field [label]="'inventory.reason' | t">
           <select class="select" formControlName="reasonCode">
             @for (r of reasons; track r) {
               <option [value]="r">{{ r | label }}</option>
             }
           </select>
-        </div>
-        <div class="field">
-          <label>{{ 'inventory.quantityChange' | t }}</label
-          ><input class="input" type="number" formControlName="quantityChange" />
-          <span class="hint">{{ 'inventory.negativeRemovesStockPositiveAddsIt' | t }}</span>
-          @if (err('quantityChange'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        </app-field>
+        <app-field
+          [label]="'inventory.quantityChange' | t"
+          [hint]="'inventory.negativeRemovesStockPositiveAddsIt' | t"
+          [error]="err('quantityChange')"
+        >
+          <input class="input" type="number" formControlName="quantityChange" />
+        </app-field>
         @if (serialTracked()) {
-          <div class="field full">
-            <label>{{ 'inventory.serialNumbersOnePerLine' | t }}</label
-            ><textarea
+          <app-field
+            class="full"
+            [label]="'inventory.serialNumbersOnePerLine' | t"
+            [hint]="'inventory.addingUnitsGiveEachNewUnit' | t"
+            [error]="err('serialNumbers')"
+          >
+            <textarea
               class="input mono"
               rows="3"
               formControlName="serials"
               placeholder="WCH-0004"
             ></textarea>
-            <span class="hint">{{ 'inventory.addingUnitsGiveEachNewUnit' | t }}</span>
-            @if (err('serialNumbers'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
+          </app-field>
         }
-        <div class="field full">
-          <label>{{ 'inventory.note' | t }}</label
-          ><textarea class="input" formControlName="note"></textarea>
-          @if (err('note'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
+        <app-field class="full" [label]="'inventory.note' | t" [error]="err('note')">
+          <textarea class="input" formControlName="note"></textarea>
+        </app-field>
       </form>
       <ng-container footer>
         <button class="btn" type="button" (click)="editing.set(false)">
@@ -195,6 +183,11 @@ export default class AdjustmentsPage {
   protected readonly batches = signal<Batch[]>([]);
   protected readonly serialTracked = signal(false);
   protected readonly productName = (p: Product) => p.name;
+  /** An adjustment being typed: closing the dialog or leaving the page asks first (UX-4). */
+  protected changed(): boolean {
+    return this.editing() && (this.form.dirty || !!this.form.controls.productUid.value);
+  }
+  private readonly unsaved = guardUnsavedWork(() => this.changed());
   protected readonly form = inject(FormBuilder).nonNullable.group({
     productUid: ['', Validators.required],
     batchUid: ['', Validators.required],

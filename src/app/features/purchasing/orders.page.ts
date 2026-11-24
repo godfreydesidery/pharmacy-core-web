@@ -72,12 +72,13 @@ const STATUSES: PurchaseOrderStatus[] = ['ORDERED', 'PARTIALLY_RECEIVED', 'RECEI
               </thead>
               <tbody>
                 @for (o of list.items(); track o.uid) {
-                  <tr class="clickable" [routerLink]="[o.uid]">
+                  <tr class="clickable" appRowLink>
                     <td>
                       <div class="cell-main">
                         <span class="thumb tone-green"><app-icon name="bag" [size]="16" /></span>
                         <div>
-                          <b>{{ o.number }}</b
+                          <a class="row-link" [routerLink]="[o.uid]"
+                            ><b>{{ o.number }}</b></a
                           ><small>{{ 'ui.t.by' | t: { name: o.createdBy } }}</small>
                         </div>
                       </div>
@@ -98,7 +99,7 @@ const STATUSES: PurchaseOrderStatus[] = ['ORDERED', 'PARTIALLY_RECEIVED', 'RECEI
                   <tr>
                     <td colspan="7">
                       <app-empty
-                        [loading]="list.loading()"
+                        [for]="list"
                         icon="bag"
                         [title]="'purchasing.noPurchaseOrders' | t"
                       />

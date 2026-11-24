@@ -74,7 +74,7 @@ const TONES: Record<AccountType, string> = {
                 <tr>
                   <td colspan="4">
                     <app-empty
-                      [loading]="accounts.loading()"
+                      [for]="accounts"
                       icon="book"
                       [title]="'finance.noAccountsYet' | t"
                       [text]="'ui.empty.accounts' | t"

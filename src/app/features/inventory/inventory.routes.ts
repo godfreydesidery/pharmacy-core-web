@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { leaveGuard } from '../../core/session/leave-guard';
 
 export default [
   { path: '', pathMatch: 'full', redirectTo: 'stock' },
@@ -31,12 +32,14 @@ export default [
     path: 'adjustments',
     title: 'Stock adjustments',
     data: { permission: 'inventory.adjust' },
+    canDeactivate: [leaveGuard],
     loadComponent: () => import('./adjustments.page'),
   },
   {
     path: 'transfers',
     title: 'Transfers',
     data: { permission: 'inventory.transfer' },
+    canDeactivate: [leaveGuard],
     loadComponent: () => import('./transfers.page'),
   },
 ] satisfies Routes;

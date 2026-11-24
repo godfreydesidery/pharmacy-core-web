@@ -10,11 +10,11 @@
       <div class="actions">
         <button type="button" class="btn" (click)="parkedOpen.set(true)">
           <app-icon name="clock" [size]="16" /> {{ 'pos.parkedSales' | t }}
-          @if (parked().length) {
-            <span class="count">{{ parked().length }}</span>
+          @if (parkedList().length) {
+            <span class="count">{{ parkedList().length }}</span>
           }
         </button>
-        <button type="button" class="btn soft" (click)="newSale()">
+        <button type="button" class="btn soft" [disabled]="locked()" (click)="newSale()">
           <app-icon name="plus" [size]="16" /> {{ 'pos.newSale' | t }}
         </button>
         <button
@@ -52,9 +52,18 @@
           <div class="till-card-b">
             <div class="kv">
               <span>{{ 'pos.status' | t }}</span>
-              <span class="badge" [class]="lines().length ? 'badge blue' : 'badge gray'">{{
-                (lines().length ? 'pos.statusOpen' : 'pos.statusEmpty') | t
-              }}</span>
+              <span
+                class="badge"
+                [class]="locked() ? 'badge amber' : lines().length ? 'badge blue' : 'badge gray'"
+                >{{
+                  (locked()
+                    ? 'pos.statusUnconfirmed'
+                    : lines().length
+                      ? 'pos.statusOpen'
+                      : 'pos.statusEmpty'
+                  ) | t
+                }}</span
+              >
             </div>
             <div class="kv">
               <span>{{ 'pos.cashier' | t }}</span
@@ -75,6 +84,7 @@
                   min="0"
                   max="100"
                   [value]="discountPercent()"
+                  [disabled]="locked()"
                   (change)="setDiscount(+$any($event.target).value)"
                   [attr.aria-label]="'pos.discount' | t"
                   [attr.aria-describedby]="
@@ -107,7 +117,7 @@
           <header class="till-card-h">
             <app-icon name="user" [size]="16" /> {{ 'pos.customer' | t }}
           </header>
-          <div class="till-card-b">
+          <div class="till-card-b" [class.locked]="locked()" [attr.inert]="locked() ? '' : null">
             @if (session.can('partners.view')) {
               <app-lookup
                 #customerLookup
@@ -254,191 +264,315 @@
               <span>{{ 'pos.total' | t }} ({{ base() }})</span
               ><b class="text-primary">{{ totals().total | money }}</b>
             </div>
-            @for (payment of payments(); track $index; let i = $index) {
-              <div class="payment" [class.boxed]="payments().length > 1">
-                <div class="pm-head">
-                  <select
-                    class="select sm"
-                    [value]="selectedCode(payment)"
-                    (change)="choose(i, $any($event.target).value)"
-                    [attr.aria-label]="'till.paymentMethod' | t"
-                  >
-                    @if (tillMethods.value(); as till) {
-                      @for (m of till; track m.code) {
-                        <option [value]="m.code" [selected]="m.code === selectedCode(payment)">
-                          {{ m.label }}
-                        </option>
-                      }
-                    } @else {
-                      @for (m of methods; track m.method) {
-                        @if (!internalMethods.includes(m)) {
-                          <option [value]="m.method" [selected]="m.method === payment.method">
-                            {{ 'ui.pay.' + m.method | t: null : m.label }}
+            <div class="pay-edit" [class.locked]="locked()" [attr.inert]="locked() ? '' : null">
+              @for (payment of payments(); track $index; let i = $index) {
+                <div class="payment" [class.boxed]="payments().length > 1">
+                  <div class="pm-head">
+                    <select
+                      class="select sm"
+                      [value]="selectedCode(payment)"
+                      (change)="choose(i, $any($event.target).value)"
+                      [attr.aria-label]="'till.paymentMethod' | t"
+                    >
+                      @if (tillMethods.value(); as till) {
+                        @for (m of till; track m.code) {
+                          <option [value]="m.code" [selected]="m.code === selectedCode(payment)">
+                            {{ m.label }}
                           </option>
                         }
+                      } @else {
+                        @for (m of methods; track m.method) {
+                          @if (!internalMethods.includes(m)) {
+                            <option [value]="m.method" [selected]="m.method === payment.method">
+                              {{ 'ui.pay.' + m.method | t: null : m.label }}
+                            </option>
+                          }
+                        }
                       }
-                    }
-                    @for (m of internalMethods; track m.method) {
-                      <option [value]="m.method" [selected]="m.method === selectedCode(payment)">
-                        {{ 'ui.pay.' + m.method | t: null : m.label }}
-                      </option>
-                    }
-                  </select>
-                  @if (accepted().length > 1) {
-                    <select
-                      class="select sm currency"
-                      [value]="payment.currency ?? base()"
-                      (change)="setCurrency(i, $any($event.target))"
-                      [attr.aria-label]="'pos.paymentCurrency' | t"
-                    >
-                      @for (c of accepted(); track c) {
-                        <option [value]="c" [selected]="c === (payment.currency ?? base())">
-                          {{ c }}
+                      @for (m of internalMethods; track m.method) {
+                        <option [value]="m.method" [selected]="m.method === selectedCode(payment)">
+                          {{ 'ui.pay.' + m.method | t: null : m.label }}
                         </option>
                       }
                     </select>
+                    @if (accepted().length > 1) {
+                      <select
+                        class="select sm currency"
+                        [value]="payment.currency ?? base()"
+                        (change)="setCurrency(i, $any($event.target))"
+                        [attr.aria-label]="'pos.paymentCurrency' | t"
+                      >
+                        @for (c of accepted(); track c) {
+                          <option [value]="c" [selected]="c === (payment.currency ?? base())">
+                            {{ c }}
+                          </option>
+                        }
+                      </select>
+                    }
+                    <input
+                      class="input sm pm-amount"
+                      type="number"
+                      min="0"
+                      step="any"
+                      [value]="payment.amount"
+                      (input)="setAmount(i, +$any($event.target).value)"
+                      [attr.aria-label]="'pos.amount' | t"
+                    />
+                    @if (payments().length > 1) {
+                      <button
+                        type="button"
+                        class="icon-btn sm"
+                        (click)="removePayment(i)"
+                        [attr.aria-label]="'pos.removePayment' | t"
+                      >
+                        <app-icon name="x" [size]="14" />
+                      </button>
+                    }
+                  </div>
+                  @if (payment.method !== 'CASH') {
+                    <input
+                      class="input sm pm-ref"
+                      [placeholder]="
+                        (payment.method === 'VOUCHER'
+                          ? 'pos.voucherCode'
+                          : tillMethodOf(payment)?.requiresReference
+                            ? 'pos.referenceRequired'
+                            : 'pos.reference'
+                        ) | t
+                      "
+                      [value]="payment.reference ?? ''"
+                      (input)="setReference(i, $any($event.target).value)"
+                    />
                   }
-                  <input
-                    class="input sm pm-amount"
-                    type="number"
-                    min="0"
-                    step="any"
-                    [value]="payment.amount"
-                    (input)="setAmount(i, +$any($event.target).value)"
-                    [attr.aria-label]="'pos.amount' | t"
-                  />
-                  @if (payments().length > 1) {
+                </div>
+                @if (tillMethodOf(payment)?.push) {
+                  <div class="row wrap push" style="gap: 6px">
+                    <input
+                      class="input sm"
+                      type="tel"
+                      [placeholder]="'pos.customerPhone' | t"
+                      [value]="pushOf(payment)?.phone ?? ''"
+                      (input)="setPhone(i, $any($event.target).value)"
+                    />
                     <button
                       type="button"
-                      class="icon-btn sm"
-                      (click)="removePayment(i)"
-                      [attr.aria-label]="'pos.removePayment' | t"
+                      class="btn sm"
+                      [disabled]="pushOf(payment)?.busy"
+                      (click)="sendToPhone(i)"
                     >
-                      <app-icon name="x" [size]="14" />
+                      <app-icon name="phone" [size]="14" />
+                      {{
+                        (pushOf(payment)?.busy ? 'pos.waitingForCustomer' : 'pos.sendToPhone') | t
+                      }}
+                    </button>
+                    @if (pushOf(payment)?.request; as r) {
+                      <span
+                        class="badge"
+                        [class.green]="r.status === 'CONFIRMED'"
+                        [class.red]="r.status === 'FAILED' || r.status === 'EXPIRED'"
+                        >{{ 'payments.status.' + r.status | t }}</span
+                      >
+                    }
+                  </div>
+                }
+                @if (payment.currency && payment.currency !== base()) {
+                  <div class="fx-note muted">
+                    {{ payment.amount | money: payment.currency }} {{ 'ui.t.at' | t }}
+                    {{ payment.exchangeRate | num }} =
+                    <b>{{ baseValue(payment) | money }}</b>
+                  </div>
+                }
+              }
+              <div class="quick">
+                <button type="button" class="chip" (click)="exact()">{{ 'pos.exact' | t }}</button>
+                @if (quickCashEnabled) {
+                  @for (amount of quickAmounts(); track amount) {
+                    <button type="button" class="chip" (click)="quickCash(amount)">
+                      {{ amount | money: payments()[0]?.currency ?? undefined }}
+                    </button>
+                  }
+                }
+                <button type="button" class="chip split-chip" (click)="addPayment()">
+                  {{ 'pos.split' | t }}
+                </button>
+              </div>
+              @if (balance() > 0) {
+                <div class="due text-red">
+                  <span>{{ 'pos.balanceDue' | t }}</span
+                  ><b>{{ balance() | money }}</b>
+                </div>
+                @if (canCredit()) {
+                  <label class="check on-account" [class.active]="balanceToAccount()">
+                    <input
+                      type="checkbox"
+                      [checked]="balanceToAccount()"
+                      (change)="balanceToAccount.set(!balanceToAccount())"
+                      [disabled]="!!account()?.onHold"
+                    />
+                    {{
+                      'ui.t.putOnAccount'
+                        | t: { amount: balance() | money, customer: customer()!.name }
+                    }}
+                    @if (account(); as a) {
+                      <small class="muted"
+                        >({{ 'ui.t.availableLower' | t: { amount: a.available | money } }})</small
+                      >
+                    }
+                  </label>
+                }
+              } @else if (nonCashExcess() > 0 && customer()) {
+                <label class="check on-account" [class.active]="excessToAccount()">
+                  <input
+                    type="checkbox"
+                    [checked]="excessToAccount()"
+                    (change)="excessToAccount.set(!excessToAccount())"
+                  />
+                  {{
+                    'ui.pay.keepOnAccount'
+                      | t: { amount: nonCashExcess() | money, customer: customer()!.name }
+                  }}
+                </label>
+              } @else if (change() > 0) {
+                <div class="change-due">
+                  <span>{{ 'pos.change' | t }}</span
+                  ><b>{{ change() | money }}</b>
+                </div>
+              }
+            </div>
+            @if (unpricedLines().length && !locked()) {
+              <div class="pay-alert tone-amber" role="alert" data-testid="pos-unpriced-list">
+                <app-icon name="alert" [size]="16" />
+                <div class="grow">
+                  <b>{{ 'pos.unpricedTitle' | t: { plan: planName() } }}</b>
+                  <ul class="unpriced-list">
+                    @for (line of unpricedLines(); track line.product.productUid) {
+                      <li>
+                        <span class="grow">{{ line.product.name }}</span>
+                        <button
+                          type="button"
+                          class="btn sm danger-outline"
+                          (click)="setQty(line, 0)"
+                          [attr.aria-label]="'pos.removeNamed' | t: { name: line.product.name }"
+                        >
+                          {{ 'pos.remove' | t }}
+                        </button>
+                      </li>
+                    }
+                  </ul>
+                  <small class="block">{{ 'pos.unpricedHint' | t }}</small>
+                  @if (tillPlans()?.canChange) {
+                    <button type="button" class="btn sm" (click)="focusPlan()">
+                      {{ 'pos.changePlan' | t }}
                     </button>
                   }
                 </div>
-                @if (payment.method !== 'CASH') {
-                  <input
-                    class="input sm pm-ref"
-                    [placeholder]="
-                      (payment.method === 'VOUCHER'
-                        ? 'pos.voucherCode'
-                        : tillMethodOf(payment)?.requiresReference
-                          ? 'pos.referenceRequired'
-                          : 'pos.reference'
-                      ) | t
-                    "
-                    [value]="payment.reference ?? ''"
-                    (input)="setReference(i, $any($event.target).value)"
-                  />
-                }
               </div>
-              @if (tillMethodOf(payment)?.push) {
-                <div class="row wrap push" style="gap: 6px">
-                  <input
-                    class="input sm"
-                    type="tel"
-                    [placeholder]="'pos.customerPhone' | t"
-                    [value]="push()[i]?.phone ?? ''"
-                    (input)="setPhone(i, $any($event.target).value)"
-                  />
-                  <button
-                    type="button"
-                    class="btn sm"
-                    [disabled]="push()[i]?.busy"
-                    (click)="sendToPhone(i)"
-                  >
-                    <app-icon name="phone" [size]="14" />
-                    {{ (push()[i]?.busy ? 'pos.waitingForCustomer' : 'pos.sendToPhone') | t }}
-                  </button>
-                  @if (push()[i]?.request; as r) {
-                    <span
-                      class="badge"
-                      [class.green]="r.status === 'CONFIRMED'"
-                      [class.red]="r.status === 'FAILED' || r.status === 'EXPIRED'"
-                      >{{ 'payments.status.' + r.status | t }}</span
+            }
+            @if (problem(); as p) {
+              <div class="pay-alert tone-red" role="alert" data-testid="pos-problem">
+                <app-icon name="alert" [size]="16" />
+                <span class="grow">{{ p }}</span>
+                <button
+                  type="button"
+                  class="icon-btn sm"
+                  (click)="problem.set(null)"
+                  [attr.aria-label]="'pos.dismiss' | t"
+                >
+                  <app-icon name="x" [size]="14" />
+                </button>
+              </div>
+            }
+            @if (locked()) {
+              <div
+                #pendingPanel
+                class="pay-alert tone-amber pending"
+                role="alert"
+                tabindex="-1"
+                data-testid="pos-uncertain"
+              >
+                <app-icon name="alert" [size]="16" />
+                <div class="grow">
+                  <b>{{ 'pos.uncertain.title' | t }}</b>
+                  <p>{{ 'pos.uncertain.text' | t }}</p>
+                  @if (pendingWhy(); as why) {
+                    <small class="block">{{ why }}</small>
+                  }
+                  <div class="pending-actions">
+                    <button
+                      type="button"
+                      class="btn sm primary"
+                      data-testid="pos-check-again"
+                      [disabled]="busy()"
+                      (click)="checkAgain()"
                     >
+                      <app-icon name="refresh" [size]="14" />
+                      {{ (busy() ? 'pos.uncertain.checking' : 'pos.uncertain.checkAgain') | t }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn sm"
+                      data-testid="pos-look-up"
+                      [disabled]="lookupBusy()"
+                      (click)="lookUp()"
+                    >
+                      <app-icon name="search" [size]="14" /> {{ 'pos.uncertain.lookUp' | t }}
+                    </button>
+                    <button
+                      type="button"
+                      class="btn sm danger-outline"
+                      [disabled]="busy()"
+                      (click)="clearPending()"
+                    >
+                      {{ 'pos.uncertain.clear' | t }}
+                    </button>
+                  </div>
+                  @if (lookup(); as found) {
+                    <div class="lookup" data-testid="pos-lookup">
+                      <small class="block">{{
+                        'pos.uncertain.lookupHint' | t: { minutes: lookupMinutes }
+                      }}</small>
+                      @for (s of found; track s.uid) {
+                        <a
+                          class="lookup-row"
+                          [class.match]="likelyMatch(s)"
+                          [href]="'/sales/' + s.uid"
+                          target="_blank"
+                          rel="noopener"
+                        >
+                          <span class="mono">{{ s.number }}</span>
+                          <span class="muted">{{ s.createdAt | when }}</span>
+                          <span class="grow muted">{{ s.customerName ?? ('pos.walkIn' | t) }}</span>
+                          <b class="num">{{ s.total | money }}</b>
+                          @if (likelyMatch(s)) {
+                            <span class="badge green">{{ 'pos.uncertain.sameTotal' | t }}</span>
+                          }
+                        </a>
+                      } @empty {
+                        <small class="block">{{ 'pos.uncertain.noneFound' | t }}</small>
+                      }
+                      <a class="btn sm" href="/sales" target="_blank" rel="noopener">
+                        <app-icon name="external" [size]="14" /> {{ 'pos.salesHistory' | t }}
+                      </a>
+                    </div>
                   }
                 </div>
-              }
-              @if (payment.currency && payment.currency !== base()) {
-                <div class="fx-note muted">
-                  {{ payment.amount | money: payment.currency }} {{ 'ui.t.at' | t }}
-                  {{ payment.exchangeRate | num }} =
-                  <b>{{ baseValue(payment) | money }}</b>
-                </div>
-              }
-            }
-            <div class="quick">
-              <button type="button" class="chip" (click)="exact()">{{ 'pos.exact' | t }}</button>
-              @if (quickCashEnabled) {
-                @for (amount of quickAmounts(); track amount) {
-                  <button type="button" class="chip" (click)="quickCash(amount)">
-                    {{ amount | money: payments()[0]?.currency ?? undefined }}
-                  </button>
-                }
-              }
-              <button type="button" class="chip split-chip" (click)="addPayment()">
-                {{ 'pos.split' | t }}
+              </div>
+            } @else {
+              <button
+                type="button"
+                class="btn success lg block complete"
+                [disabled]="busy() || !lines().length || unpricedLines().length > 0"
+                (click)="checkout()"
+              >
+                <app-icon name="check" [size]="18" />
+                {{ busy() ? ('ui.l.completing' | t) : ('ui.l.completeSale' | t) }}
               </button>
-            </div>
-            @if (balance() > 0) {
-              <div class="due text-red">
-                <span>{{ 'pos.balanceDue' | t }}</span
-                ><b>{{ balance() | money }}</b>
-              </div>
-              @if (canCredit()) {
-                <label class="check on-account" [class.active]="balanceToAccount()">
-                  <input
-                    type="checkbox"
-                    [checked]="balanceToAccount()"
-                    (change)="balanceToAccount.set(!balanceToAccount())"
-                    [disabled]="!!account()?.onHold"
-                  />
-                  {{
-                    'ui.t.putOnAccount'
-                      | t: { amount: balance() | money, customer: customer()!.name }
-                  }}
-                  @if (account(); as a) {
-                    <small class="muted"
-                      >({{ 'ui.t.availableLower' | t: { amount: a.available | money } }})</small
-                    >
-                  }
-                </label>
-              }
-            } @else if (nonCashExcess() > 0 && customer()) {
-              <label class="check on-account" [class.active]="excessToAccount()">
-                <input
-                  type="checkbox"
-                  [checked]="excessToAccount()"
-                  (change)="excessToAccount.set(!excessToAccount())"
-                />
-                {{
-                  'ui.pay.keepOnAccount'
-                    | t: { amount: nonCashExcess() | money, customer: customer()!.name }
-                }}
-              </label>
-            } @else if (change() > 0) {
-              <div class="change-due">
-                <span>{{ 'pos.change' | t }}</span
-                ><b>{{ change() | money }}</b>
-              </div>
             }
-            <button
-              type="button"
-              class="btn success lg block complete"
-              [disabled]="busy() || !lines().length"
-              (click)="checkout()"
-            >
-              <app-icon name="check" [size]="18" />
-              {{ busy() ? ('ui.l.completing' | t) : ('ui.l.completeSale' | t) }}
-            </button>
           </div>
         </section>
       </div>
 
-      <section class="card cart-card">
+      <section class="card cart-card" [class.locked]="locked()" [attr.inert]="locked() ? '' : null">
         <!-- Entry row: find an item, set the quantity, add it, without leaving the page. -->
         <div class="entry">
           <div class="entry-search">
@@ -770,20 +904,27 @@
 />
 
 <app-modal [open]="parkedOpen()" [title]="'pos.parkedSales' | t" (closed)="parkedOpen.set(false)">
-  @if (parked().length) {
+  @if (parkedList().length) {
     <p class="muted" style="margin-top: 0">{{ 'pos.parkedHint' | t }}</p>
     <div class="parked">
-      @for (p of parked(); track p.id) {
+      @for (p of parkedList(); track p.id) {
         <div class="parked-row">
           <div class="grow">
-            <b>{{ p.customer?.name ?? ('pos.walkIn' | t) }}</b>
+            <b>{{
+              p.customerUid
+                ? (parkedNames()[p.customerUid] ?? ('pos.customerAttached' | t))
+                : ('pos.walkIn' | t)
+            }}</b>
+            @if (p.pending) {
+              <span class="badge amber">{{ 'pos.statusUnconfirmed' | t }}</span>
+            }
             <small class="block muted"
-              >{{ p.parkedAt | when }} · {{ 'pos.linesCount' | t: { count: p.lines.length } }} ·
-              {{ p.lines[0].product.name }}{{ p.lines.length > 1 ? '…' : '' }}</small
+              >{{ p.parkedAt | when }} ·
+              {{ 'pos.linesCount' | t: { count: p.lines.length } }}</small
             >
           </div>
           <b class="num">{{ p.total | money }}</b>
-          <button type="button" class="btn sm primary" (click)="resume(p.id)">
+          <button type="button" class="btn sm primary" [disabled]="locked()" (click)="resume(p.id)">
             {{ 'pos.resume' | t }}
           </button>
           <button
@@ -809,7 +950,7 @@
     <button
       class="btn primary"
       type="button"
-      [disabled]="!lines().length"
+      [disabled]="!lines().length || locked()"
       (click)="parkSale(); parkedOpen.set(false)"
     >
       <app-icon name="clock" [size]="16" /> {{ 'pos.parkThisSale' | t }}

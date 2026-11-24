@@ -1,4 +1,5 @@
 import { Routes } from '@angular/router';
+import { leaveGuard } from '../../core/session/leave-guard';
 
 export default [
   { path: '', pathMatch: 'full', redirectTo: 'products' },
@@ -19,11 +20,13 @@ export default [
     path: 'products/new',
     title: 'New product',
     data: { permission: 'catalogue.manage' },
+    canDeactivate: [leaveGuard],
     loadComponent: () => import('./product-form.page'),
   },
   {
     path: 'products/:uid',
     title: 'Product',
+    canDeactivate: [leaveGuard],
     loadComponent: () => import('./product-form.page'),
   },
   { path: 'categories', title: 'Categories', loadComponent: () => import('./categories.page') },

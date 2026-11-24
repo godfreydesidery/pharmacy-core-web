@@ -92,7 +92,7 @@ import { Translations } from '../../core/i18n/translations.store';
                 <tr>
                   <td colspan="7">
                     <app-empty
-                      [loading]="list.loading()"
+                      [for]="list"
                       icon="shield"
                       [title]="'insurance.noInsuredMembers' | t"
                     />

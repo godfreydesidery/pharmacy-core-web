@@ -1,12 +1,10 @@
 import {
   ChangeDetectionStrategy,
   Component,
-  ElementRef,
   Injectable,
   effect,
   inject,
   signal,
-  viewChild,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { HttpClient, HttpContext } from '@angular/common/http';
@@ -15,6 +13,7 @@ import { TranslatePipe } from '../i18n/t.pipe';
 import { apiUrl } from '../api/api.service';
 import { ApiError } from '../api/api-error';
 import { SILENT } from '../api/api.interceptor';
+import { DialogDirective } from '../ui/dialog';
 
 /**
  * "Confirm it's you" before a sensitive change to one's own account (passkeys, two-factor, phone):
@@ -64,26 +63,27 @@ export class ConfirmIdentityService {
 
 @Component({
   selector: 'app-confirm-identity',
-  imports: [FormsModule, TranslatePipe],
+  imports: [FormsModule, TranslatePipe, DialogDirective],
   changeDetection: ChangeDetectionStrategy.OnPush,
-  host: { '(document:keydown.escape)': 'service.open() && cancel()' },
   template: `
     @if (service.open()) {
       <div class="backdrop" (click)="cancel()">
         <form
           class="popup"
           role="dialog"
-          aria-modal="true"
+          appDialog
+          appDialogFocus="#confirm-identity-password"
           aria-labelledby="confirm-identity-title"
+          aria-describedby="confirm-identity-text"
+          (dialogEscape)="cancel()"
           (click)="$event.stopPropagation()"
           (ngSubmit)="submit()"
         >
           <h2 id="confirm-identity-title">{{ 'identity.title' | t }}</h2>
-          <p>{{ 'identity.text' | t }}</p>
+          <p id="confirm-identity-text">{{ 'identity.text' | t }}</p>
           <div class="field">
             <label for="confirm-identity-password">{{ 'identity.password' | t }}</label>
             <input
-              #password
               id="confirm-identity-password"
               name="password"
               type="password"
@@ -169,18 +169,15 @@ export class ConfirmIdentityComponent {
   protected readonly needsCode = signal(false);
   protected passwordValue = '';
   protected codeValue = '';
-  private readonly password = viewChild<ElementRef<HTMLInputElement>>('password');
-  private returnFocus: HTMLElement | null = null;
 
   constructor() {
+    // Focus moves in, stays inside and goes back on close: the dialog directive.
     effect(() => {
       if (this.service.open()) {
-        this.returnFocus = document.activeElement as HTMLElement | null;
         this.passwordValue = '';
         this.codeValue = '';
         this.error.set('');
         this.needsCode.set(false);
-        setTimeout(() => this.password()?.nativeElement.focus());
       }
     });
   }
@@ -216,6 +213,5 @@ export class ConfirmIdentityComponent {
     this.passwordValue = '';
     this.codeValue = '';
     answer?.(confirmed);
-    this.returnFocus?.focus();
   }
 }

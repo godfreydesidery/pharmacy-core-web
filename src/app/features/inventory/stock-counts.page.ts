@@ -203,7 +203,9 @@ export function sheetOrder(count: StockCount): StockCount {
             <tbody>
               @for (c of counts.items(); track c.uid) {
                 <tr class="clickable" (click)="openCount(c.uid)">
-                  <td class="mono strong">{{ c.number }}</td>
+                  <td class="mono strong">
+                    <button type="button" class="row-link">{{ c.number }}</button>
+                  </td>
                   <td class="muted">{{ c.createdAt | when }}</td>
                   <td class="right">{{ c.counted }} / {{ c.lines }}</td>
                   <td class="right">

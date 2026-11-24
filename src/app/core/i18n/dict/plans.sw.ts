@@ -85,7 +85,7 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
   'plans.outstanding': 'Madeni',
   'plans.openInvoices': 'Ankara zisizolipwa',
   'errors.plan_limit_reached':
-    'Kifurushi chako hakiruhusu zaidi ya hizi. Mwombe msimamizi wa mfumo akupandishie kifurushi.',
+    'Kifurushi chako hakiruhusu zaidi ya {{limit}}. Mwombe msimamizi wa mfumo akupandishie kifurushi.',
   'errors.plan_feature_unavailable': 'Kifurushi chako hakina huduma hii.',
   'errors.plan_not_found': 'Kifurushi hicho hakipo.',
   'errors.subscription_not_found': 'Duka hili halina usajili.',

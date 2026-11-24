@@ -66,12 +66,14 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.duplicate_name': 'This name is already in use.',
 
   // selling
-  'errors.insufficient_stock': 'There is not enough stock of this product here.',
-  'errors.payment_short': 'The payments do not cover the total.',
+  'errors.insufficient_stock':
+    'Not enough stock: {{available}} available, {{requested}} needed. {{product}}{{batch}}',
+  'errors.payment_short': 'The payments ({{paid}}) do not cover the total ({{total}}).',
   'errors.overpaid_non_cash':
     'Only cash can be overpaid, unless the excess goes on the customer account.',
   'errors.customer_required': 'A walk-in customer cannot owe; choose the customer.',
-  'errors.credit_limit_exceeded': 'This would take the customer over their credit limit.',
+  'errors.credit_limit_exceeded':
+    'This would take the customer over their credit limit ({{limit}}).',
   'errors.credit_not_permitted': 'Your role may not sell on account.',
   'errors.insufficient_account_credit': 'The account does not hold enough credit.',
   'errors.discount_not_allowed': 'You may not give a discount.',
@@ -157,4 +159,145 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.upload_missing': 'The file has not finished uploading; try again.',
   'errors.url_expired': 'This file link has expired; open it again.',
   'errors.invalid_signature': 'This file link is not valid.',
+
+  // The fallback for an `invalid_<field>` reason with no line of its own (see localizeError).
+  'errors.invalid_input': 'Check the information entered.',
+
+  // edge and lists
+  'errors.busy_try_again': 'Another till was using the same stock or account; try again.',
+  'errors.idempotency_in_progress': 'This request is still being processed; wait a moment.',
+  'errors.idempotency_key_reused':
+    'This request was already sent with different details; start it again.',
+  'errors.invalid_idempotency_key':
+    'The request could not be sent safely; reload the page and try again.',
+  'errors.method_not_allowed': 'This action is not available.',
+  'errors.unsupported_media_type': 'The request could not be read.',
+  'errors.invalid_cursor': 'The list has changed; reload it.',
+  'errors.invalid_limit': 'Show between 1 and 100 rows.',
+  'errors.invalid_page': 'The page must be a whole number from 1.',
+  'errors.invalid_value': 'A required value is missing.',
+
+  // sign-in and accounts
+  'errors.session_idle':
+    'You were signed out after {{idleMinutes}} minutes without using the app; sign in again.',
+  'errors.session_not_found': 'That session has already ended.',
+  'errors.managed_login':
+    'This is a pharmacy staff login: its pharmacy keeps its details and resets its password.',
+  'errors.password_required': 'Choose a new password.',
+  'errors.same_email': 'That is already your sign-in email.',
+  'errors.email_taken': 'That email has an account now; ask for another change.',
+  'errors.already_verified': 'That phone is already verified.',
+  'errors.phone_needs_verification':
+    'Add or change your phone on the security page, with the code sent to it.',
+  'errors.recovery_on_hold':
+    'For your safety, this recovery link works only after a waiting period; try again later.',
+  'errors.already_a_member':
+    'Your account is already in that pharmacy; ask its admin to remove one of the two.',
+  'errors.invitation_not_found': 'No such invitation.',
+  'errors.passkey_not_found': 'No such passkey.',
+  'errors.invalid_credential': 'The passkey did not answer; try again.',
+  'errors.user_not_found': 'No such user.',
+  'errors.role_not_found': 'No such role.',
+  'errors.invalid_permissions': 'One of these permissions cannot be given to a pharmacy role.',
+  'errors.invalid_idle_minutes': 'The idle limit must be between 5 and 60 minutes.',
+
+  // pharmacy and platform
+  'errors.tenant_not_found': 'No such pharmacy.',
+  'errors.branch_not_found': 'No such branch.',
+  'errors.settings_not_found':
+    "The pharmacy's settings are missing; contact the platform administrator.",
+  'errors.erased': "The pharmacy's data is already erased.",
+  'errors.invalid_country': 'The country must be a two-letter code, such as TZ.',
+  'errors.invalid_timezone': 'Choose a time zone, such as Africa/Dar_es_Salaam.',
+  'errors.invalid_look': 'Choose a look from the list.',
+  'errors.invalid_expiry_alert_days': 'Expiry alerts must come 1 to 730 days ahead.',
+  'errors.clock_backwards': 'The simulated clock only moves forward.',
+  'errors.clock_move': 'Give either a duration to move forward or a time to move to.',
+  'errors.reseal_running': 'The re-encryption of the keys is already running.',
+
+  // selling, customers and insurance
+  'errors.product_inactive': 'This product is no longer sold: {{product}}.',
+  'errors.product_not_found': 'No such product.',
+  'errors.customer_not_found': 'No such customer.',
+  'errors.member_not_of_customer': "This insurance membership is not the customer's.",
+  'errors.account_on_hold': "The customer's account is on hold; no new credit is allowed.",
+  'errors.invalid_credit_limit': 'Enter the credit limit.',
+  'errors.currency_not_accepted':
+    'This pharmacy does not accept {{currency}} (Settings → Currencies).',
+  'errors.refund_method_not_allowed': 'A refund goes back the way the sale was paid.',
+  'errors.preauth_required': 'This insurer needs a pre-authorisation number.',
+  'errors.payer_not_found': 'No such insurer.',
+  'errors.scheme_not_found': 'No such insurance scheme.',
+  'errors.claim_not_found': 'No such claim.',
+  'errors.remittance_exceeds_due': 'A claim cannot be paid more than it has due.',
+  'errors.sale_line_not_found': 'That line is not on this sale.',
+  'errors.return_not_found': 'No such return.',
+  'errors.return_line_not_found': 'That line is not on this return.',
+  'errors.promotion_not_found': 'No such promotion.',
+  'errors.price_list_not_found': 'No such price list.',
+  'errors.duplicate_voucher': 'A voucher with this code already exists.',
+  'errors.invalid_expiry': 'The expiry date has passed.',
+  'errors.method_not_found': 'No such payment method.',
+  'errors.invalid_adapter': 'That payment connection is not known.',
+  'errors.invalid_kind': 'That kind of payment is not known.',
+  'errors.payment_request_not_found': 'No such payment request.',
+  'errors.invalid_payment_method': 'Choose one of the payment methods offered.',
+  'errors.invalid_payment_terms_days': 'Payment terms must be 0 to 365 days.',
+  'errors.overpayment':
+    'That is more than is still owed on those receipts; pay at most that, or pay the rest on account.',
+  'errors.invalid_action': 'That action does not need approval.',
+
+  // stock, purchasing and finance
+  'errors.batch_not_found': 'No such batch.',
+  'errors.batch_required': 'The product came in several batches; choose the batch of each line.',
+  'errors.batch_not_expired':
+    'This batch has not expired; destroy it as damaged, or wait until it expires.',
+  'errors.batch_not_on_receipt': 'This batch was not received on that goods receipt.',
+  'errors.duplicate_line': 'Each line appears once.',
+  'errors.expiry_required': "The ingredients have no expiry date; give the product's expiry date.",
+  'errors.invalid_quantity': 'Enter a valid quantity.',
+  'errors.invalid_type': 'Stock comes in as opening stock or as a goods receipt.',
+  'errors.invalid_direction': 'Choose outgoing or incoming.',
+  'errors.invalid_within_days': 'Days must be between 0 and 3650.',
+  'errors.invalid_serial': 'A serial number is at most 64 characters and has no comma.',
+  'errors.count_not_found': 'No such stock-take.',
+  'errors.line_not_found': 'That line is not on this record.',
+  'errors.transfer_not_found': 'No such transfer.',
+  'errors.destruction_not_found': 'No such destruction record.',
+  'errors.invalid_date': 'The date cannot be in the future.',
+  'errors.future_date': 'The date {{date}} is after today ({{today}}).',
+  'errors.invalid_adjustment': 'The adjustment must be more than -100%.',
+  'errors.goods_receipt_not_found': 'No such goods receipt.',
+  'errors.purchase_order_not_found': 'No such purchase order.',
+  'errors.supplier_not_found': 'No such supplier.',
+  'errors.supplier_return_not_found': 'No such supplier return.',
+  'errors.category_not_found': 'No such category.',
+  'errors.manufacturer_not_found': 'No such manufacturer.',
+  'errors.invalid_period': 'The end date is before the start date.',
+
+  // messages and integrations
+  'errors.unknown_category': 'No such notification category.',
+  'errors.unknown_template': 'No such message template.',
+  'errors.notification_not_found': 'No such notification.',
+  'errors.webhook_not_found': 'No such webhook.',
+  'errors.invalid_channel': 'In-app messages need no provider.',
+  'errors.invalid_month': 'The month must look like 2026-11.',
+
+  // files, imports and exports
+  'errors.empty_file': 'Choose a file to import.',
+  'errors.unreadable_file': 'The file could not be read.',
+  'errors.unsupported_file':
+    'Old .xls files cannot be read: save it as an Excel workbook (.xlsx) or as CSV.',
+  'errors.unsupported_type': 'Only PNG, JPEG or WebP images and PDF documents may be uploaded.',
+  'errors.file_too_large': 'A file may be at most 10 MB.',
+  'errors.file_not_found': 'No such file.',
+  'errors.invalid_size': 'The file is empty.',
+  'errors.invalid_owner_type': 'A file cannot be attached here.',
+  'errors.invalid_purpose': 'A file cannot be attached here.',
+  'errors.invalid_format': 'Download as Excel (xlsx) or CSV.',
+  'errors.too_many_rows':
+    'Too many rows match (more than {{max}}): narrow the filters and download again.',
+  'errors.period_too_long': 'Choose a period of at most 366 days.',
+  'errors.too_many_uids': 'Too many products at once (at most {{max}}).',
+  'errors.database_busy': 'The system is busy right now. Try again in a moment.',
 };

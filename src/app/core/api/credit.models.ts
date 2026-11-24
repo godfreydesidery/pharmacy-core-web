@@ -1,3 +1,4 @@
+import type { FollowPages } from '../data/data';
 /** Customer accounts (receivables) and insurance: the shapes of /receivables and /insurance. */
 
 export type EntryType =
@@ -234,4 +235,17 @@ export const CLAIM_TONES: Record<ClaimStatus, string> = {
   REJECTED: 'red',
   PAID: 'green',
   VOIDED: 'gray',
+};
+
+/** A statement is read whole for its period: every page of entries, joined in order. */
+export const WHOLE_STATEMENT: FollowPages<Statement> = {
+  next: (s) => s.entries.nextCursor,
+  join: (sofar, page) => ({
+    ...sofar,
+    entries: {
+      ...page.entries,
+      items: [...sofar.entries.items, ...page.entries.items],
+    },
+  }),
+  maxPages: 50,
 };

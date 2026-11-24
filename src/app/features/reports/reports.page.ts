@@ -165,11 +165,7 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
               </div>
             </div>
           } @else {
-            <app-empty
-              [loading]="sales.loading()"
-              icon="chart"
-              [title]="'reports.reportUnavailable' | t"
-            />
+            <app-empty [for]="sales" icon="chart" [title]="'reports.reportUnavailable' | t" />
           }
         }
         @case ('products') {
@@ -181,11 +177,7 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
               @if ((products.value() ?? []).length) {
                 <app-bar-chart [labels]="productLabels()" [series]="productSeries()" />
               } @else {
-                <app-empty
-                  [loading]="products.loading()"
-                  icon="pill"
-                  [title]="'reports.noProductSales' | t"
-                />
+                <app-empty [for]="products" icon="pill" [title]="'reports.noProductSales' | t" />
               }
             </div>
           </div>
@@ -274,11 +266,7 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
               </div>
             </div>
           } @else {
-            <app-empty
-              [loading]="pl.loading()"
-              icon="chart"
-              [title]="'reports.reportUnavailable' | t"
-            />
+            <app-empty [for]="pl" icon="chart" [title]="'reports.reportUnavailable' | t" />
           }
         }
         @case ('payments') {
@@ -318,7 +306,7 @@ const COLORS = ['#2463eb', '#16a34a', '#f97316', '#7c3aed', '#0891b2', '#ef4444'
                       <tr>
                         <td colspan="4">
                           <app-empty
-                            [loading]="payments.loading()"
+                            [for]="payments"
                             icon="wallet"
                             [title]="'reports.noPayments' | t"
                           />

@@ -34,11 +34,11 @@ The dev server proxies `/api`, `/actuator`, `/swagger-ui` and `/v3/api-docs` to 
 
 These development accounts come from the API's dev seed. The sign-in page offers them as one-click chips in dev mode only.
 
-| Account | Email | Password |
-|---|---|---|
-| Root administrator | `root@pharmacy.local` | `Root#2026` |
-| Afya Pharmacy administrator | `admin@afya.co.tz` | `Afya#2026` |
-| Afya Pharmacy cashier | `cashier@afya.co.tz` | `Cashier#2026` |
+| Account                     | Email                 | Password       |
+| --------------------------- | --------------------- | -------------- |
+| Root administrator          | `root@pharmacy.local` | `Root#2026`    |
+| Afya Pharmacy administrator | `admin@afya.co.tz`    | `Afya#2026`    |
+| Afya Pharmacy cashier       | `cashier@afya.co.tz`  | `Cashier#2026` |
 
 ## Build and test
 
@@ -84,6 +84,7 @@ src/app
 `SessionStore` holds the token, the user, the user's memberships, and the chosen workspace (tenant and branch) as signals. It persists them to `localStorage`.
 
 After sign-in, the **workspace picker** lets the user choose a pharmacy and a branch:
+
 - A **member** chooses from their memberships.
 - The **root administrator** searches every tenant (`/platform/tenants`) and can also open platform administration.
 
@@ -92,6 +93,7 @@ The branch switcher in the top bar changes the branch. Choosing **All branches**
 ### HTTP
 
 `apiInterceptor` does four things:
+
 - It adds `Authorization`, `X-Tenant-Id`, `X-Branch-Id` and `X-Correlation-Id` to every `/api/` request.
 - It unwraps the `{ success, data }` envelope, so callers get `data` directly.
 - It turns RFC 9457 problems into an `ApiError`, which carries `reason`, `field` and `correlationId`.
@@ -104,6 +106,21 @@ Navigation items and routes declare a permission code (`data.permission`). The n
 ### Lists
 
 `pagedList()` reloads whenever its request signal, the tenant or the branch changes. It drops stale responses and pages with `nextCursor`.
+
+A list that fails to load is not shown as empty: `<app-empty [for]="list">` takes the list (any `pagedList()` or `loaded()` value) and shows the failure and **Retry** instead of "nothing here".
+
+### Languages and API refusals
+
+The text is in English and Swahili: `core/i18n/en.ts`, `sw.ts` and one pair per area in `core/i18n/dict/` (`<area>.en.ts`, `<area>.sw.ts`, registered in `en-areas.ts` and `sw-areas.ts`).
+
+Every refusal of the API carries a stable `reason`. Its `errors.<reason>` line is shown in Swahili; English shows the API's own `detail`. `localizeError` fills a line's `{{name}}` placeholders from the problem's extra members, such as `{{batchUnitCost}}`.
+
+| Command                | What it does                                                                                                                                                                                                                    |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run i18n:check`   | Fails on a key used but not defined, on a Swahili key English lacks, on an API reason with no line in either language, and on a placeholder the reason's problem does not carry. `-- --strict` also fails on untranslated keys. |
+| `npm run i18n:reasons` | Regenerates `src/app/core/i18n/api-reasons.json`: every reason the API sends and its extra members, read from `../pharmacy-core-api` (or `npm run i18n:reasons -- <folder>`).                                                   |
+
+The API is a separate repository, so the list is committed. After an API change, run `npm run i18n:reasons`, add the new lines, run `npm run i18n:check`, and commit the list with them. The list also names the reasons whose `detail` mentions a value that no problem member carries (`valuesOnlyInDetail`): their Swahili lines cannot name it until the API sends it.
 
 ### Money
 
@@ -122,13 +139,22 @@ Amounts are formatted with `Intl.NumberFormat` in the tenant's currency, which c
 - Reusable styles live in `src/styles.scss`. Component styles stay small.
 - Format with Prettier (`.prettierrc`, print width 100) and follow `.editorconfig`.
 
+### Accessibility (WCAG 2.2 AA)
+
+- **Dialogs:** put `appDialog` (`core/ui/dialog.ts`) on a dialog's panel, or use `app-modal` / `app-drawer`. Focus moves in, stays inside and goes back on close; Escape closes only the top dialog. `app-modal [dirty]` asks before closing over unsaved changes.
+- **Questions:** always `ConfirmService.ask()`, never the browser's `confirm()` (`npm run lint:dialogs`, in CI). Questions queue: one shows at a time. A danger question starts on Cancel.
+- **Fields:** `<app-field [label] [hint] [error]>` around a control ties them together (`for`/`id`, `aria-describedby`, `aria-invalid`). Older `<div class="field">` blocks are linked by `FieldLinkDirective`, and unnamed inputs in `table.table` rows are named from their column and row (`npm run a11y:labels` lists labels still not linked).
+- **Clickable rows:** `<tr class="clickable" appRowLink>` with a real `<a class="row-link">` (or `<button class="row-link">` for a row with its own `(click)`) in the main cell.
+- **Colours:** use the tokens in `styles.scss`, never a fixed `#fff` on a token colour (use `--on-primary`, `--on-green`, `--on-red`, `--on-amber`). `npm run a11y:contrast` checks them in CI.
+- **Unsaved work:** a form page calls `guardUnsavedWork(() => changed)` and its route gets `canDeactivate: [leaveGuard]`; call `done()` on the handle once saved. Long forms keep Cancel and Save in a `.sticky-actions` bar.
+
 ## Production build, end-to-end tests and QA
 
-| Command | What it does |
-|---|---|
-| `npm run build` | Production build to `dist/pharmacy-core-web/browser` |
+| Command              | What it does                                                                                                                                                       |
+| -------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `npm run build`      | Production build to `dist/pharmacy-core-web/browser`                                                                                                               |
 | `npm run serve:prod` | Serves that build on http://localhost:4300 and proxies `/api`, `/actuator`, `/v3/api-docs` and `/swagger-ui` to the API (`API_URL`, default http://localhost:8080) |
-| `npm run e2e` | Playwright, headed and maximised, against `serve:prod` and a running API (local profile). `CI=1` runs it headless. |
+| `npm run e2e`        | Playwright, headed and maximised, against `serve:prod` and a running API (local profile). `CI=1` runs it headless.                                                 |
 
 `e2e/routes.spec.ts` signs in as the administrator, the cashier and the root administrator. It opens every route each may use, and fails on console errors, uncaught exceptions and API 404/405/5xx responses.
 

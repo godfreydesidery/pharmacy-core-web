@@ -78,7 +78,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
             </thead>
             <tbody>
               @for (p of list.items(); track p.uid) {
-                <tr class="clickable" [routerLink]="[p.uid]">
+                <tr class="clickable" appRowLink>
                   <td class="mono">{{ p.sku ?? '—' }}</td>
                   <td>
                     <div class="cell-main">
@@ -88,7 +88,8 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                         ><app-icon [name]="typeOf(p).icon" [size]="16"
                       /></span>
                       <div>
-                        <b>{{ p.name }}</b
+                        <a class="row-link" [routerLink]="[p.uid]"
+                          ><b>{{ p.name }}</b></a
                         ><small
                           >{{ p.genericName ?? p.brand ?? ''
                           }}{{ p.atcCode ? ' · ' + p.atcCode : '' }}</small
@@ -124,7 +125,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                 <tr>
                   <td colspan="9">
                     <app-empty
-                      [loading]="list.loading()"
+                      [for]="list"
                       icon="pill"
                       [title]="'catalogue.noProducts' | t"
                       [text]="'ui.empty.products' | t"
