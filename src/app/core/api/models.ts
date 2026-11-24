@@ -307,6 +307,8 @@ export interface ProductInput {
   warrantyMonths: number | null;
   /** SERIAL products only: the POS asks for each unit's serial number. */
   requiresSerialAtSale: boolean | null;
+  /** The product's TMDA (Tanzania Medicines and Medical Devices Authority) registration number. */
+  tmdaRegistrationNumber?: string | null;
 }
 
 export interface Product extends ProductInput {
@@ -342,6 +344,65 @@ export interface Customer extends CustomerInput {
   uid: Uid;
   code: string;
   createdAt: IsoDateTime;
+  /** When the person's details were erased (STD-5): the record stays, nameless and inactive. */
+  anonymisedAt?: IsoDateTime | null;
+}
+
+/** What a customer may agree to (STD-5). */
+export type ConsentPurpose = 'SMS_RECEIPTS' | 'MARKETING' | 'INSURER_SHARING';
+export type ConsentStatus = 'GIVEN' | 'WITHDRAWN' | 'NONE';
+
+/** Sent with a customer's create or update: only the purposes present, and changed, are recorded. */
+export type ConsentChoices = Partial<Record<ConsentPurpose, boolean>>;
+
+export interface ConsentState {
+  purpose: ConsentPurpose;
+  status: ConsentStatus;
+  since: IsoDateTime | null;
+  /** SMS receipts unless WITHDRAWN; marketing and insurer sharing only when GIVEN. */
+  effective: boolean;
+}
+
+export interface ConsentRecord {
+  uid: Uid;
+  purpose: ConsentPurpose;
+  givenAt: IsoDateTime | null;
+  givenBy: string | null;
+  withdrawnAt: IsoDateTime | null;
+  withdrawnBy: string | null;
+  note: string | null;
+  inForce: boolean;
+}
+
+/** GET/POST /customers/{uid}/consents: the state of each purpose, and the history newest first. */
+export interface CustomerConsents {
+  current: ConsentState[];
+  history: ConsentRecord[];
+}
+
+export type DataSubjectRequestKind =
+  'ACCESS' | 'CORRECTION' | 'ERASURE' | 'OBJECTION' | 'RESTRICTION';
+export type DataSubjectRequestStatus = 'OPEN' | 'COMPLETED' | 'REFUSED';
+
+/** A data-subject request (Administration → Data requests). */
+export interface DataSubjectRequest {
+  uid: Uid;
+  number: string;
+  kind: DataSubjectRequestKind;
+  status: DataSubjectRequestStatus;
+  customerUid: Uid;
+  customerCode: string | null;
+  customerName: string | null;
+  receivedAt: IsoDateTime;
+  /** Received + 30 days. */
+  dueOn: IsoDate;
+  completedAt: IsoDateTime | null;
+  completedBy: string | null;
+  outcome: string | null;
+  note: string | null;
+  overdue: boolean;
+  createdAt: IsoDateTime;
+  createdBy: string | null;
 }
 
 export interface SupplierInput {
@@ -610,6 +671,8 @@ export interface Prescription {
   prescriberRegistration: string;
   reference: string;
   patientName: string;
+  /** The day the prescriber wrote it ("YYYY-MM-DD"); valid for 6 months (STD-7). */
+  prescriptionDate?: IsoDate | null;
 }
 
 export interface CheckoutRequest {
@@ -686,6 +749,10 @@ export interface Sale {
   lines: SaleLine[];
   payments: SalePayment[];
   prescription: Prescription | null;
+  /** The seller who dispensed its prescription lines; null when it has none. */
+  dispensedBy?: string | null;
+  /** The sale has a prescription the caller may not see (no `health.view`): `prescription` is null. */
+  prescriptionWithheld?: boolean;
   cashierName: string;
   createdAt: IsoDateTime;
 }
@@ -1166,4 +1233,87 @@ export interface Voucher {
   status: 'ACTIVE' | 'SPENT' | 'VOID';
   createdAt: string;
   createdBy: string;
+}
+
+/* ---------- controlled drugs ---------- */
+/** GET /controlled-drugs: a Page of these, by name. */
+export interface ControlledProduct {
+  productUid: Uid;
+  name: string;
+  strength: string | null;
+  dosageForm: string | null;
+  onHand: number;
+  schedule?: Schedule;
+  /** False for a product that was controlled once and is not now: its register stays. */
+  controlledNow?: boolean;
+}
+
+/** One line of a controlled drug's register. Without `health.view` the patient details are null. */
+export interface ControlledRegisterLine {
+  uid: Uid;
+  at: IsoDateTime;
+  type: string;
+  reference: string | null;
+  batchNumber: string | null;
+  quantityIn: number;
+  quantityOut: number;
+  balance: number;
+  patientName: string | null;
+  prescriberName: string | null;
+  prescriberRegistration: string | null;
+  prescriptionReference: string | null;
+  prescriptionDate?: IsoDate | null;
+  dispensedBy?: string | null;
+  /** The prescription details are hidden from this caller (no `health.view`). */
+  withheld?: boolean;
+  note: string | null;
+  recordedBy: string;
+}
+
+/* ---------- adverse drug reactions (STD-8) ---------- */
+export type AdrSeriousness = 'SERIOUS' | 'NOT_SERIOUS';
+export type AdrSeriousReason =
+  | 'DEATH'
+  | 'LIFE_THREATENING'
+  | 'HOSPITALISATION'
+  | 'DISABILITY'
+  | 'CONGENITAL_ANOMALY'
+  | 'OTHER_MEDICALLY_IMPORTANT';
+export type AdrOutcome =
+  'RECOVERED' | 'RECOVERING' | 'NOT_RECOVERED' | 'RECOVERED_WITH_SEQUELAE' | 'FATAL' | 'UNKNOWN';
+export type PatientSex = 'FEMALE' | 'MALE';
+
+/** POST /adverse-reactions: the report's editable fields. */
+export interface AdverseReactionInput {
+  customerUid: Uid | null;
+  patientName: string | null;
+  patientAge: number | null;
+  patientSex: PatientSex | null;
+  patientWeightKg: number | null;
+  productUid: Uid;
+  batchNumber: string | null;
+  dose: string | null;
+  route: string | null;
+  indication: string | null;
+  therapyStarted: IsoDate | null;
+  therapyStopped: IsoDate | null;
+  reaction: string;
+  onsetDate: IsoDate;
+  seriousness: AdrSeriousness;
+  seriousReason: AdrSeriousReason | null;
+  outcome: AdrOutcome;
+  /** Left out: the signed-in user's name. */
+  reporterName: string | null;
+  reporterProfession: string | null;
+  reporterPhone: string | null;
+  note: string | null;
+}
+
+export interface AdverseReaction extends AdverseReactionInput {
+  uid: Uid;
+  number: string;
+  branchUid: Uid | null;
+  productName: string;
+  createdAt: IsoDateTime;
+  createdBy: string | null;
 }

@@ -29,6 +29,12 @@ export default [
     loadComponent: () => import('./controlled.page'),
   },
   {
+    path: 'adverse-reactions',
+    title: 'Adverse reactions',
+    data: { permission: 'health.view' },
+    loadComponent: () => import('./adverse-reactions.page'),
+  },
+  {
     path: 'adjustments',
     title: 'Stock adjustments',
     data: { permission: 'inventory.adjust' },

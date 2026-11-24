@@ -91,7 +91,7 @@ import { RolesNoticeComponent } from './roles-notice.component';
                       />
                       <span
                         ><b class="mono">{{ p.code }}</b
-                        ><small>{{ p.description }}</small></span
+                        ><small>{{ 'perm.' + p.code | t: null : p.description }}</small></span
                       ></label
                     >
                   }

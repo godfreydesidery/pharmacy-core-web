@@ -1,6 +1,7 @@
 import { Router } from '@angular/router';
 import {
   HttpContextToken,
+  HttpErrorResponse,
   HttpEvent,
   HttpInterceptorFn,
   HttpRequest,
@@ -106,73 +107,111 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
   const send = (attempt: HttpRequest<unknown>): Observable<HttpEvent<unknown>> =>
     next(attempt).pipe(
       unwrap,
-      catchError((failure: unknown) => {
-        const error = localizeError(
-          ApiError.from(failure),
-          translations.lang(),
-          (key, params, fallback) => translations.t(key, params, fallback),
-        );
-        if (error.reason === 'reauthentication_required' && !attempt.context.get(CONFIRMED)) {
-          // A sensitive account change after a while: ask for the password, then send it again.
-          return from(injector.get(ConfirmIdentityService).ask()).pipe(
-            switchMap((confirmed) =>
-              confirmed
-                ? send(attempt.clone({ context: attempt.context.set(CONFIRMED, true) }))
-                : throwError(() => error),
-            ),
-          );
-        }
-        if (error.reason === 'shift_required' && !attempt.context.get(SHIFT_OPENED)) {
-          // The pharmacy requires an open shift: the cashier opens one here, then it goes again.
-          return from(injector.get(OpenShiftService).ask()).pipe(
-            switchMap((opened) =>
-              opened
-                ? send(attempt.clone({ context: attempt.context.set(SHIFT_OPENED, true) }))
-                : throwError(() => error),
-            ),
-          );
-        }
-        const approved = attempt.context.get(APPROVED);
-        const action = String(error.extras['action'] ?? '');
-        if (error.reason === 'approval_required' && !approved.includes(action)) {
-          // Above the pharmacy's limit: a manager approves on this screen, then it goes again.
-          // One request may need two (a late return of a damaged controlled medicine): each
-          // approval is added to the list header, and an action is never asked for twice.
-          const amount = Number(error.extras['amount'] ?? 0);
-          return from(injector.get(ManagerApprovalService).ask({ action, amount })).pipe(
-            switchMap((token) => {
-              if (!token) {
-                return throwError(() => error);
-              }
-              const sent = attempt.headers.get(APPROVAL_HEADER);
-              return send(
-                attempt.clone({
-                  headers: attempt.headers.set(APPROVAL_HEADER, sent ? `${sent}, ${token}` : token),
-                  context: attempt.context.set(APPROVED, [...approved, action]),
-                }),
-              );
+      catchError((failure: unknown) =>
+        // A file download's refusal arrives as a Blob: read its problem first, so its reason
+        // and words are shown like any other refusal's.
+        failure instanceof HttpErrorResponse && failure.error instanceof Blob
+          ? from(problemOfBlob(failure)).pipe(switchMap((read) => fail(read, attempt)))
+          : fail(failure, attempt),
+      ),
+    );
+
+  const fail = (
+    failure: unknown,
+    attempt: HttpRequest<unknown>,
+  ): Observable<HttpEvent<unknown>> => {
+    const error = localizeError(
+      ApiError.from(failure),
+      translations.lang(),
+      (key, params, fallback) => translations.t(key, params, fallback),
+    );
+    if (error.reason === 'reauthentication_required' && !attempt.context.get(CONFIRMED)) {
+      // A sensitive account change after a while: ask for the password, then send it again.
+      return from(injector.get(ConfirmIdentityService).ask()).pipe(
+        switchMap((confirmed) =>
+          confirmed
+            ? send(attempt.clone({ context: attempt.context.set(CONFIRMED, true) }))
+            : throwError(() => error),
+        ),
+      );
+    }
+    if (error.reason === 'shift_required' && !attempt.context.get(SHIFT_OPENED)) {
+      // The pharmacy requires an open shift: the cashier opens one here, then it goes again.
+      return from(injector.get(OpenShiftService).ask()).pipe(
+        switchMap((opened) =>
+          opened
+            ? send(attempt.clone({ context: attempt.context.set(SHIFT_OPENED, true) }))
+            : throwError(() => error),
+        ),
+      );
+    }
+    const approved = attempt.context.get(APPROVED);
+    const action = String(error.extras['action'] ?? '');
+    if (error.reason === 'approval_required' && !approved.includes(action)) {
+      // Above the pharmacy's limit: a manager approves on this screen, then it goes again.
+      // One request may need two (a late return of a damaged controlled medicine): each
+      // approval is added to the list header, and an action is never asked for twice.
+      const amount = Number(error.extras['amount'] ?? 0);
+      return from(injector.get(ManagerApprovalService).ask({ action, amount })).pipe(
+        switchMap((token) => {
+          if (!token) {
+            return throwError(() => error);
+          }
+          const sent = attempt.headers.get(APPROVAL_HEADER);
+          return send(
+            attempt.clone({
+              headers: attempt.headers.set(APPROVAL_HEADER, sent ? `${sent}, ${token}` : token),
+              context: attempt.context.set(APPROVED, [...approved, action]),
             }),
           );
-        }
-        const signingIn = attempt.url.includes('/auth/sign-in');
-        const signingOut = attempt.url.includes('/auth/sign-out');
-        if (error.status === 401 && !signingIn) {
-          if (!signingOut) {
-            // Looked up here, not above: the service itself sends requests through this interceptor.
-            void injector
-              .get(SignOutService)
-              .end(error.reason === 'session_idle' ? 'idle' : 'expired');
-          }
-        } else if (error.reason === 'two_factor_required_by_pharmacy') {
-          // G16: this pharmacy requires a second factor; set one up, then come back.
-          toasts.error(error.message);
-          void injector.get(Router).navigateByUrl('/account?setup=2fa');
-        } else if (!attempt.context.get(SILENT)) {
-          toasts.error(error.message);
-        }
-        return throwError(() => error);
-      }),
-    );
+        }),
+      );
+    }
+    const signingIn = attempt.url.includes('/auth/sign-in');
+    const signingOut = attempt.url.includes('/auth/sign-out');
+    if (error.status === 401 && !signingIn) {
+      if (!signingOut) {
+        // Looked up here, not above: the service itself sends requests through this interceptor.
+        void injector.get(SignOutService).end(error.reason === 'session_idle' ? 'idle' : 'expired');
+      }
+    } else if (error.reason === 'two_factor_required_by_pharmacy') {
+      // G16: this pharmacy requires a second factor; set one up, then come back.
+      toasts.error(error.message);
+      void injector.get(Router).navigateByUrl('/account?setup=2fa');
+    } else if (!attempt.context.get(SILENT)) {
+      toasts.error(error.message);
+    }
+    return throwError(() => error);
+  };
 
   return send(request.clone({ headers }));
 };
+
+/** The failure with its Blob body read as the problem JSON it holds (or no body if it is not). */
+async function problemOfBlob(failure: HttpErrorResponse): Promise<HttpErrorResponse> {
+  let error: unknown = null;
+  try {
+    error = JSON.parse(await blobText(failure.error as Blob));
+  } catch {
+    error = null;
+  }
+  return new HttpErrorResponse({
+    error,
+    headers: failure.headers,
+    status: failure.status,
+    statusText: failure.statusText,
+    url: failure.url ?? undefined,
+  });
+}
+
+function blobText(blob: Blob): Promise<string> {
+  if (typeof blob.text === 'function') {
+    return blob.text();
+  }
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(reader.error);
+    reader.readAsText(blob);
+  });
+}

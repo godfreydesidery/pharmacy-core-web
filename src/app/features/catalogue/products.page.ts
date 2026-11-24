@@ -92,8 +92,14 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
                           ><b>{{ p.name }}</b></a
                         ><small
                           >{{ p.genericName ?? p.brand ?? ''
-                          }}{{ p.atcCode ? ' · ' + p.atcCode : '' }}</small
-                        >
+                          }}{{ p.atcCode ? ' · ' + p.atcCode : '' }}
+                          @if (p.tmdaRegistrationNumber) {
+                            ·
+                            <span [title]="'catalogue.tmdaRegistration' | t"
+                              >{{ 'catalogue.tmdaShort' | t }} {{ p.tmdaRegistrationNumber }}</span
+                            >
+                          }
+                        </small>
                       </div>
                       @if (p.trackingMode === 'SERIAL') {
                         <span class="badge purple" [title]="'catalogue.trackedBySerialNumber' | t"

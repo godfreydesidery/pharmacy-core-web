@@ -205,7 +205,29 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
                     <dt>{{ 'sales.patient' | t }}</dt>
                     <dd>{{ rx.patientName }}</dd>
                   </div>
+                  <div>
+                    <dt>{{ 'sales.prescriptionDate' | t }}</dt>
+                    <dd data-testid="rx-date">
+                      {{ rx.prescriptionDate ? (rx.prescriptionDate | day) : '—' }}
+                    </dd>
+                  </div>
+                  <div>
+                    <dt>{{ 'sales.dispensedBy' | t }}</dt>
+                    <dd data-testid="dispensed-by">{{ s.dispensedBy ?? '—' }}</dd>
+                  </div>
                 </dl>
+              </div>
+            } @else if (s.prescriptionWithheld) {
+              <div class="card card-pad" data-testid="rx-withheld">
+                <h3 class="mb row">
+                  <app-icon name="stethoscope" [size]="16" /> {{ 'sales.prescription' | t }}
+                </h3>
+                <p class="muted">
+                  <app-icon name="lock" [size]="14" /> {{ 'sales.prescriptionWithheld' | t }}
+                </p>
+                @if (s.dispensedBy) {
+                  <p class="muted">{{ 'sales.dispensedByName' | t: { name: s.dispensedBy } }}</p>
+                }
               </div>
             }
           </div>

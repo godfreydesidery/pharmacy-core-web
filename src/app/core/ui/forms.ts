@@ -1,7 +1,8 @@
 import { ChangeDetectionStrategy, Component, inject, input } from '@angular/core';
-import { AbstractControl, FormGroup } from '@angular/forms';
+import { AbstractControl, FormGroup, ValidationErrors } from '@angular/forms';
 import { RouterLink } from '@angular/router';
 import { ApiError } from '../api/api-error';
+import { isoDay } from '../format/format';
 import { TranslatePipe } from '../i18n/t.pipe';
 import { Params, Translations } from '../i18n/translations.store';
 import { SessionStore } from '../session/session.store';
@@ -64,6 +65,16 @@ export function controlError(control: AbstractControl | null): string | null {
 /** A form message in the current language (English before the app has started). */
 function text(key: string, fallback: string, params?: Params): string {
   return Translations.current?.t(key, params, fallback) ?? fallback;
+}
+
+/**
+ * A `YYYY-MM-DD` date not after today (the browser's day; the API checks the pharmacy's), such as
+ * a prescription's date. Its error is `max`, shown as "Must be at most <today>".
+ */
+export function notAfterToday(control: AbstractControl): ValidationErrors | null {
+  const value = String(control.value ?? '');
+  const today = isoDay();
+  return value && value > today ? { max: { max: today } } : null;
 }
 
 /** Marks every control touched so their errors show, and says whether the form is valid. */

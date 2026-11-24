@@ -87,6 +87,7 @@
     "period_locked",
     "permission_not_held",
     "plan_feature_unavailable",
+    "prescription_incomplete",
     "product_not_found",
     "product_not_on_order",
     "provider_incomplete",
@@ -96,6 +97,7 @@
     "recipe_mismatch",
     "refund_currency_not_tendered",
     "refund_method_not_allowed",
+    "request_closed",
     "restock_not_allowed",
     "return_exceeds_sold",
     "sale_line_not_found",
@@ -131,6 +133,7 @@
     "adapter_not_available": [],
     "adapter_unavailable": [],
     "admin_role_fixed": [],
+    "adverse_reaction_not_found": [],
     "already_a_member": [],
     "already_closed": [],
     "already_received": [],
@@ -206,6 +209,7 @@
     "currency_not_accepted": [
       "currency"
     ],
+    "customer_anonymised": [],
     "customer_not_found": [],
     "customer_required": [],
     "database_busy": [],
@@ -213,6 +217,9 @@
     "destruction_not_found": [],
     "direct_creation_disabled": [],
     "discount_not_allowed": [],
+    "dispense_not_allowed": [
+      "products"
+    ],
     "duplicate_batch": [],
     "duplicate_code": [],
     "duplicate_email": [],
@@ -298,6 +305,7 @@
     "invalid_expiry_alert_days": [],
     "invalid_format": [],
     "invalid_generic_name": [],
+    "invalid_given": [],
     "invalid_gtin": [],
     "invalid_idempotency_key": [],
     "invalid_idle_minutes": [
@@ -317,6 +325,8 @@
     "invalid_owner_type": [],
     "invalid_page": [],
     "invalid_password": [],
+    "invalid_patient_age": [],
+    "invalid_patient_weight_kg": [],
     "invalid_payment_method": [],
     "invalid_payment_terms_days": [],
     "invalid_percent": [],
@@ -331,6 +341,7 @@
     "invalid_range": [],
     "invalid_rate": [],
     "invalid_reason": [],
+    "invalid_received_on": [],
     "invalid_received_quantity": [],
     "invalid_reorder_level": [],
     "invalid_return_window": [],
@@ -338,6 +349,7 @@
     "invalid_serial": [],
     "invalid_signature": [],
     "invalid_size": [],
+    "invalid_therapy_dates": [],
     "invalid_timezone": [],
     "invalid_token": [],
     "invalid_type": [],
@@ -382,6 +394,7 @@
     "note_required": [],
     "nothing_held": [],
     "notification_not_found": [],
+    "onset_in_future": [],
     "opening_balances_posted": [],
     "orders_required": [],
     "over_receipt": [],
@@ -424,6 +437,12 @@
     "preauth_required": [
       "payer"
     ],
+    "prescription_date_in_future": [],
+    "prescription_expired": [
+      "oldestAllowed",
+      "validMonths"
+    ],
+    "prescription_incomplete": [],
     "prescription_required": [],
     "price_list_not_found": [],
     "price_list_target": [],
@@ -458,6 +477,11 @@
       "payer"
     ],
     "remittance_mismatch": [],
+    "request_closed": [],
+    "request_mismatch": [
+      "kind"
+    ],
+    "request_not_found": [],
     "reseal_running": [],
     "restock_not_allowed": [],
     "return_exceeds_sold": [],
@@ -486,6 +510,7 @@
     ],
     "serials_mismatch": [],
     "serials_not_tracked": [],
+    "serious_reason_required": [],
     "session_expired": [],
     "session_idle": [
       "idleMinutes"
@@ -500,6 +525,10 @@
     "smtp_port_not_allowed": [],
     "stale_version": [],
     "stream_ticket_expired": [],
+    "subject_has_balance": [
+      "balance"
+    ],
+    "subject_under_legal_hold": [],
     "subscription_not_found": [],
     "supplier_mismatch": [],
     "supplier_not_found": [],

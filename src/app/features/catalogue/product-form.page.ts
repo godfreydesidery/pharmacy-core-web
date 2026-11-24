@@ -211,6 +211,18 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                     }
                   </select>
                 </app-field>
+                <app-field
+                  [label]="'catalogue.tmdaRegistration' | t"
+                  [hint]="'catalogue.tmdaRegistrationHint' | t"
+                  [error]="err('tmdaRegistrationNumber')"
+                >
+                  <input
+                    class="input"
+                    formControlName="tmdaRegistrationNumber"
+                    data-testid="tmda-registration"
+                    maxlength="60"
+                  />
+                </app-field>
               </div>
             </fieldset>
           } @else {
@@ -224,6 +236,18 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                 </app-field>
                 <app-field [label]="'catalogue.model' | t">
                   <input class="input" formControlName="model" placeholder="Action 1" />
+                </app-field>
+                <app-field
+                  [label]="'catalogue.tmdaRegistration' | t"
+                  [hint]="'catalogue.tmdaRegistrationHint' | t"
+                  [error]="err('tmdaRegistrationNumber')"
+                >
+                  <input
+                    class="input"
+                    formControlName="tmdaRegistrationNumber"
+                    data-testid="tmda-registration"
+                    maxlength="60"
+                  />
                 </app-field>
                 <app-field [label]="'catalogue.packSize' | t">
                   <input class="input" formControlName="packSize" placeholder="Box of 100" />
@@ -528,6 +552,8 @@ export default class ProductFormPage implements OnInit {
     model: [''],
     warrantyMonths: [null as number | null, [Validators.min(0), Validators.max(120)]],
     requiresSerialAtSale: [true],
+    /** TMDA registers medicines and medical devices alike (STD-8). */
+    tmdaRegistrationNumber: ['', Validators.maxLength(60)],
     costPrice: [0, [Validators.required, Validators.min(0)]],
     sellingPrice: [0, [Validators.required, Validators.min(0)]],
     taxRatePercent: [0, [Validators.min(0), Validators.max(100)]],
@@ -606,6 +632,7 @@ export default class ProductFormPage implements OnInit {
       model: product.model ?? '',
       warrantyMonths: product.warrantyMonths ?? null,
       requiresSerialAtSale: product.requiresSerialAtSale ?? true,
+      tmdaRegistrationNumber: product.tmdaRegistrationNumber ?? '',
     });
   }
 
@@ -666,6 +693,7 @@ export default class ProductFormPage implements OnInit {
           ? null
           : Number(v.warrantyMonths),
       requiresSerialAtSale: v.trackingMode === 'SERIAL' ? v.requiresSerialAtSale : null,
+      tmdaRegistrationNumber: nullable(v.tmdaRegistrationNumber),
     };
     this.busy.set(true);
     try {

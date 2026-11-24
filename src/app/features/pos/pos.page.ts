@@ -5,7 +5,7 @@ import {
   TillMethod,
   TillPlans,
 } from '../../core/api/models';
-import { formatMoney, minorUnits } from '../../core/format/format';
+import { formatMoney, isoDay, minorUnits } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -38,7 +38,7 @@ import { debounced, loaded } from '../../core/data/data';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
-import { controlError, validate } from '../../core/ui/forms';
+import { applyApiError, controlError, notAfterToday, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { LeaveGuard } from '../../core/session/leave-guard';
 import { ConfirmService } from '../../core/ui/confirm';
@@ -569,11 +569,20 @@ export default class PosPage {
     prescriberRegistration: ['', Validators.required],
     reference: ['', Validators.required],
     patientName: ['', Validators.required],
+    /** The day it was written: not in the future, and valid 6 months (STD-7, checked by the API). */
+    prescriptionDate: ['', [Validators.required, notAfterToday]],
   });
+  /** The latest prescription date the date picker offers. */
+  protected readonly today = isoDay;
 
   /** The message under a prescription field once it was touched or the form was submitted. */
   protected rxErr(
-    name: 'prescriberName' | 'prescriberRegistration' | 'reference' | 'patientName',
+    name:
+      | 'prescriberName'
+      | 'prescriberRegistration'
+      | 'reference'
+      | 'patientName'
+      | 'prescriptionDate',
   ): string | null {
     return controlError(this.rxForm.controls[name]);
   }
@@ -1829,7 +1838,17 @@ export default class PosPage {
         this.showPending();
       } else {
         this.settlePending();
-        this.problem.set(error.message || this.translations.t('pos.checkoutFailed'));
+        this.problem.set(
+          error.reason === 'dispense_not_allowed'
+            ? this.translations.t('pos.dispenseNotAllowed')
+            : error.message || this.translations.t('pos.checkoutFailed'),
+        );
+        // A prescription detail refused (incomplete, dated ahead, older than 6 months): its field
+        // shows why, and the prescription opens again to correct it.
+        if (error.field?.startsWith('prescription') && applyApiError(this.rxForm, failure)) {
+          this.prescription.set(null);
+          this.rxOpen.set(true);
+        }
       }
     } finally {
       if (attempt === this.attempt) {

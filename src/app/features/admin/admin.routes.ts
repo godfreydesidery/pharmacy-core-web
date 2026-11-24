@@ -51,6 +51,12 @@ export default [
     loadComponent: () => import('./audit.page'),
   },
   {
+    path: 'privacy-requests',
+    title: 'Data requests',
+    data: { permission: 'data.export' },
+    loadComponent: () => import('./privacy-requests.page'),
+  },
+  {
     path: 'payment-methods',
     title: 'Payment methods',
     data: { permission: 'settings.manage' },
