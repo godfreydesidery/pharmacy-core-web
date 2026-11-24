@@ -220,6 +220,8 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.account_on_hold': 'Akaunti ya mteja imesimamishwa; hakuna mkopo mpya unaoruhusiwa.',
   'errors.invalid_credit_limit': 'Weka kikomo cha mkopo.',
   'errors.currency_not_accepted': 'Famasia hii haipokei sarafu {{currency}} (Mipangilio → Sarafu).',
+  'errors.currency_not_supported':
+    'Sarafu {{currency}} ina desimali zaidi ya 2; sarafu kuu ya famasia inaweza kuwa na desimali 2 tu.',
   'errors.refund_method_not_allowed': 'Fedha hurudishwa kwa njia ileile ambayo mauzo yalilipwa.',
   'errors.preauth_required': 'Bima hii inahitaji namba ya idhini ya awali.',
   'errors.payer_not_found': 'Mlipaji huyo hayupo.',

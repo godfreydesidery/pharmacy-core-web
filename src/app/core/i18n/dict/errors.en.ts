@@ -228,6 +228,8 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.invalid_credit_limit': 'Enter the credit limit.',
   'errors.currency_not_accepted':
     'This pharmacy does not accept {{currency}} (Settings → Currencies).',
+  'errors.currency_not_supported':
+    '{{currency}} has more than 2 decimals; the base currency of a pharmacy may have at most 2.',
   'errors.refund_method_not_allowed': 'A refund goes back the way the sale was paid.',
   'errors.preauth_required': 'This insurer needs a pre-authorisation number.',
   'errors.payer_not_found': 'No such insurer.',

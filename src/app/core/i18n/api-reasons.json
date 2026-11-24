@@ -206,6 +206,9 @@
     "currency_not_accepted": [
       "currency"
     ],
+    "currency_not_supported": [
+      "currency"
+    ],
     "customer_not_found": [],
     "customer_required": [],
     "database_busy": [],
@@ -298,7 +301,9 @@
     "invalid_expiry_alert_days": [],
     "invalid_format": [],
     "invalid_generic_name": [],
-    "invalid_gtin": [],
+    "invalid_gtin": [
+      "gtin"
+    ],
     "invalid_idempotency_key": [],
     "invalid_idle_minutes": [
       "max",
@@ -424,6 +429,8 @@
     "preauth_required": [
       "payer"
     ],
+    "precondition_failed": [],
+    "precondition_required": [],
     "prescription_required": [],
     "price_list_not_found": [],
     "price_list_target": [],
