@@ -28,6 +28,7 @@ function session(rootAdmin = false): Session {
 describe('SessionStore', () => {
   beforeEach(() => {
     localStorage.clear();
+    sessionStorage.clear();
     TestBed.resetTestingModule();
   });
 
@@ -84,5 +85,41 @@ describe('SessionStore', () => {
     TestBed.tick();
     expect(store.token()).toBeNull();
     expect(localStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
+  });
+
+  it('keeps a shared counter PC session in sessionStorage only, so closing the browser ends it', () => {
+    const store = TestBed.inject(SessionStore);
+    store.signIn(session());
+    store.enterMembership(membership, membership.branches, membership.branches[0]);
+    TestBed.tick();
+    expect(localStorage.getItem(SESSION_STORAGE_KEY)).toContain('pcs_token');
+
+    store.useSharedPc(true);
+    TestBed.tick();
+    expect(store.sharedPc()).toBe(true);
+    expect(localStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
+    expect(sessionStorage.getItem(SESSION_STORAGE_KEY)).toContain('pcs_token');
+
+    // A reload in the same tab keeps it; a closed browser (empty sessionStorage) does not.
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(SessionStore).token()).toBe('pcs_token');
+    sessionStorage.clear();
+    TestBed.resetTestingModule();
+    expect(TestBed.inject(SessionStore).signedIn()).toBe(false);
+  });
+
+  it('moves the session back to localStorage when the pharmacy turns shared PCs off', () => {
+    const store = TestBed.inject(SessionStore);
+    store.signIn(session());
+    store.useSharedPc(true);
+    TestBed.tick();
+    store.useSharedPc(false);
+    TestBed.tick();
+    expect(sessionStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
+    expect(localStorage.getItem(SESSION_STORAGE_KEY)).toContain('pcs_token');
+    store.signOut();
+    TestBed.tick();
+    expect(localStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
+    expect(sessionStorage.getItem(SESSION_STORAGE_KEY)).toBeNull();
   });
 });

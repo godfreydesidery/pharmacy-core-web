@@ -26,38 +26,57 @@ export interface StoredSession {
   user: SessionUser;
   memberships: Membership[];
   workspace: Workspace | null;
+  /**
+   * The workspace pharmacy uses shared counter PCs (WEB-5): the session is kept in this tab's
+   * sessionStorage, so it ends when the browser (or the tab) closes, and never in localStorage.
+   */
+  sharedPc?: boolean;
 }
 
 export const SESSION_STORAGE_KEY = 'pharmacy-core.session';
 
+function parse(raw: string | null): StoredSession | null {
+  if (!raw) {
+    return null;
+  }
+  const stored = JSON.parse(raw) as StoredSession;
+  return new Date(stored.expiresAt).getTime() > Date.now() ? stored : null;
+}
+
+/** The kept session: this tab's sessionStorage first (shared counter PCs), then localStorage. */
 function read(): StoredSession | null {
   try {
-    const raw = localStorage.getItem(SESSION_STORAGE_KEY);
-    if (!raw) {
-      return null;
-    }
-    const stored = JSON.parse(raw) as StoredSession;
-    return new Date(stored.expiresAt).getTime() > Date.now() ? stored : null;
+    return (
+      parse(sessionStorage.getItem(SESSION_STORAGE_KEY)) ??
+      parse(localStorage.getItem(SESSION_STORAGE_KEY))
+    );
   } catch {
     return null;
   }
 }
 
 function write(session: StoredSession | null): void {
-  try {
-    if (session) {
-      localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
-    } else {
-      localStorage.removeItem(SESSION_STORAGE_KEY);
+  for (const [storage, keep] of [
+    [localStorage, !!session && !session.sharedPc],
+    [sessionStorage, !!session?.sharedPc],
+  ] as const) {
+    try {
+      if (keep) {
+        storage.setItem(SESSION_STORAGE_KEY, JSON.stringify(session));
+      } else {
+        storage.removeItem(SESSION_STORAGE_KEY);
+      }
+    } catch {
+      /* storage unavailable (private mode): the session lives in memory only */
     }
-  } catch {
-    /* storage unavailable (private mode): the session lives in memory only */
   }
 }
 
 /**
  * The signed-in session as signals: the token, the user, their memberships and the workspace
- * (tenant + branch) the app works in. It persists to localStorage so a reload keeps the session.
+ * (tenant + branch) the app works in. It persists to localStorage so a reload keeps the session;
+ * for a pharmacy with shared counter PCs it persists to sessionStorage instead, so closing the
+ * browser ends it (the API's inactivity limit applies either way).
  */
 @Injectable({ providedIn: 'root' })
 export class SessionStore {
@@ -75,6 +94,8 @@ export class SessionStore {
   readonly branches = computed(() => this.workspace()?.branches ?? []);
   readonly isRoot = computed(() => this.user()?.rootAdmin ?? false);
   readonly signedIn = computed(() => this.token() !== null);
+  /** The session is kept for this tab only (the pharmacy's shared counter PCs setting). */
+  readonly sharedPc = computed(() => this.state()?.sharedPc ?? false);
   private readonly permissionSet = computed(() => new Set(this.workspace()?.permissions ?? []));
 
   constructor() {
@@ -159,6 +180,17 @@ export class SessionStore {
   switchBranch(branch: BranchRef | null): void {
     this.state.update((current) =>
       current?.workspace ? { ...current, workspace: { ...current.workspace, branch } } : current,
+    );
+  }
+
+  /**
+   * Follows the workspace pharmacy's "Shared counter PCs" setting: on keeps the session in this
+   * tab's sessionStorage (it ends when the browser closes) and takes it out of localStorage; off
+   * keeps it in localStorage as before.
+   */
+  useSharedPc(shared: boolean): void {
+    this.state.update((current) =>
+      current && !!current.sharedPc !== shared ? { ...current, sharedPc: shared } : current,
     );
   }
 

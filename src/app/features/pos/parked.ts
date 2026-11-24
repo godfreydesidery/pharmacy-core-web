@@ -41,7 +41,8 @@ export const PARKED_LIMIT = 20;
 /**
  * A parked sale is dropped 12 hours after it was parked. That covers a customer who comes back
  * later the same day (a long shift is 12 hours), but no cart waits overnight into another day's
- * prices, stock and cashier, and a shared counter PC does not collect old carts.
+ * prices, stock and cashier. A pharmacy with "Shared counter PCs" on drops them at the end of its
+ * business day instead (see {@link ParkedExpiry}).
  */
 export const PARKED_TTL_MS = 12 * 60 * 60 * 1000;
 
@@ -52,10 +53,47 @@ export function parkedKey(tenantUid: string, branchUid: string, userUid: string)
   return `${PREFIX}${tenantUid}.${branchUid}.${userUid}`;
 }
 
-/** Whether a parked sale is older than {@link PARKED_TTL_MS} (or has no readable time). */
-export function expired(sale: Pick<ParkedSale, 'parkedAt'>, now = Date.now()): boolean {
+/**
+ * How long parked sales last at this pharmacy. With "Shared counter PCs" on (WEB-5), a parked sale
+ * lasts until the end of the business day it was parked in, in the pharmacy's time zone, so no cart
+ * is left on a shared computer overnight; otherwise {@link PARKED_TTL_MS}.
+ */
+export interface ParkedExpiry {
+  sharedPc: boolean;
+  /** The pharmacy's IANA time zone, such as Africa/Dar_es_Salaam; the browser's when missing. */
+  timeZone?: string | null;
+}
+
+/** The calendar day (YYYY-MM-DD) of an instant in a time zone; the browser's for an unknown one. */
+export function businessDay(at: number, timeZone?: string | null): string {
+  const options: Intl.DateTimeFormatOptions = { year: 'numeric', month: '2-digit', day: '2-digit' };
+  let format: Intl.DateTimeFormat;
+  try {
+    format = new Intl.DateTimeFormat('en-CA', { ...options, timeZone: timeZone || undefined });
+  } catch {
+    format = new Intl.DateTimeFormat('en-CA', options);
+  }
+  const parts = Object.fromEntries(format.formatToParts(at).map((p) => [p.type, p.value]));
+  return `${parts['year']}-${parts['month']}-${parts['day']}`;
+}
+
+/**
+ * Whether a parked sale has expired (or has no readable time): older than {@link PARKED_TTL_MS},
+ * or, on shared counter PCs, parked on an earlier business day of the pharmacy.
+ */
+export function expired(
+  sale: Pick<ParkedSale, 'parkedAt'>,
+  now = Date.now(),
+  expiry?: ParkedExpiry | null,
+): boolean {
   const at = Date.parse(sale.parkedAt);
-  return !Number.isFinite(at) || now - at > PARKED_TTL_MS;
+  if (!Number.isFinite(at)) {
+    return true;
+  }
+  if (expiry?.sharedPc) {
+    return at > now || businessDay(at, expiry.timeZone) !== businessDay(now, expiry.timeZone);
+  }
+  return now - at > PARKED_TTL_MS;
 }
 
 /**
@@ -118,12 +156,13 @@ export function readParked(
   storage: Pick<Storage, 'getItem'> | null,
   key: string,
   now = Date.now(),
+  expiry?: ParkedExpiry | null,
 ): ParkedSale[] {
   try {
     const raw = storage?.getItem(key);
     const list = raw ? (JSON.parse(raw) as unknown) : [];
     return Array.isArray(list)
-      ? list.map(normalize).filter((p): p is ParkedSale => p !== null && !expired(p, now))
+      ? list.map(normalize).filter((p): p is ParkedSale => p !== null && !expired(p, now, expiry))
       : [];
   } catch {
     return [];

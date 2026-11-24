@@ -1,11 +1,13 @@
 import { Injectable, computed, inject, signal } from '@angular/core';
 import { Api } from '../api/api.service';
 import { Settings } from '../api/models';
+import { SessionStore } from '../session/session.store';
 
 /** The tenant's settings, loaded once per workspace; the currency formats every amount. */
 @Injectable({ providedIn: 'root' })
 export class SettingsStore {
   private readonly api = inject(Api);
+  private readonly session = inject(SessionStore);
   private readonly state = signal<Settings | null>(null);
   private loadedFor: string | null = null;
 
@@ -24,7 +26,7 @@ export class SettingsStore {
     }
     this.loadedFor = tenantUid;
     try {
-      this.state.set(await this.api.get<Settings>('/settings', undefined, { silent: true }));
+      this.set(await this.api.get<Settings>('/settings', undefined, { silent: true }));
     } catch {
       this.state.set(null);
     }
@@ -32,6 +34,8 @@ export class SettingsStore {
 
   set(settings: Settings): void {
     this.state.set(settings);
+    // Shared counter PCs (WEB-5): where the session is kept follows the pharmacy's setting.
+    this.session.useSharedPc(!!settings?.sharedCounterPcs);
   }
 
   clear(): void {
