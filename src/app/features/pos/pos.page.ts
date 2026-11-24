@@ -989,12 +989,21 @@ export default class PosPage {
     phone: ['', [Validators.pattern(/^\+?[0-9 ()-]{6,20}$/)]],
   });
 
+  /**
+   * Who may add a customer at the till: whoever manages customers, or holds the narrow
+   * `partners.create_at_till` (a cashier, a pharmacist). The dialog sends only what that narrow
+   * permission allows: a name, a phone, type RETAIL and active.
+   */
+  protected canCreateCustomer(): boolean {
+    return this.session.canAny(['partners.manage', 'partners.create_at_till']);
+  }
+
   protected newCustomerErr(name: 'name' | 'phone'): string | null {
     return controlError(this.newCustomerForm.controls[name]);
   }
 
   protected openNewCustomer(): void {
-    if (this.locked()) {
+    if (this.locked() || !this.canCreateCustomer()) {
       return;
     }
     // What was typed in the search becomes the name: the cashier looked for them first.

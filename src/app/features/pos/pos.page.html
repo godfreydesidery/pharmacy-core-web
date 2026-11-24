@@ -139,7 +139,7 @@
                 [detail]="customerDetail"
                 (picked)="pickCustomer($event)"
               />
-              @if (session.can('partners.manage') && !customer()) {
+              @if (canCreateCustomer() && !customer()) {
                 <button
                   type="button"
                   class="chip sm new-customer"

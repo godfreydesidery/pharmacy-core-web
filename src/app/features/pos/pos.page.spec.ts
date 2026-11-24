@@ -791,8 +791,44 @@ describe('POS page', () => {
         (page as unknown as { customer: Signal<{ uid: string } | null> }).customer()?.uid,
       ).toBe('c9');
       expect(element('[data-testid="nc-name"]')).toBeNull();
-      });
     });
+
+    it('offers "New customer" with partners.manage or only partners.create_at_till, else not', async () => {
+      const session = TestBed.inject(SessionStore);
+      const reopen = async (held: string[]): Promise<void> => {
+        fixture.destroy();
+        vi.spyOn(session, 'can').mockImplementation((p) => !p || held.includes(p));
+        await open();
+      };
+
+      // A cashier with only the narrow permission sees it and sends only what it allows.
+      await reopen(['sales.create', 'partners.view', 'partners.create_at_till']);
+      expect(element('[data-testid="pos-new-customer"]')).not.toBeNull();
+      api.posts.set('/customers', () =>
+        Promise.resolve({ uid: 'c7', code: 'CUS-7', name: 'Baraka', type: 'RETAIL' }),
+      );
+      element('[data-testid="pos-new-customer"]')?.click();
+      await settle();
+      const name = element('[data-testid="nc-name"]') as HTMLInputElement;
+      name.value = 'Baraka';
+      name.dispatchEvent(new Event('input'));
+      element('[data-testid="nc-save"]')?.click();
+      await settle();
+      const post = api.sent.find((s) => s.method === 'POST' && s.path === '/customers');
+      expect(post?.body).toEqual({ name: 'Baraka', phone: null, type: 'RETAIL', active: true });
+
+      // Whoever manages customers sees it too.
+      await reopen(['sales.create', 'partners.view', 'partners.manage']);
+      expect(element('[data-testid="pos-new-customer"]')).not.toBeNull();
+
+      // Neither permission: no chip, and the dialog does not open.
+      await reopen(['sales.create', 'partners.view']);
+      expect(element('[data-testid="pos-new-customer"]')).toBeNull();
+      (page as unknown as { openNewCustomer(): void }).openNewCustomer();
+      await settle();
+      expect(element('[data-testid="nc-name"]')).toBeNull();
+    });
+  });
 
   describe('sales that did not happen (FRD-20)', () => {
     type Till = Page & { cancelSale(): Promise<void>; discard(id: string): Promise<void> };
