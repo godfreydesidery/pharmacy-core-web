@@ -642,7 +642,7 @@
                     aria-expanded="true"
                     [attr.aria-activedescendant]="activeOption()"
                     [attr.aria-label]="'pos.searchNameGenericSkuOrScan' | t"
-                    aria-describedby="till-search-state"
+                    [attr.aria-describedby]="suggestions().length ? null : 'till-search-state'"
                     [placeholder]="'pos.searchNameGenericSkuOrScan' | t"
                     [value]="q()"
                     (input)="search($any($event.target).value)"
