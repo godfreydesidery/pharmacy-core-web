@@ -6,8 +6,10 @@ export const SECURITY2_EN: Readonly<Record<string, string>> = {
   'security2.unlocked': '{{name}} can sign in again',
   'security2.invitationSentInstead':
     'This email already has an account, so an invitation was sent; they join when they accept.',
-  'security2.signOutOthers': 'Sign out of {{count}} other device(s)',
-  'security2.othersSignedOut': 'Signed out of {{count}} other device(s)',
+  'security2.signOutOthers':
+    'Sign out of {count, plural, one {# other device} other {# other devices}}',
+  'security2.othersSignedOut':
+    'Signed out of {count, plural, one {# other device} other {# other devices}}',
 
   // audit trail actions
   'security2.audit.CREATE': 'Created',

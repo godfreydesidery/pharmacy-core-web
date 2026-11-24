@@ -64,8 +64,9 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.keyPay': 'pay',
   'pos.keySearch': 'search',
   'pos.lineTotal': 'Line total',
-  'pos.linesAndUnits': '{{lines}} lines · {{units}} units',
-  'pos.linesCount': '{{count}} lines',
+  'pos.linesAndUnits':
+    '{lines, plural, one {# line} other {# lines}} · {units, plural, one {# unit} other {# units}}',
+  'pos.linesCount': '{count, plural, one {# line} other {# lines}}',
   'pos.noParkedSales': 'The sale list is empty',
   'pos.noParkedSalesHint': 'Park a sale to serve someone else and pick it up again here.',
   'pos.outOfStock': 'Out of stock',
@@ -89,7 +90,7 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.confirmCompleteText':
     'Check the items and the payment. Once completed, a sale can only be undone by a return.',
   'pos.selectItem': 'Select an item…',
-  'pos.typeAtLeast': 'Type {{count}} or more letters',
+  'pos.typeAtLeast': 'Type {count, plural, one {# letter} other {# or more letters}}',
   'pos.leftCount': '{{count}} left',
   'pos.sn': 'SN',
   'pos.code': 'Code',
@@ -126,7 +127,7 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.parkedCustomerGone':
     'The customer of this sale could not be found; it is now a walk-in sale.',
   'pos.parkedItemsGone':
-    '{{count}} item(s) of this sale can no longer be sold here and were left out.',
+    '{count, plural, one {# item of this sale can no longer be sold here and was left out.} other {# items of this sale can no longer be sold here and were left out.}}',
   'pos.uncertain.title': 'We could not confirm this sale',
   'pos.uncertain.text':
     'It may have gone through. The cart is locked so it is never charged twice. Check again sends the same sale with the same key: if it went through you get its receipt, if not it is completed now.',
@@ -136,7 +137,8 @@ export const POS_EN: Readonly<Record<string, string>> = {
   'pos.uncertain.checkAgain': 'Check again',
   'pos.uncertain.checking': 'Checking…',
   'pos.uncertain.lookUp': 'Look it up',
-  'pos.uncertain.lookupHint': 'Sales at this branch from {{minutes}} minutes before it was sent:',
+  'pos.uncertain.lookupHint':
+    'Sales at this branch from {minutes, plural, one {# minute} other {# minutes}} before it was sent:',
   'pos.uncertain.sameTotal': 'Same total',
   'pos.uncertain.noneFound': 'No sales were recorded in that time.',
   'pos.uncertain.noSalesView':

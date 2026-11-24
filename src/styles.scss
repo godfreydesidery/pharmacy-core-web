@@ -1035,6 +1035,10 @@ textarea.input {
     width: 100%;
   }
 }
+/* A till receipt prints on an 80 mm roll: the printer's paper, with small margins (UX-15). */
+@page receipt {
+  margin: 3mm 4mm;
+}
 
 /* Files: attachment panels sit under the record they belong to. */
 app-attachments {

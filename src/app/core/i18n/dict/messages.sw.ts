@@ -25,15 +25,18 @@ export const MESSAGES_SW: Readonly<Record<string, string>> = {
   'toast.manufacturerSaved': 'Mtengenezaji amehifadhiwa',
   'toast.expenseRecorded': 'Matumizi yameandikwa',
   'toast.rateRecorded': '1 {{base}} = {{rate}} {{quote}} kimeandikwa',
-  'toast.ratesRefreshed': 'Viwango {{count}} vimesasishwa',
+  'toast.ratesRefreshed':
+    '{count, plural, one {Kiwango # kimesasishwa} other {Viwango # vimesasishwa}}',
   'toast.noRateProvider': 'Hakuna mtoa huduma aliyewekwa; andika viwango kwa mkono.',
   'toast.supplierPaymentRecorded': 'Malipo kwa msambazaji yameandikwa',
-  'toast.batchSubmitted': '{{number}}: madai {{count}} yamewasilishwa',
+  'toast.batchSubmitted':
+    '{{number}}: {count, plural, one {dai # limewasilishwa} other {madai # yamewasilishwa}}',
   'toast.claimUpdated': '{{number}}: {{status}}',
   'toast.membershipSaved': 'Uanachama umehifadhiwa',
   'toast.payerSaved': 'Mlipaji amehifadhiwa',
   'toast.schemeSaved': 'Mpango umehifadhiwa',
-  'toast.remittanceRecorded': 'Malipo ya bima yameandikwa kwa madai {{count}}',
+  'toast.remittanceRecorded':
+    'Malipo ya bima yameandikwa kwa {count, plural, one {dai #} other {madai #}}',
   'toast.adjustmentRecorded': 'Marekebisho yameandikwa',
   'toast.openingStockRecorded': 'Hifadhi ya mwanzo imeandikwa',
   'toast.transferSent': '{{number}} imetumwa kwa {{branch}}',

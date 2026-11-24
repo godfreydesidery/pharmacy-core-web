@@ -51,11 +51,14 @@ import { FiscalBlockComponent } from './fiscal-block.component';
                 {{ line.productName }}
                 <div class="faint small">
                   @if (line.serialNumbers.length) {
-                    S/N {{ line.serialNumbers.join(', ') }}
+                    {{ 'receipt.serials' | t: { serials: line.serialNumbers.join(', ') } }}
                   } @else if (line.expiryDate) {
-                    Batch {{ line.batchNumber }} · exp {{ line.expiryDate | day }}
+                    {{
+                      'receipt.batchExpiry'
+                        | t: { batch: line.batchNumber, date: line.expiryDate | day }
+                    }}
                   } @else if (line.batchNumber && line.batchNumber !== '-') {
-                    Batch {{ line.batchNumber }}
+                    {{ 'receipt.batch' | t: { batch: line.batchNumber } }}
                   }
                   @if (line.warrantyEndsOn) {
                     <div>{{ 'ui.t.warrantyUntil' | t: { date: line.warrantyEndsOn | day } }}</div>
@@ -166,6 +169,51 @@ import { FiscalBlockComponent } from './fiscal-block.component';
     }
     .footer {
       margin-top: 10px;
+    }
+    /*
+     * 80 mm thermal printers (UX-15): about 72 mm can be printed. Black on white only (thermal
+     * heads print no grey), a narrow column, small margins (the 'receipt' page in styles.scss),
+     * and no line split over a cut.
+     */
+    @media print {
+      .receipt {
+        page: receipt;
+        width: 72mm;
+        max-width: 72mm;
+        margin: 0;
+        gap: 2mm;
+        color: #000;
+        font-size: 10pt;
+        line-height: 1.25;
+      }
+      .small {
+        font-size: 8.5pt;
+      }
+      .muted,
+      .faint,
+      th {
+        color: #000;
+      }
+      .receipt-logo {
+        max-width: 40mm;
+        max-height: 14mm;
+      }
+      table {
+        margin: 1mm 0;
+      }
+      th,
+      td {
+        padding: 1mm 0.5mm;
+        border-color: #000;
+      }
+      tr,
+      .row {
+        break-inside: avoid;
+      }
+      .grand {
+        font-size: 12pt;
+        border-color: #000;
+      }
     }
   `,
 })

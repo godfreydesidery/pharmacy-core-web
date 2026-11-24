@@ -81,7 +81,7 @@ export const UI_EN: Readonly<Record<string, string>> = {
   'ui.import.ready': 'Ready to import: {{creating}} new, {{updating}} to update.',
   'ui.import.problems':
     '{{count}} problems to fix. Nothing has been saved; correct the file and choose it again.',
-  'ui.import.more': 'and {{count}} more problems',
+  'ui.import.more': 'and {count, plural, one {# more problem} other {# more problems}}',
   'ui.import.row': 'Row',
   'ui.import.column': 'Column',
   'ui.import.problem': 'Problem',
@@ -242,7 +242,7 @@ export const UI_EN: Readonly<Record<string, string>> = {
 
   // bell and preferences
   'ui.bell.notifications': 'Notifications',
-  'ui.bell.unread': '{{count}} unread notifications',
+  'ui.bell.unread': '{count, plural, one {# unread notification} other {# unread notifications}}',
   'ui.bell.live': 'Live',
   'ui.bell.new': '{{count}} new',
   'ui.bell.markAllRead': 'Mark all read',
@@ -283,8 +283,9 @@ export const UI_EN: Readonly<Record<string, string>> = {
 
   // stock and transfers
   'ui.stock.onHand': 'Products on hand',
-  'ui.stock.onHandHint': '{{count}} products tracked',
-  'ui.transfers.incomingWaiting': '{{count}} incoming transfer(s) waiting to be received',
+  'ui.stock.onHandHint': '{count, plural, one {# product tracked} other {# products tracked}}',
+  'ui.transfers.incomingWaiting':
+    '{count, plural, one {# incoming transfer waiting} other {# incoming transfers waiting}} to be received',
   'ui.transfers.open': 'Open transfers',
 
   // reports
@@ -426,7 +427,7 @@ export const UI_EN: Readonly<Record<string, string>> = {
   'ui.l.walkIn': 'Walk-in',
 
   // sentences with values
-  'ui.t.subCategories': '{{count}} sub-categories',
+  'ui.t.subCategories': '{count, plural, one {# sub-category} other {# sub-categories}}',
   'ui.t.serialNotice':
     'Each unit is received with its serial number and sold by it, so every {{name}} can be traced to its sale and warranty.',
   'ui.t.unit': 'unit',
@@ -438,7 +439,8 @@ export const UI_EN: Readonly<Record<string, string>> = {
   'ui.t.expires': 'Expires {{date}}',
   'ui.t.expired': 'expired',
   'ui.t.batchNumber': 'Batch number',
-  'ui.t.serialUnits': '{{count}} serial number(s) = {{count}} unit(s)',
+  'ui.t.serialUnits':
+    '{count, plural, one {# serial number = # unit} other {# serial numbers = # units}}',
   'ui.t.fefo': 'earliest-expiring batches are sold first',
   'ui.t.credit': 'Credit {{amount}}',
   'ui.t.available': 'Available {{amount}}',
@@ -466,11 +468,11 @@ export const UI_EN: Readonly<Record<string, string>> = {
   'ui.t.orderLocked':
     'The order locked {{rate}} {{base}} per {{currency}}; change it only if the supplier invoiced at another rate.',
   'ui.t.receiveInto': 'into {{branch}}. Stock goes up as soon as you save.',
-  'ui.t.units': '{{count}} unit(s)',
+  'ui.t.units': '{count, plural, one {# unit} other {# units}}',
   'ui.t.receiptsSub': 'Deliveries received at {{branch}}, with batch and expiry.',
 
   // POS phone cart bar
-  'ui.pos.cartBar': '{{count}} item(s)',
+  'ui.pos.cartBar': '{count, plural, one {# item} other {# items}}',
   'ui.pos.pay': 'Pay',
 
   // a save that crossed someone else's change (412 precondition_failed, STD-10)

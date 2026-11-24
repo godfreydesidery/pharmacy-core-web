@@ -111,7 +111,7 @@ export const EN: Readonly<Record<string, string>> = {
   'workspace.noTenants': 'No pharmacy matches.',
   'workspace.noMemberships':
     'You have no membership in any pharmacy yet. Ask your administrator to add you.',
-  'workspace.branches': '{{count}} branches',
+  'workspace.branches': '{count, plural, one {# branch} other {# branches}}',
   'workspace.platformHome': 'Platform overview',
   'workspace.back': 'Back',
 
@@ -121,7 +121,7 @@ export const EN: Readonly<Record<string, string>> = {
 
   // dashboard
   'dashboard.title': 'Dashboard',
-  'dashboard.lastDays': 'last {{days}} days',
+  'dashboard.lastDays': 'last {days, plural, one {# day} other {# days}}',
   'dashboard.newSale': 'New sale',
   'dashboard.sales': 'Sales',
   'dashboard.purchases': 'Purchases',
@@ -221,7 +221,7 @@ export const EN: Readonly<Record<string, string>> = {
   'security.inviteClosed': 'This invitation is {{status}}. Ask for a new one.',
   'security.retryIn': 'Try again in {{seconds}} seconds.',
   'security.retryInMinute': 'Try again in 1 minute.',
-  'security.retryInMinutes': 'Try again in {{minutes}} minutes.',
+  'security.retryInMinutes': 'Try again in {minutes, plural, one {# minute} other {# minutes}}.',
   // per-area dictionaries (dict/)
   ...EN_AREAS,
 };

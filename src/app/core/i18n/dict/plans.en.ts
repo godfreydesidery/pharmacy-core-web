@@ -72,7 +72,8 @@ export const PLANS_EN: Readonly<Record<string, string>> = {
   'plans.current': 'Current',
   'plans.upgradeHint':
     'Features your plan does not include are hidden from the menu. Ask the platform administrator to change your plan.',
-  'plans.banner.trial': 'Free trial of {{plan}}: {{days}} days left.',
+  'plans.banner.trial':
+    'Free trial of {{plan}}: {days, plural, one {# day left} other {# days left}}.',
   'plans.banner.pastDue': 'Your subscription is unpaid. Pay by {{date}} to keep using the system.',
   'plans.banner.see': 'See subscription',
   'plans.mrr': 'Monthly revenue',

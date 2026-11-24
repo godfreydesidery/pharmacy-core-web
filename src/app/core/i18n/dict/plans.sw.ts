@@ -72,7 +72,8 @@ export const PLANS_SW: Readonly<Record<string, string>> = {
   'plans.current': 'Cha sasa',
   'plans.upgradeHint':
     'Huduma zisizo kwenye kifurushi chako hazionekani kwenye menyu. Mwombe msimamizi wa mfumo akubadilishie kifurushi.',
-  'plans.banner.trial': 'Majaribio ya bure ya {{plan}}: zimebaki siku {{days}}.',
+  'plans.banner.trial':
+    'Majaribio ya bure ya {{plan}}: {days, plural, one {imebaki siku #} other {zimebaki siku #}}.',
   'plans.banner.pastDue':
     'Usajili wako haujalipwa. Lipa kabla ya tarehe {{date}} ili uendelee kutumia mfumo.',
   'plans.banner.see': 'Angalia usajili',
