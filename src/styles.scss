@@ -446,6 +446,20 @@ textarea.input {
   height: 16px;
   accent-color: var(--primary);
 }
+/* A group of checkboxes in a form, with its question as the legend (e.g. a customer's consents). */
+fieldset.consent {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+}
+fieldset.consent legend {
+  margin-bottom: 6px;
+  padding: 0;
+  font-size: 13px;
+  font-weight: 600;
+}
 .switch {
   position: relative;
   width: 40px;

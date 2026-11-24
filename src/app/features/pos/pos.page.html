@@ -1140,6 +1140,17 @@
         data-testid="nc-phone"
       />
     </app-field>
+    <fieldset class="full consent">
+      <legend>{{ 'pos.newCustomerConsents' | t }}</legend>
+      <label class="check">
+        <input type="checkbox" formControlName="smsReceipts" data-testid="nc-consent-sms" />
+        {{ 'pos.newCustomerConsentSms' | t }}
+      </label>
+      <label class="check">
+        <input type="checkbox" formControlName="marketing" data-testid="nc-consent-marketing" />
+        {{ 'pos.newCustomerConsentMarketing' | t }}
+      </label>
+    </fieldset>
     <button type="submit" hidden></button>
   </form>
   <ng-container footer>

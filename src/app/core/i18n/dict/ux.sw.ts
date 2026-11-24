@@ -104,6 +104,9 @@ export const UX_SW: Readonly<Record<string, string>> = {
   'pos.newCustomerPhone': 'Simu (si lazima)',
   'pos.newCustomerPhoneHint': 'Kwa risiti kwa SMS na kumpata wakati ujao.',
   'pos.newCustomerSave': 'Hifadhi na uongeze kwenye mauzo',
+  'pos.newCustomerConsents': 'Muulize mteja. Anakubali:',
+  'pos.newCustomerConsentSms': 'Risiti kwa SMS',
+  'pos.newCustomerConsentMarketing': 'Ofa na habari (masoko)',
   'pos.customerCreated': '{{name}} ameongezwa kama mteja na ameunganishwa na mauzo haya',
   'pos.totalAnnounce':
     'Jumla {{total}}, {lines, plural, one {mstari #} other {mistari #}}, {units, plural, one {kipimo #} other {vipimo #}}',

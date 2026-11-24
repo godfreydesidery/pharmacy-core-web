@@ -793,6 +793,34 @@ describe('POS page', () => {
       expect(element('[data-testid="nc-name"]')).toBeNull();
     });
 
+    it('records the SMS receipts and marketing consents the customer gave, never assumed', async () => {
+      api.posts.set('/customers', () =>
+        Promise.resolve({ uid: 'c8', code: 'CUS-8', name: 'Rehema', type: 'RETAIL' }),
+      );
+      api.gets.set('/receivables/accounts/', () => Promise.reject(notFound()));
+      element('[data-testid="pos-new-customer"]')?.click();
+      await settle();
+      const sms = element('[data-testid="nc-consent-sms"]') as HTMLInputElement;
+      const marketing = element('[data-testid="nc-consent-marketing"]') as HTMLInputElement;
+      expect(sms.checked).toBe(false);
+      expect(marketing.checked).toBe(false);
+      const name = element('[data-testid="nc-name"]') as HTMLInputElement;
+      name.value = 'Rehema';
+      name.dispatchEvent(new Event('input'));
+      sms.click();
+      marketing.click();
+      element('[data-testid="nc-save"]')?.click();
+      await settle();
+      const post = api.sent.find((s) => s.method === 'POST' && s.path === '/customers');
+      expect(post?.body).toEqual({
+        name: 'Rehema',
+        phone: null,
+        type: 'RETAIL',
+        active: true,
+        consents: { SMS_RECEIPTS: true, MARKETING: true },
+      });
+    });
+
     it('offers "New customer" with partners.manage or only partners.create_at_till, else not', async () => {
       const session = TestBed.inject(SessionStore);
       const reopen = async (held: string[]): Promise<void> => {

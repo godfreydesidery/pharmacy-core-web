@@ -109,6 +109,9 @@ export const UX_EN: Readonly<Record<string, string>> = {
   'pos.newCustomerPhone': 'Phone (optional)',
   'pos.newCustomerPhoneHint': 'For receipts by SMS and to find them next time.',
   'pos.newCustomerSave': 'Save and add to sale',
+  'pos.newCustomerConsents': 'Ask the customer. They agree to:',
+  'pos.newCustomerConsentSms': 'Receipts by SMS',
+  'pos.newCustomerConsentMarketing': 'Offers and news (marketing)',
   'pos.customerCreated': '{{name}} added as a customer and attached to this sale',
   'pos.totalAnnounce':
     'Total {{total}}, {lines, plural, one {# line} other {# lines}}, {units, plural, one {# unit} other {# units}}',
