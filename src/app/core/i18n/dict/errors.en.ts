@@ -164,6 +164,8 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.url_expired': 'This file link has expired; open it again.',
   'errors.invalid_signature': 'This file link is not valid.',
   'errors.upload_used': 'This upload link has been used; start the upload again.',
+  'errors.field_not_allowed':
+    'At the till a new customer gets a name, a phone and an email only; someone who manages customers sets the rest.',
 
   // The fallback for an `invalid_<field>` reason with no line of its own (see localizeError).
   'errors.invalid_input': 'Check the information entered.',
