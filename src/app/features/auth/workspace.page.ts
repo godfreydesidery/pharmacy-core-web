@@ -47,7 +47,10 @@ interface Pending {
               }}
             </h1>
             <p class="muted">
-              {{ 'workspace.signedInAs' | t: { name: session.user()?.name } }} ·
+              {{
+                'workspace.signedInAs' | t: { name: $safeNavigationMigration(session.user()?.name) }
+              }}
+              ·
               {{ session.signInName() }}
             </p>
           </div>

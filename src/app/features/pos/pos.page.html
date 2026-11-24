@@ -66,12 +66,10 @@
               >
             </div>
             <div class="kv">
-              <span>{{ 'pos.cashier' | t }}</span
-              ><b>{{ session.user()?.name }}</b>
+              <span>{{ 'pos.cashier' | t }}</span><b>{{ session.user()?.name }}</b>
             </div>
             <div class="kv">
-              <span>{{ 'pos.items' | t }}</span
-              ><b>{{
+              <span>{{ 'pos.items' | t }}</span><b>{{
                 'pos.linesAndUnits' | t: { lines: lines().length, units: totals().items }
               }}</b>
             </div>
@@ -202,8 +200,9 @@
                       [checked]="useInsurance()"
                       (change)="toggleInsurance(!useInsurance())"
                     />
-                    <b>{{ m.payerName }}</b
-                    >&nbsp;<span class="muted">{{ m.schemeName }} · {{ m.memberNumber }}</span>
+                    <b>{{ m.payerName }}</b>&nbsp;<span class="muted"
+                      >{{ m.schemeName }} · {{ m.memberNumber }}</span
+                    >
                   </label>
                   <app-icon name="shield" [size]="16" />
                 </div>
@@ -211,16 +210,18 @@
                   @if (coverage(); as cq) {
                     <div class="split">
                       <div>
-                        <small>{{ 'pos.insurerPays' | t }}</small
-                        ><b class="text-green">{{ cq.covered | money }}</b>
+                        <small>{{ 'pos.insurerPays' | t }}</small><b class="text-green">{{
+                          cq.covered | money
+                        }}</b>
                       </div>
                       <div>
-                        <small>{{ 'pos.coPay' | t }}</small
-                        ><b>{{ cq.copay | money }}</b>
+                        <small>{{ 'pos.coPay' | t }}</small><b>{{ cq.copay | money }}</b>
                       </div>
                       <div>
-                        <small>{{ 'pos.notCovered' | t }}</small
-                        ><b [class.text-red]="cq.notCovered > 0">{{ cq.notCovered | money }}</b>
+                        <small>{{ 'pos.notCovered' | t }}</small><b
+                          [class.text-red]="cq.notCovered > 0"
+                          >{{ cq.notCovered | money }}</b
+                        >
                       </div>
                     </div>
                     @for (note of cq.notes; track note) {
@@ -357,7 +358,7 @@
                     <button
                       type="button"
                       class="btn sm"
-                      [disabled]="pushOf(payment)?.busy"
+                      [disabled]="$safeNavigationMigration(pushOf(payment)?.busy)"
                       (click)="sendToPhone(i)"
                     >
                       <app-icon name="phone" [size]="14" />
@@ -398,8 +399,7 @@
               </div>
               @if (balance() > 0) {
                 <div class="due text-red">
-                  <span>{{ 'pos.balanceDue' | t }}</span
-                  ><b>{{ balance() | money }}</b>
+                  <span>{{ 'pos.balanceDue' | t }}</span><b>{{ balance() | money }}</b>
                 </div>
                 @if (canCredit()) {
                   <label class="check on-account" [class.active]="balanceToAccount()">
@@ -434,8 +434,7 @@
                 </label>
               } @else if (change() > 0) {
                 <div class="change-due">
-                  <span>{{ 'pos.change' | t }}</span
-                  ><b>{{ change() | money }}</b>
+                  <span>{{ 'pos.change' | t }}</span><b>{{ change() | money }}</b>
                 </div>
               }
             </div>
@@ -971,36 +970,44 @@
       }
     </div>
     <div class="field">
-      <label>{{ 'pos.prescriberName' | t }}</label
-      ><input class="input" formControlName="prescriberName" />
+      <label>{{ 'pos.prescriberName' | t }}</label><input
+        class="input"
+        formControlName="prescriberName"
+      />
       @if (rxErr('prescriberName'); as m) {
         <span class="error">{{ m }}</span>
       }
     </div>
     <div class="field">
-      <label>{{ 'pos.registrationNo' | t }}</label
-      ><input class="input" formControlName="prescriberRegistration" placeholder="MCT-1234" />
+      <label>{{ 'pos.registrationNo' | t }}</label><input
+        class="input"
+        formControlName="prescriberRegistration"
+        placeholder="MCT-1234"
+      />
       @if (rxErr('prescriberRegistration'); as m) {
         <span class="error">{{ m }}</span>
       }
     </div>
     <div class="field">
-      <label>{{ 'pos.prescriptionReference' | t }}</label
-      ><input class="input" formControlName="reference" />
+      <label>{{ 'pos.prescriptionReference' | t }}</label><input
+        class="input"
+        formControlName="reference"
+      />
       @if (rxErr('reference'); as m) {
         <span class="error">{{ m }}</span>
       }
     </div>
     <div class="field">
-      <label>{{ 'pos.patientName' | t }}</label
-      ><input class="input" formControlName="patientName" />
+      <label>{{ 'pos.patientName' | t }}</label><input
+        class="input"
+        formControlName="patientName"
+      />
       @if (rxErr('patientName'); as m) {
         <span class="error">{{ m }}</span>
       }
     </div>
     <div class="field">
-      <label>{{ 'pos.prescriptionDate' | t }}</label
-      ><input
+      <label>{{ 'pos.prescriptionDate' | t }}</label><input
         class="input"
         type="date"
         formControlName="prescriptionDate"

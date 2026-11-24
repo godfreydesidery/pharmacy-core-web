@@ -124,8 +124,8 @@ interface Decision {
               @for (c of list.items(); track c.uid) {
                 <tr class="link-row" (click)="show(c)">
                   <td>
-                    <button type="button" class="row-link mono strong">{{ c.number }}</button
-                    ><small class="muted block"
+                    <button type="button" class="row-link mono strong">{{ c.number }}</button><small
+                      class="muted block"
                       >{{ c.createdAt | day
                       }}{{ c.batchNumber ? ' · ' + c.batchNumber : '' }}</small
                     >
@@ -166,7 +166,11 @@ interface Decision {
     <app-drawer
       [open]="!!selected()"
       [title]="selected()?.number ?? ''"
-      [subtitle]="selected()?.payerName + ' · ' + (selected()?.status | label)"
+      [subtitle]="
+        $safeNavigationMigration(selected()?.payerName) +
+        ' · ' +
+        ($safeNavigationMigration(selected()?.status) | label)
+      "
       (closed)="selected.set(null)"
     >
       @if (selected(); as c) {
@@ -269,8 +273,7 @@ interface Decision {
             </div>
           }
           <div class="field">
-            <label>{{ 'insurance.note' | t }}</label
-            ><input
+            <label>{{ 'insurance.note' | t }}</label><input
               class="input"
               [value]="note()"
               (input)="note.set($any($event.target).value)"

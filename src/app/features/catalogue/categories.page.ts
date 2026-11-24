@@ -110,8 +110,7 @@ const MAX_DEPTH = 3;
     >
       <form class="stack" [formGroup]="form" (ngSubmit)="save()">
         <div class="field">
-          <label>{{ 'catalogue.name' | t }}</label
-          ><input class="input" formControlName="name" />
+          <label>{{ 'catalogue.name' | t }}</label><input class="input" formControlName="name" />
           @if (err('name'); as m) {
             <span class="error">{{ m }}</span>
           }
@@ -129,8 +128,10 @@ const MAX_DEPTH = 3;
           }
         </div>
         <div class="field">
-          <label>{{ 'catalogue.description' | t }}</label
-          ><textarea class="input" formControlName="description"></textarea>
+          <label>{{ 'catalogue.description' | t }}</label><textarea
+            class="input"
+            formControlName="description"
+          ></textarea>
         </div>
       </form>
       <ng-container footer>

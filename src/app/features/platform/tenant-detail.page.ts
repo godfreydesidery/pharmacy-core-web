@@ -204,8 +204,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
                             ><app-icon name="building" [size]="16"
                           /></span>
                           <div>
-                            <b>{{ b.name }}</b
-                            ><small
+                            <b>{{ b.name }}</b><small
                               >{{ b.code
                               }}{{ b.headOffice ? ('ui.l.preHeadOffice' | t) : '' }}</small
                             >
@@ -260,8 +259,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
           <span class="hint">{{ 'susp.kindHint' | t }}</span>
         </div>
         <div class="field">
-          <label>{{ 'platform.reason' | t }}</label
-          ><textarea
+          <label>{{ 'platform.reason' | t }}</label><textarea
             class="input"
             #reason
             [placeholder]="'platform.unpaidSubscriptionLicenceRevoked' | t"
@@ -287,8 +285,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
       <div class="stack">
         <p>{{ 'close.closeText' | t }}</p>
         <div class="field">
-          <label>{{ 'platform.reason' | t }}</label
-          ><textarea
+          <label>{{ 'platform.reason' | t }}</label><textarea
             class="input"
             #closeReason
             data-testid="close-reason"
@@ -316,8 +313,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
       <div class="stack">
         <p>{{ 'close.holdText' | t }}</p>
         <div class="field">
-          <label>{{ 'platform.reason' | t }}</label
-          ><textarea
+          <label>{{ 'platform.reason' | t }}</label><textarea
             class="input"
             #holdReason
             data-testid="hold-reason"

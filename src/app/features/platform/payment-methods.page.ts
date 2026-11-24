@@ -47,8 +47,7 @@ const ADAPTERS = ['NONE', 'MANUAL', 'SIMULATOR', 'MPESA', 'MIXX', 'AIRTEL', 'SEL
             @for (m of registry.items(); track m.code) {
               <tr>
                 <td>
-                  <b>{{ m.name }}</b
-                  ><small class="muted block mono">{{ m.code }}</small>
+                  <b>{{ m.name }}</b><small class="muted block mono">{{ m.code }}</small>
                 </td>
                 <td>{{ 'payments.kind.' + m.kind | t }}</td>
                 <td class="mono">{{ m.adapter }}</td>

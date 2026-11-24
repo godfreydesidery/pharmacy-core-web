@@ -200,8 +200,7 @@ function observeWidth(fallback: number) {
       </svg>
       @if (hover(); as h) {
         <div class="tip" [style.left.px]="h.tipX" [style.top.px]="h.y - 14">
-          <span>{{ h.label }}</span
-          ><b>{{ h.text }}</b>
+          <span>{{ h.label }}</span><b>{{ h.text }}</b>
         </div>
       }
     }

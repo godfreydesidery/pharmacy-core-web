@@ -46,22 +46,24 @@ import { Translations } from '../../core/i18n/translations.store';
           <h3>{{ 'admin.locale' | t }}</h3>
           <div class="form-grid">
             <div class="field">
-              <label>{{ 'admin.currency' | t }}</label
-              ><input class="input" [value]="settings()?.currency ?? ''" disabled /><span
-                class="hint"
-                >{{ 'admin.setWhenThePharmacyWas' | t }}</span
-              >
+              <label>{{ 'admin.currency' | t }}</label><input
+                class="input"
+                [value]="settings()?.currency ?? ''"
+                disabled
+              /><span class="hint">{{ 'admin.setWhenThePharmacyWas' | t }}</span>
             </div>
             <div class="field">
-              <label>{{ 'admin.timeZone' | t }}</label
-              ><input class="input" [value]="settings()?.timezone ?? ''" disabled />
+              <label>{{ 'admin.timeZone' | t }}</label><input
+                class="input"
+                [value]="settings()?.timezone ?? ''"
+                disabled
+              />
             </div>
           </div>
           <h3>{{ 'admin.invoicesAmpTax' | t }}</h3>
           <div class="form-grid">
             <div class="field">
-              <label>{{ 'admin.invoicePrefix' | t }}</label
-              ><input
+              <label>{{ 'admin.invoicePrefix' | t }}</label><input
                 class="input"
                 formControlName="invoicePrefix"
                 style="text-transform:uppercase"
@@ -71,8 +73,7 @@ import { Translations } from '../../core/i18n/translations.store';
               }
             </div>
             <div class="field">
-              <label for="standard-vat-rate">{{ 'vat.standardRate' | t }}</label
-              ><input
+              <label for="standard-vat-rate">{{ 'vat.standardRate' | t }}</label><input
                 id="standard-vat-rate"
                 class="input"
                 type="number"
@@ -91,8 +92,7 @@ import { Translations } from '../../core/i18n/translations.store';
               <span class="hint">{{ 'vat.registeredHint' | t }}</span>
             </div>
             <div class="field">
-              <label for="vat-tin">{{ 'vat.tin' | t }}</label
-              ><input
+              <label for="vat-tin">{{ 'vat.tin' | t }}</label><input
                 id="vat-tin"
                 class="input"
                 formControlName="tin"
@@ -106,8 +106,7 @@ import { Translations } from '../../core/i18n/translations.store';
               <span class="hint">{{ 'vat.tinHint' | t }}</span>
             </div>
             <div class="field">
-              <label for="vat-vrn">{{ 'vat.vrn' | t }}</label
-              ><input
+              <label for="vat-vrn">{{ 'vat.vrn' | t }}</label><input
                 id="vat-vrn"
                 class="input"
                 formControlName="vrn"
@@ -128,16 +127,17 @@ import { Translations } from '../../core/i18n/translations.store';
               </div>
             }
             <div class="field full">
-              <label>{{ 'admin.receiptFooter' | t }}</label
-              ><textarea class="input" formControlName="receiptFooter"></textarea>
+              <label>{{ 'admin.receiptFooter' | t }}</label><textarea
+                class="input"
+                formControlName="receiptFooter"
+              ></textarea>
             </div>
           </div>
         </div>
         <div class="card card-pad stack">
           <h3>{{ 'admin.pointOfSale' | t }}</h3>
           <div class="field">
-            <label>{{ 'admin.maximumDiscount' | t }}</label
-            ><input
+            <label>{{ 'admin.maximumDiscount' | t }}</label><input
               class="input"
               type="number"
               min="0"
@@ -148,8 +148,7 @@ import { Translations } from '../../core/i18n/translations.store';
           </div>
           <h3>{{ 'controls.title' | t }}</h3>
           <div class="field">
-            <label for="approval-limit">{{ 'controls.approvalLimit' | t }}</label
-            ><input
+            <label for="approval-limit">{{ 'controls.approvalLimit' | t }}</label><input
               id="approval-limit"
               class="input"
               type="number"
@@ -164,8 +163,7 @@ import { Translations } from '../../core/i18n/translations.store';
             <span class="hint">{{ 'controls.approvalLimitHint' | t }}</span>
           </div>
           <div class="field">
-            <label for="return-window">{{ 'controls.returnWindow' | t }}</label
-            ><input
+            <label for="return-window">{{ 'controls.returnWindow' | t }}</label><input
               id="return-window"
               class="input"
               type="number"
@@ -188,8 +186,13 @@ import { Translations } from '../../core/i18n/translations.store';
           </div>
           <h3>{{ 'idle.security' | t }}</h3>
           <div class="field">
-            <label>{{ 'idle.setting' | t }}</label
-            ><input class="input" type="number" min="5" max="60" formControlName="idleMinutes" />
+            <label>{{ 'idle.setting' | t }}</label><input
+              class="input"
+              type="number"
+              min="5"
+              max="60"
+              formControlName="idleMinutes"
+            />
             @if (err('idleMinutes'); as e) {
               <span class="error">{{ e }}</span>
             }
@@ -207,8 +210,7 @@ import { Translations } from '../../core/i18n/translations.store';
           </div>
           <h3>{{ 'admin.alerts' | t }}</h3>
           <div class="field">
-            <label>{{ 'admin.expiryAlertWindowDays' | t }}</label
-            ><input
+            <label>{{ 'admin.expiryAlertWindowDays' | t }}</label><input
               class="input"
               type="number"
               min="1"
@@ -276,8 +278,9 @@ import { Translations } from '../../core/i18n/translations.store';
           <div>
             <h3>{{ 'admin.currencies' | t }}</h3>
             <p class="muted">
-              {{ 'admin.pricesStockAndReportsAre' | t }} <b>{{ settings()?.currency }}</b
-              >{{ 'admin.theBaseCurrencyAcceptOther' | t }}
+              {{ 'admin.pricesStockAndReportsAre' | t }} <b>{{ settings()?.currency }}</b>{{
+                'admin.theBaseCurrencyAcceptOther' | t
+              }}
             </p>
           </div>
         </div>

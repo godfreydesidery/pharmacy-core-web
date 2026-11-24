@@ -51,8 +51,7 @@ import { Translations } from '../../core/i18n/translations.store';
               @for (b of batches.items(); track b.uid) {
                 <tr>
                   <td>
-                    <b class="mono">{{ b.number }}</b
-                    ><small class="muted block"
+                    <b class="mono">{{ b.number }}</b><small class="muted block"
                       >{{ 'insurance.submitted' | t }} {{ b.submittedAt | when }}</small
                     >
                   </td>
@@ -119,8 +118,7 @@ import { Translations } from '../../core/i18n/translations.store';
           </select>
         </div>
         <div class="field">
-          <label>{{ 'insurance.from' | t }}</label
-          ><input
+          <label>{{ 'insurance.from' | t }}</label><input
             class="input"
             type="date"
             [value]="from()"
@@ -128,8 +126,7 @@ import { Translations } from '../../core/i18n/translations.store';
           />
         </div>
         <div class="field">
-          <label>{{ 'insurance.to' | t }}</label
-          ><input
+          <label>{{ 'insurance.to' | t }}</label><input
             class="input"
             type="date"
             [value]="to()"

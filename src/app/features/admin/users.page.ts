@@ -82,8 +82,9 @@ import { signInLabel } from '../../core/session/sign-in-label';
                     <div class="cell-main">
                       <span class="avatar">{{ initials(m.name) }}</span>
                       <div>
-                        <b>{{ m.name }}</b
-                        ><small>{{ m.managed ? signInOf(m.email) : m.email }}</small>
+                        <b>{{ m.name }}</b><small>{{
+                          m.managed ? signInOf(m.email) : m.email
+                        }}</small>
                         @if (m.staff?.staffNumber || m.staff?.jobTitle) {
                           <small class="staff"
                             >{{ m.staff?.staffNumber }}
@@ -177,8 +178,7 @@ import { signInLabel } from '../../core/session/sign-in-label';
         }
         @if (!current() || current()!.managed) {
           <div class="field">
-            <label>{{ 'ui.users.name' | t }}</label
-            ><input class="input" formControlName="name" />
+            <label>{{ 'ui.users.name' | t }}</label><input class="input" formControlName="name" />
             @if (err('name'); as m) {
               <span class="error">{{ m }}</span>
             }
@@ -207,8 +207,11 @@ import { signInLabel } from '../../core/session/sign-in-label';
         }
         @if (!current() && !managedMode()) {
           <div class="field">
-            <label>{{ 'ui.users.email' | t }}</label
-            ><input class="input" type="email" formControlName="email" />
+            <label>{{ 'ui.users.email' | t }}</label><input
+              class="input"
+              type="email"
+              formControlName="email"
+            />
             @if (err('email'); as m) {
               <span class="error">{{ m }}</span>
             }
@@ -216,8 +219,11 @@ import { signInLabel } from '../../core/session/sign-in-label';
         }
         @if (managedMode() || current()?.managed) {
           <div class="field">
-            <label>{{ 'logins.contactEmail' | t }}</label
-            ><input class="input" type="email" formControlName="contactEmail" />
+            <label>{{ 'logins.contactEmail' | t }}</label><input
+              class="input"
+              type="email"
+              formControlName="contactEmail"
+            />
             <span class="hint">{{ 'logins.contactEmailHint' | t }}</span>
             @if (err('contactEmail'); as m) {
               <span class="error">{{ m }}</span>
@@ -226,19 +232,24 @@ import { signInLabel } from '../../core/session/sign-in-label';
         }
         @if (current()) {
           <div class="field">
-            <label>{{ 'staff.number' | t }}</label
-            ><input class="input" formControlName="staffNumber" maxlength="40" />
+            <label>{{ 'staff.number' | t }}</label><input
+              class="input"
+              formControlName="staffNumber"
+              maxlength="40"
+            />
             @if (err('staffNumber'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
           <div class="field">
-            <label>{{ 'staff.jobTitle' | t }}</label
-            ><input class="input" formControlName="jobTitle" maxlength="80" />
+            <label>{{ 'staff.jobTitle' | t }}</label><input
+              class="input"
+              formControlName="jobTitle"
+              maxlength="80"
+            />
           </div>
           <div class="field">
-            <label>{{ 'staff.workPhone' | t }}</label
-            ><input
+            <label>{{ 'staff.workPhone' | t }}</label><input
               class="input"
               type="tel"
               formControlName="workPhone"
@@ -249,8 +260,11 @@ import { signInLabel } from '../../core/session/sign-in-label';
             }
           </div>
           <div class="field">
-            <label>{{ 'staff.workEmail' | t }}</label
-            ><input class="input" type="email" formControlName="workEmail" />
+            <label>{{ 'staff.workEmail' | t }}</label><input
+              class="input"
+              type="email"
+              formControlName="workEmail"
+            />
             <span class="hint">{{ 'staff.hint' | t }}</span>
             @if (err('workEmail'); as m) {
               <span class="error">{{ m }}</span>
@@ -259,8 +273,12 @@ import { signInLabel } from '../../core/session/sign-in-label';
         }
         @if (managedMode() || current()?.managed) {
           <div class="field">
-            <label>{{ 'admin2.phone' | t }}</label
-            ><input class="input" type="tel" formControlName="phone" placeholder="+255754000111" />
+            <label>{{ 'admin2.phone' | t }}</label><input
+              class="input"
+              type="tel"
+              formControlName="phone"
+              placeholder="+255754000111"
+            />
             <span class="hint">{{
               (managedMode() || current()?.managed ? 'logins.phoneHint' : 'admin2.phoneAdminHint')
                 | t

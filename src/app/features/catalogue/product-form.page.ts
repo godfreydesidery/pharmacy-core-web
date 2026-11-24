@@ -161,8 +161,9 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                   @for (m of trackingModes; track m.code) {
                     <label class="pill" [class.on]="tracking() === m.code">
                       <input type="radio" formControlName="trackingMode" [value]="m.code" />
-                      <b>{{ 'ui.tracking.' + m.code | t: null : m.label }}</b
-                      ><small>{{ 'ui.tracking.' + m.code + '.hint' | t: null : m.hint }}</small>
+                      <b>{{ 'ui.tracking.' + m.code | t: null : m.label }}</b><small>{{
+                        'ui.tracking.' + m.code + '.hint' | t: null : m.hint
+                      }}</small>
                     </label>
                   }
                 </div>

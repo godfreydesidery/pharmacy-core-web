@@ -109,8 +109,7 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
         <h4 class="muted">{{ 'platform.business' | t }}</h4>
         <div class="form-grid three">
           <div class="field">
-            <label>{{ 'platform.code' | t }}</label
-            ><input
+            <label>{{ 'platform.code' | t }}</label><input
               class="input"
               formControlName="code"
               placeholder="AFYA"
@@ -122,19 +121,22 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
             }
           </div>
           <div class="field">
-            <label>{{ 'platform.tradingName' | t }}</label
-            ><input class="input" formControlName="name" />
+            <label>{{ 'platform.tradingName' | t }}</label><input
+              class="input"
+              formControlName="name"
+            />
             @if (err('name'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
           <div class="field">
-            <label>{{ 'platform.legalName' | t }}</label
-            ><input class="input" formControlName="legalName" />
+            <label>{{ 'platform.legalName' | t }}</label><input
+              class="input"
+              formControlName="legalName"
+            />
           </div>
           <div class="field">
-            <label>{{ 'platform.countryIso' | t }}</label
-            ><input
+            <label>{{ 'platform.countryIso' | t }}</label><input
               class="input"
               formControlName="country"
               maxlength="2"
@@ -145,16 +147,20 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
             }
           </div>
           <div class="field">
-            <label>{{ 'platform.currency' | t }}</label
-            ><select class="select" formControlName="currency">
+            <label>{{ 'platform.currency' | t }}</label><select
+              class="select"
+              formControlName="currency"
+            >
               @for (c of currencies; track c) {
                 <option [value]="c">{{ c }}</option>
               }
             </select>
           </div>
           <div class="field">
-            <label>{{ 'platform.timeZone' | t }}</label
-            ><select class="select" formControlName="timezone">
+            <label>{{ 'platform.timeZone' | t }}</label><select
+              class="select"
+              formControlName="timezone"
+            >
               @for (z of zones; track z) {
                 <option [value]="z">{{ z }}</option>
               }
@@ -164,38 +170,45 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
         <h4 class="muted">{{ 'platform.headOfficeBranch' | t }}</h4>
         <div class="form-grid" formGroupName="headOffice">
           <div class="field">
-            <label>{{ 'platform.branchCode' | t }}</label
-            ><input class="input" formControlName="code" style="text-transform:uppercase" />
+            <label>{{ 'platform.branchCode' | t }}</label><input
+              class="input"
+              formControlName="code"
+              style="text-transform:uppercase"
+            />
           </div>
           <div class="field">
-            <label>{{ 'platform.branchName' | t }}</label
-            ><input class="input" formControlName="name" />
+            <label>{{ 'platform.branchName' | t }}</label><input
+              class="input"
+              formControlName="name"
+            />
           </div>
           <div class="field">
-            <label>{{ 'platform.address' | t }}</label
-            ><input class="input" formControlName="address" />
+            <label>{{ 'platform.address' | t }}</label><input
+              class="input"
+              formControlName="address"
+            />
           </div>
           <div class="field">
-            <label>{{ 'platform.phone' | t }}</label
-            ><input class="input" formControlName="phone" />
+            <label>{{ 'platform.phone' | t }}</label><input class="input" formControlName="phone" />
           </div>
         </div>
         <h4 class="muted">{{ 'platform.firstAdministrator' | t }}</h4>
         <div class="form-grid three" formGroupName="admin">
           <div class="field">
-            <label>{{ 'platform.name' | t }}</label
-            ><input class="input" formControlName="name" />
+            <label>{{ 'platform.name' | t }}</label><input class="input" formControlName="name" />
           </div>
           <div class="field">
-            <label>{{ 'platform.email' | t }}</label
-            ><input class="input" type="email" formControlName="email" />
+            <label>{{ 'platform.email' | t }}</label><input
+              class="input"
+              type="email"
+              formControlName="email"
+            />
             @if (adminErr('email'); as m) {
               <span class="error">{{ m }}</span>
             }
           </div>
           <div class="field">
-            <label>{{ 'platform.password' | t }}</label
-            ><input
+            <label>{{ 'platform.password' | t }}</label><input
               class="input"
               type="password"
               formControlName="password"

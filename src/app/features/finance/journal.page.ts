@@ -38,8 +38,7 @@ import { SHARED } from '../../core/shared';
           <div class="card">
             <div class="card-head" style="padding-bottom:10px">
               <div class="row">
-                <span class="badge blue">{{ e.number }}</span
-                ><b>{{ e.description }}</b>
+                <span class="badge blue">{{ e.number }}</span><b>{{ e.description }}</b>
               </div>
               <span class="muted" style="font-size:12px"
                 >{{ e.entryDate | day }} · {{ e.sourceType | label
