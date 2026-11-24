@@ -5,6 +5,7 @@
  * only when chosen, so the two lists live in separate modules.
  */
 import { APPROVALS_EN } from './approvals.en';
+import { DECISIONS_EN } from './decisions.en';
 import { A11Y_EN } from './a11y.en';
 import { PLANNING_EN } from './planning.en';
 import { PLANS_EN } from './plans.en';
@@ -50,6 +51,7 @@ import { UI_EN } from './ui.en';
 import { STATE_EN } from './state.en';
 
 export const EN_AREAS: Readonly<Record<string, string>> = {
+  ...DECISIONS_EN,
   ...A11Y_EN,
   ...SHELL_EN,
   ...PLANNING_EN,

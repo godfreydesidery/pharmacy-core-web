@@ -216,6 +216,8 @@
     "customer_not_found": [],
     "customer_required": [],
     "database_busy": [],
+    "debit_note_base_currency_only": [],
+    "debit_note_needs_customer": [],
     "delivery_not_found": [],
     "destruction_not_found": [],
     "direct_creation_disabled": [],
@@ -289,6 +291,7 @@
     "invalid_adapter": [],
     "invalid_adjustment": [],
     "invalid_amount": [],
+    "invalid_apportionment_method": [],
     "invalid_atc_code": [],
     "invalid_branch_uids": [],
     "invalid_channel": [],
@@ -348,6 +351,10 @@
     "invalid_phone": [],
     "invalid_port": [],
     "invalid_price": [],
+    "invalid_provision_bands": [
+      "maxBands",
+      "maxDays"
+    ],
     "invalid_purpose": [],
     "invalid_quantity": [],
     "invalid_quantity_change": [],
@@ -356,6 +363,10 @@
     "invalid_reason": [],
     "invalid_received_on": [],
     "invalid_received_quantity": [],
+    "invalid_recoverable_percent": [
+      "max",
+      "min"
+    ],
     "invalid_reorder_level": [],
     "invalid_return_window": [],
     "invalid_rounding": [],
@@ -374,6 +385,7 @@
     "invalid_vrn": [],
     "invalid_warranty_months": [],
     "invalid_within_days": [],
+    "invalid_year_end_month": [],
     "invitation_not_found": [],
     "invitation_not_open": [],
     "invoice_not_found": [],
@@ -406,6 +418,7 @@
     "not_destination": [],
     "not_managed": [],
     "not_suspended": [],
+    "not_under_legal_hold": [],
     "note_required": [],
     "nothing_held": [],
     "notification_not_found": [],
@@ -425,6 +438,13 @@
     "passkey_rejected": [],
     "password_change_required": [],
     "password_required": [],
+    "password_too_short": [
+      "minLength",
+      "twoFactor"
+    ],
+    "password_too_short_without_two_factor": [
+      "minLength"
+    ],
     "payer_not_found": [],
     "payment_declined": [],
     "payment_mismatch": [
@@ -482,6 +502,7 @@
     "receipt_supplier_mismatch": [],
     "receiver_is_sender": [],
     "recipe_mismatch": [],
+    "recoverable_percent_required": [],
     "recovery_on_hold": [
       "notBefore"
     ],
@@ -506,6 +527,12 @@
     "return_not_found": [],
     "role_not_found": [],
     "root_admin_not_found": [],
+    "root_approval_closed": [],
+    "root_approval_expired": [],
+    "root_approval_pending": [],
+    "root_approval_required": [
+      "action"
+    ],
     "route_not_found": [],
     "sale_line_not_found": [],
     "sale_not_found": [],
@@ -517,6 +544,7 @@
     "same_product": [],
     "schedule_downgrade": [],
     "scheme_not_found": [],
+    "second_root_admin_required": [],
     "serial_not_in_stock": [],
     "serial_not_of_batch": [],
     "serial_not_on_sale": [],
