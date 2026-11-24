@@ -987,12 +987,17 @@ export default class PosPage {
   protected readonly newCustomerForm = inject(FormBuilder).nonNullable.group({
     name: ['', [Validators.required, Validators.maxLength(200)]],
     phone: ['', [Validators.pattern(/^\+?[0-9 ()-]{6,20}$/)]],
+    // What the customer agreed to when asked (owner, 24 Nov 2026). Both start unticked: consent is
+    // given, never assumed (PDPA).
+    smsReceipts: [false],
+    marketing: [false],
   });
 
   /**
    * Who may add a customer at the till: whoever manages customers, or holds the narrow
    * `partners.create_at_till` (a cashier, a pharmacist). The dialog sends only what that narrow
-   * permission allows: a name, a phone, type RETAIL and active.
+   * permission allows: a name, a phone, type RETAIL, active, and the SMS receipts and marketing
+   * consents the customer gave.
    */
   protected canCreateCustomer(): boolean {
     return this.session.canAny(['partners.manage', 'partners.create_at_till']);
@@ -1008,7 +1013,12 @@ export default class PosPage {
     }
     // What was typed in the search becomes the name: the cashier looked for them first.
     const typed = this.customer() ? '' : (this.customerLookup()?.typed() ?? '');
-    this.newCustomerForm.reset({ name: typed.trim(), phone: '' });
+    this.newCustomerForm.reset({
+      name: typed.trim(),
+      phone: '',
+      smsReceipts: false,
+      marketing: false,
+    });
     this.newCustomerOpen.set(true);
   }
 
@@ -1023,6 +1033,15 @@ export default class PosPage {
       return;
     }
     const value = this.newCustomerForm.getRawValue();
+    // Only what the customer agreed to is recorded: an unticked box records nothing (the customer
+    // was not asked, or said no — either way nothing is assumed, and today's defaults stay).
+    const consents: Record<string, boolean> = {};
+    if (value.smsReceipts) {
+      consents['SMS_RECEIPTS'] = true;
+    }
+    if (value.marketing) {
+      consents['MARKETING'] = true;
+    }
     this.newCustomerBusy.set(true);
     try {
       const customer = await this.api.post<Customer>(
@@ -1032,6 +1051,7 @@ export default class PosPage {
           phone: value.phone.trim() || null,
           type: 'RETAIL',
           active: true,
+          ...(Object.keys(consents).length ? { consents } : {}),
         },
         { silent: true, noBranch: true },
       );
