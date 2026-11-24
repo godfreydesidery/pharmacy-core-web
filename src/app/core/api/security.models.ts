@@ -20,6 +20,10 @@ export interface SecurityOverview {
   managed: boolean;
   /** A new sign-in email waiting for its mailbox to confirm it. */
   pendingEmail: string | null;
+  /** The shortest new password this account may choose: 8 with two-factor, 15 without (STD-21). */
+  minPasswordLength?: number;
+  /** The current password is known to have 15 or more characters (two-factor may be turned off). */
+  passwordLongEnoughAlone?: boolean;
 }
 
 /** One entry of the person's own security history. */

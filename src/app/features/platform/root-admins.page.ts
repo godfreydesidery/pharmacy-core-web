@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { SessionStore } from '../../core/session/session.store';
 import { FormBuilder, Validators } from '@angular/forms';
+import { SINGLE_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { Api } from '../../core/api/api.service';
 import { User } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
@@ -176,7 +177,7 @@ export default class RootAdminsPage {
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', Validators.required],
     email: ['', [Validators.required, Validators.email]],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', passwordValidators(SINGLE_FACTOR_MIN_PASSWORD)],
   });
 
   private readonly session = inject(SessionStore);

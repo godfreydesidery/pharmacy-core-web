@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
+import { SINGLE_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Api } from '../../core/api/api.service';
 import { RegisterTenant, Tenant } from '../../core/api/models';
@@ -266,7 +267,7 @@ export default class TenantsPage implements OnInit {
     admin: this.fb.group({
       name: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
-      password: ['', [Validators.required, Validators.minLength(8)]],
+      password: ['', passwordValidators(SINGLE_FACTOR_MIN_PASSWORD)],
     }),
   });
 

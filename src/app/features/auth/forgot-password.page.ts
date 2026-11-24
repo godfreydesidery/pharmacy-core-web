@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TWO_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
@@ -134,6 +135,7 @@ import { staffLoginCode } from './staff-login';
                 formControlName="newPassword"
                 autocomplete="new-password"
               />
+              <span class="hint">{{ 'password.resetHint' | t }}</span>
               @if (passwordError(); as message) {
                 <span class="error">{{ message }}</span>
               }
@@ -232,7 +234,7 @@ export default class ForgotPasswordPage {
   protected readonly phoneForm = this.fb.group({ phone: ['', Validators.required] });
   protected readonly resetForm = this.fb.group({
     code: ['', [Validators.required, Validators.pattern(/^\s*\d{6}\s*$/)]],
-    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    newPassword: ['', passwordValidators(TWO_FACTOR_MIN_PASSWORD)],
     confirm: ['', Validators.required],
   });
 

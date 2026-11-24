@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TWO_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
@@ -47,6 +48,7 @@ import { AUTH_CARD_STYLES } from './auth-card';
                 formControlName="newPassword"
                 autocomplete="new-password"
               />
+              <span class="hint">{{ 'password.resetHint' | t }}</span>
               @if (error(); as message) {
                 <span class="error">{{ message }}</span>
               }
@@ -87,7 +89,7 @@ export default class ConfirmEmailPage {
   protected readonly failure = signal<string | null>(null);
   protected readonly mismatch = signal(false);
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    newPassword: ['', this.recovery ? [Validators.required, Validators.minLength(8)] : []],
+    newPassword: ['', this.recovery ? passwordValidators(TWO_FACTOR_MIN_PASSWORD) : []],
     confirm: [''],
   });
 
