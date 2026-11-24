@@ -148,4 +148,11 @@ export const UX_SW: Readonly<Record<string, string>> = {
   'ux.skipToContent': 'Ruka hadi maudhui',
   'ux.userMenu': 'Menyu ya akaunti ya {{name}}',
   'nav.suppliers.history': 'Wasambazaji wote',
+
+  // drafts kept over a forced sign-out
+  'ux.draft.title': 'Urejeshe ulichokuwa ukiandika?',
+  'ux.draft.text':
+    'Ulitolewa {{time}} fomu hii ikiwa haijahifadhiwa. Rasimu yake imehifadhiwa kwenye kompyuta hii.',
+  'ux.draft.restore': 'Irejeshe',
+  'ux.draft.discard': 'Anza upya',
 };

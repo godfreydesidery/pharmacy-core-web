@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  afterNextRender,
+  inject,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
 import { AdjustmentReason, Batch, Movement, Product } from '../../core/api/models';
@@ -14,6 +21,19 @@ import { parseSerials } from '../../core/ui/product-types';
 import { ToastService } from '../../core/ui/toast.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
+
+/** An adjustment being typed, as a draft keeps it. */
+interface AdjustmentDraft {
+  value: {
+    productUid?: string;
+    batchUid?: string;
+    reasonCode?: AdjustmentReason;
+    quantityChange?: number;
+    note?: string;
+    serials?: string;
+  };
+  product: Pick<Product, 'uid' | 'name' | 'trackingMode'> | null;
+}
 
 const REASONS: AdjustmentReason[] = [
   'DAMAGE',
@@ -109,6 +129,7 @@ const REASONS: AdjustmentReason[] = [
           <app-lookup
             path="/products"
             [placeholder]="'inventory.searchProducts' | t"
+            #productLookup
             [display]="productName"
             (picked)="pickProduct($event)"
           />
@@ -192,7 +213,23 @@ export default class AdjustmentsPage {
   protected changed(): boolean {
     return this.editing() && (this.form.dirty || !!this.form.controls.productUid.value);
   }
-  private readonly unsaved = guardUnsavedWork(() => this.changed());
+  private readonly productLookup = viewChild<LookupComponent>('productLookup');
+  /** The product picked, as a draft keeps it. */
+  private pickedProduct: Pick<Product, 'uid' | 'name' | 'trackingMode'> | null = null;
+  private readonly unsaved = guardUnsavedWork<AdjustmentDraft>(() => this.changed(), {
+    id: () => 'inventory.adjustment',
+    save: () => ({ value: this.form.getRawValue(), product: this.pickedProduct }),
+    restore: async (draft) => {
+      this.open();
+      if (draft.product) {
+        await this.pickProduct(draft.product as Product);
+        this.productLookup()?.setText(draft.product.name);
+      }
+      this.form.patchValue(draft.value);
+      this.form.markAsDirty();
+    },
+  });
+  private readonly offerOnOpen = afterNextRender(() => void this.unsaved.offerDraft());
   protected readonly form = inject(FormBuilder).nonNullable.group({
     productUid: ['', Validators.required],
     batchUid: ['', Validators.required],
@@ -215,6 +252,9 @@ export default class AdjustmentsPage {
   protected async pickProduct(product: Product | null): Promise<void> {
     this.form.patchValue({ productUid: product?.uid ?? '', batchUid: '', serials: '' });
     this.pickedName.set(product?.name ?? null);
+    this.pickedProduct = product
+      ? { uid: product.uid, name: product.name, trackingMode: product.trackingMode }
+      : null;
     this.serialTracked.set(product?.trackingMode === 'SERIAL');
     this.batches.set(product ? await this.api.get<Batch[]>(`/stock/${product.uid}/batches`) : []);
   }

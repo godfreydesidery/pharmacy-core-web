@@ -4,11 +4,13 @@ import { convertMoney, roundMoney } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
+  afterNextRender,
   computed,
   effect,
   inject,
   signal,
   untracked,
+  viewChild,
 } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -22,6 +24,19 @@ import { LookupComponent } from '../../core/ui/lookup.component';
 import { ToastService } from '../../core/ui/toast.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
+
+/** An order being typed, as a draft keeps it. */
+interface OrderDraft {
+  value: {
+    supplierUid?: string;
+    expectedDate?: string;
+    note?: string;
+    lines?: { productUid: string; productName: string; quantity: number; unitCost: number }[];
+  };
+  currency: string;
+  rate: number;
+  supplier: string | null;
+}
 
 type LineGroup = FormGroup<{
   productUid: FormControl<string>;
@@ -56,7 +71,11 @@ type LineGroup = FormGroup<{
                 [placeholder]="'purchasing.searchSuppliers' | t"
                 [display]="supplierName"
                 [detail]="supplierDetail"
-                (picked)="form.controls.supplierUid.setValue($event?.uid ?? '')"
+                #supplierLookup
+                (picked)="
+                  form.controls.supplierUid.setValue($event?.uid ?? '');
+                  pickedSupplier.set($event?.name ?? null)
+                "
               />
             </app-field>
             <app-field [label]="'purchasing.expectedDelivery' | t">
@@ -226,10 +245,42 @@ export default class OrderFormPage {
     convertMoney(this.total(), this.rate(), this.base()),
   );
 
-  /** Leaving with an order half typed asks first (UX-4). */
-  private readonly unsaved = guardUnsavedWork(
+  /** The supplier picked in the box, kept with a draft. */
+  protected readonly pickedSupplier = signal<string | null>(null);
+  private readonly supplierLookup = viewChild<LookupComponent>('supplierLookup');
+
+  /** Leaving with an order half typed asks first (UX-4); a forced sign-out keeps a draft. */
+  private readonly unsaved = guardUnsavedWork<OrderDraft>(
     () => this.form.dirty || this.lines.length > 0 || !!this.form.controls.supplierUid.value,
+    {
+      id: () => 'purchasing.order',
+      save: () => ({
+        value: this.form.getRawValue(),
+        currency: this.currency(),
+        rate: this.rate(),
+        supplier: this.pickedSupplier(),
+      }),
+      restore: (draft) => {
+        this.lines.clear();
+        for (const l of draft.value.lines ?? []) {
+          const line = this.line();
+          line.patchValue(l);
+          this.lines.push(line);
+        }
+        const { lines: _lines, ...rest } = draft.value;
+        this.form.patchValue(rest);
+        if (draft.currency) this.currency.set(draft.currency);
+        this.rate.set(draft.rate || 1);
+        if (draft.supplier) {
+          this.pickedSupplier.set(draft.supplier);
+          this.supplierLookup()?.setText(draft.supplier);
+        }
+        this.form.markAsDirty();
+        this.touch();
+      },
+    },
   );
+  private readonly offerOnOpen = afterNextRender(() => void this.unsaved.offerDraft());
   protected readonly supplierName = (s: Supplier) => s.name;
   protected readonly supplierDetail = (s: Supplier) => [s.code, s.paymentTerms].join(' · ');
   protected readonly productName = (p: Product) => p.name;

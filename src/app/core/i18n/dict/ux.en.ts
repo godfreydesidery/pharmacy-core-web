@@ -153,4 +153,11 @@ export const UX_EN: Readonly<Record<string, string>> = {
   'ux.skipToContent': 'Skip to content',
   'ux.userMenu': 'Account menu of {{name}}',
   'nav.suppliers.history': 'All suppliers',
+
+  // drafts kept over a forced sign-out
+  'ux.draft.title': 'Restore what you were typing?',
+  'ux.draft.text':
+    'You were signed out on {{time}} with this form unsaved. Its draft was kept on this computer.',
+  'ux.draft.restore': 'Restore it',
+  'ux.draft.discard': 'Start again',
 };

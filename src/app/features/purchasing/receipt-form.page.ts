@@ -36,6 +36,21 @@ import { ConfirmService } from '../../core/ui/confirm';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 
+/** A receipt being typed, as a draft keeps it (no names of people, no health details). */
+interface ReceiptDraft {
+  value: {
+    purchaseOrderUid?: string;
+    supplierUid?: string;
+    supplierInvoiceNumber?: string;
+    note?: string;
+    vatAmount?: number;
+    lines?: ReturnType<ReceiptLine['getRawValue']>[];
+  };
+  currency: string;
+  rate: number;
+  supplier: string | null;
+}
+
 type ReceiptLine = FormGroup<{
   productUid: FormControl<string>;
   productName: FormControl<string>;
@@ -385,17 +400,49 @@ export default class ReceiptFormPage implements OnInit {
     convertMoney(this.total(), this.rate(), this.base()),
   );
   /** Leaving with a receipt half typed asks first (UX-4). */
-  private readonly unsaved = guardUnsavedWork(
+  private readonly unsaved = guardUnsavedWork<ReceiptDraft>(
     () =>
       this.form.dirty ||
       (!this.order() && (this.lines.length > 0 || !!this.form.controls.supplierUid.value)),
+    {
+      // Kept over a forced sign-out and offered back after the next sign-in (Batch 8 leftover).
+      id: () => `purchasing.receipt.${this.po() ?? 'new'}`,
+      save: () => ({
+        value: this.form.getRawValue(),
+        currency: this.currency(),
+        rate: this.rate(),
+        supplier: this.order()?.supplierName ?? this.pickedSupplier(),
+      }),
+      restore: (draft) => this.restoreDraft(draft),
+    },
   );
+
+  /** Puts a kept draft back: its lines (as typed), supplier, currency and rate. */
+  private restoreDraft(draft: ReceiptDraft): void {
+    this.lines.clear();
+    for (const l of draft.value.lines ?? []) {
+      const line = this.line(l.productUid, l.productName, l.quantity, l.unitCost, l.tracking);
+      line.patchValue(l);
+      this.lines.push(line);
+    }
+    const { lines: _lines, ...rest } = draft.value;
+    this.form.patchValue(rest);
+    if (draft.currency) this.currency.set(draft.currency);
+    this.rate.set(draft.rate || 1);
+    if (draft.supplier && !this.order()) {
+      this.pickedSupplier.set(draft.supplier);
+      this.supplierLookup()?.setText(draft.supplier);
+    }
+    this.form.markAsDirty();
+    this.touch();
+  }
   protected readonly supplierName = (s: Supplier) => s.name;
   protected readonly productName = (p: Product) => p.name;
 
   async ngOnInit(): Promise<void> {
     const uid = this.po();
     if (!uid) {
+      await this.unsaved.offerDraft();
       return;
     }
     const order = await this.api.get<PurchaseOrder>(`/purchase-orders/${uid}`);

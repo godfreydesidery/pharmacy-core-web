@@ -2,6 +2,7 @@ import { DestroyRef, Injectable, inject } from '@angular/core';
 import { CanDeactivateFn } from '@angular/router';
 import { Translations } from '../i18n/translations.store';
 import { ConfirmService } from '../ui/confirm';
+import { DraftOptions, DraftStore, offerDraft } from './drafts';
 
 /**
  * A page's check before it is left. `ask` is false when nobody can be asked (the inactivity
@@ -53,6 +54,11 @@ export const leaveGuard: CanDeactivateFn<unknown> = () => inject(LeaveGuard).can
 export interface UnsavedWork {
   /** The work is saved: the page now leaves without asking (call before navigating away). */
   done(): void;
+  /**
+   * Offers back the draft kept when the app signed the person out (see `draft` below); call it
+   * once the page is ready for it. True when the draft was restored.
+   */
+  offerDraft(): Promise<boolean>;
 }
 
 /**
@@ -60,15 +66,30 @@ export interface UnsavedWork {
  * `canDeactivate: [leaveGuard]`): while {@code changed} is true, leaving by a link, the branch
  * switch or sign-out asks first in the app's dialog, and reloading or closing the tab asks
  * through the browser. The inactivity warning mentions the unsaved work.
+ *
+ * With {@code draft}, a sign-out nobody could be asked about (the inactivity limit, an expired
+ * session) keeps the work as a draft for this user, pharmacy and branch, and
+ * {@link UnsavedWork.offerDraft} offers it back after the next sign-in.
  */
-export function guardUnsavedWork(changed: () => boolean): UnsavedWork {
+export function guardUnsavedWork<T = unknown>(
+  changed: () => boolean,
+  draft?: DraftOptions<T>,
+): UnsavedWork {
   let saved = false;
   const dirty = () => !saved && changed();
   const guard = inject(LeaveGuard);
   const confirm = inject(ConfirmService);
   const translations = inject(Translations);
+  const drafts = inject(DraftStore);
   const unregister = guard.register(async (ask) => {
-    if (!dirty() || !ask) {
+    if (!dirty()) {
+      return true;
+    }
+    if (!ask) {
+      const id = draft?.id();
+      if (draft && id) {
+        drafts.keep(id, draft.save());
+      }
       return true;
     }
     return confirm.ask({
@@ -93,6 +114,10 @@ export function guardUnsavedWork(changed: () => boolean): UnsavedWork {
   return {
     done: () => {
       saved = true;
+      const id = draft?.id();
+      if (id) drafts.drop(id);
     },
+    offerDraft: () =>
+      draft ? offerDraft(drafts, confirm, translations, draft) : Promise.resolve(false),
   };
 }
