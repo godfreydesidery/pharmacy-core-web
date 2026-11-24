@@ -39,7 +39,7 @@ export const ADMIN2_SW: Readonly<Record<string, string>> = {
   'admin2.profile': 'Wasifu',
   'admin2.phone': 'Simu',
   'admin2.phoneHint':
-    'Kwa mfumo wa kimataifa, kama +255754000111. Hutumika kwa arifa za SMS na WhatsApp.',
+    'Kama 0754 000 111 au +255754000111; huhifadhiwa kwa mfumo wa kimataifa. Hutumika kwa arifa za SMS na WhatsApp.',
   'admin2.phoneAdminHint': 'Kwa mtu ambaye bado hana simu tu; kila mtu hubadilisha yake mwenyewe.',
   'admin2.profileSaved': 'Wasifu umehifadhiwa',
 
@@ -104,7 +104,7 @@ export const ADMIN2_SW: Readonly<Record<string, string>> = {
   'errors.last_root_admin': 'Mfumo unahitaji angalau msimamizi mkuu mmoja aliye hai.',
   'errors.cannot_change_self': 'Huwezi kujizima wala kujiondoa mwenyewe.',
   'errors.root_admin_not_found': 'Msimamizi mkuu huyo hayupo.',
-  'errors.invalid_phone': 'Weka simu kwa mfumo wa kimataifa, kama +255754000111.',
+  'errors.invalid_phone': 'Weka namba ya simu kama 0754 000 111 au +255754000111.',
   'errors.delivery_not_found': 'Ujumbe huo haupo.',
   'errors.cannot_resend':
     'Ujumbe wa ndani ya programu hubaki kwenye kikasha; hakuna cha kutuma tena.',
