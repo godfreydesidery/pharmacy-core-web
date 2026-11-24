@@ -22,7 +22,8 @@ export interface SupplierBalance {
   lastActivity: string | null;
 }
 
-export type StatementLineType = 'OPENING' | 'RECEIPT' | 'PAYMENT' | 'RETURN';
+/** DEBIT_NOTE: a supplier's debit note raising what is owed (STD-2). */
+export type StatementLineType = 'OPENING' | 'RECEIPT' | 'PAYMENT' | 'RETURN' | 'DEBIT_NOTE';
 
 /** GET /api/v1/suppliers/{uid}/statement (base currency). */
 export interface SupplierStatement {
