@@ -1,5 +1,10 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import {
+  SINGLE_FACTOR_MIN_PASSWORD,
+  TWO_FACTOR_MIN_PASSWORD,
+  passwordValidators,
+} from '../../core/session/password-rule';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
@@ -49,6 +54,7 @@ import { AUTH_CARD_STYLES } from './auth-card';
                 formControlName="newPassword"
                 autocomplete="new-password"
               />
+              <span class="hint">{{ 'password.resetHint' | t }}</span>
               @if (error(); as message) {
                 <span class="error">{{ message }}</span>
               }
@@ -94,7 +100,14 @@ export default class ConfirmEmailPage {
   protected readonly failure = signal<string | null>(null);
   protected readonly mismatch = signal(false);
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    newPassword: ['', this.needsPassword ? [Validators.required, Validators.minLength(8)] : []],
+    // The undo of an email change asks for 15 characters: it removes passkeys and may turn
+    // two-factor off, so the password may be the only factor (the API checks it, STD-21).
+    newPassword: [
+      '',
+      this.needsPassword
+        ? passwordValidators(this.revert ? SINGLE_FACTOR_MIN_PASSWORD : TWO_FACTOR_MIN_PASSWORD)
+        : [],
+    ],
     confirm: [''],
   });
 

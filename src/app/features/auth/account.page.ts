@@ -1,6 +1,13 @@
-import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { AbstractControl, FormBuilder, ValidationErrors, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
+import { SecurityOverview } from '../../core/api/security.models';
+import {
+  SINGLE_FACTOR_MIN_PASSWORD,
+  TWO_FACTOR_MIN_PASSWORD,
+  minPasswordLength,
+  passwordValidators,
+} from '../../core/session/password-rule';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
 import { applyApiError, controlError, validate } from '../../core/ui/forms';
@@ -69,17 +76,17 @@ function matching(group: AbstractControl): ValidationErrors | null {
             autocomplete="current-password"
           />
         </app-field>
-        <app-field
-          [label]="'ui.account.newPassword' | t"
-          [hint]="'ui.account.atLeast8' | t"
-          [error]="err('newPassword')"
-        >
+        <app-field [label]="'ui.account.newPassword' | t" [error]="err('newPassword')">
           <input
             class="input"
             type="password"
             formControlName="newPassword"
             autocomplete="new-password"
           />
+          <span class="hint" data-testid="password-min-hint">{{
+            (minLength() === twoFactorMin ? 'password.minLengthTwoFactor' : 'password.minLength')
+              | t: { min: minLength() }
+          }}</span>
         </app-field>
         <div class="field">
           <label>{{ 'ui.account.confirmPassword' | t }}</label><input
@@ -104,7 +111,7 @@ function matching(group: AbstractControl): ValidationErrors | null {
     </div>
   `,
 })
-export default class AccountPage {
+export default class AccountPage implements OnInit {
   protected readonly session = inject(SessionStore);
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
@@ -113,11 +120,24 @@ export default class AccountPage {
   protected readonly form = inject(FormBuilder).nonNullable.group(
     {
       currentPassword: ['', Validators.required],
-      newPassword: ['', [Validators.required, Validators.minLength(8)]],
+      newPassword: ['', passwordValidators(SINGLE_FACTOR_MIN_PASSWORD)],
       confirm: ['', Validators.required],
     },
     { validators: matching },
   );
+  /** 8 with two-factor, 15 without (STD-21); 15 until the account's security is read. */
+  protected readonly minLength = signal(SINGLE_FACTOR_MIN_PASSWORD);
+  protected readonly twoFactorMin = TWO_FACTOR_MIN_PASSWORD;
+
+  async ngOnInit(): Promise<void> {
+    const overview = await this.api
+      .get<SecurityOverview>('/auth/security', undefined, { silent: true })
+      .catch(() => null);
+    const min = minPasswordLength(overview);
+    this.minLength.set(min);
+    this.form.controls.newPassword.setValidators(passwordValidators(min));
+    this.form.controls.newPassword.updateValueAndValidity();
+  }
 
   protected err(name: 'currentPassword' | 'newPassword'): string | null {
     return controlError(this.form.controls[name]);

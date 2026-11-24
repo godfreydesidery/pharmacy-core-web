@@ -4,6 +4,8 @@ import { downloadCsv, isoDay } from '../../core/format/format';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SHARED } from '../../core/shared';
+import { SessionStore } from '../../core/session/session.store';
+import { ExpiryProvisionRun, VatApportionmentRun } from '../../core/api/models';
 
 interface Line {
   code: string;
@@ -42,6 +44,9 @@ interface VatCategoryLine {
   returnsTax: number;
   net: number;
   tax: number;
+  /** Debit notes to customers in this category (STD-2). */
+  debitNotesNet?: number;
+  debitNotesTax?: number;
 }
 interface Vat {
   from: string;
@@ -54,6 +59,12 @@ interface Vat {
   /** Output less returns less input; below zero is a credit. */
   netPayable: number;
   categories?: VatCategoryLine[];
+  /** Input VAT as booked, the part apportioned to expense, and what stays reclaimable (STD-2). */
+  inputVatBeforeApportionment?: number;
+  nonReclaimableInputVat?: number;
+  reclaimableInputVat?: number;
+  apportionments?: VatApportionmentRun[];
+  debitNotes?: { salesNet: number; salesTax: number; purchasesNet: number; purchasesVat: number };
 }
 interface BranchStock {
   branchUid: string;
@@ -73,7 +84,7 @@ interface Cashier {
   cashToHandOver: number;
 }
 
-type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
+type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'writedown' | 'cashiers';
 
 /**
  * Finance → Statements: balance sheet, trial balance and VAT from the ledger, stock valuation per
@@ -91,7 +102,7 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
           <p class="sub">{{ 'statements.sub' | t }}</p>
         </div>
         <div class="actions">
-          @if (tab() === 'vat' || tab() === 'cashiers') {
+          @if (tab() === 'vat' || tab() === 'cashiers' || tab() === 'writedown') {
             <input
               class="input"
               style="width:auto"
@@ -291,6 +302,156 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
                 </div>
               </div>
             }
+            @if (v.nonReclaimableInputVat !== undefined) {
+              <div class="grid kpis mt" data-testid="vat-apportionment">
+                <app-stat
+                  [label]="'vatReport.beforeApportionment' | t"
+                  [value]="v.inputVatBeforeApportionment ?? 0 | money"
+                  icon="truck"
+                  tone="purple"
+                />
+                <app-stat
+                  [label]="'vatReport.nonReclaimable' | t"
+                  [value]="v.nonReclaimableInputVat | money"
+                  icon="minus"
+                  tone="amber"
+                />
+                <app-stat
+                  [label]="'vatReport.reclaimable' | t"
+                  [value]="v.reclaimableInputVat ?? v.inputVat ?? 0 | money"
+                  icon="check"
+                  tone="green"
+                />
+              </div>
+            }
+            @if (v.apportionments?.length) {
+              <div class="card mt">
+                <div class="card-head">
+                  <h3>{{ 'vatReport.apportionment' | t }}</h3>
+                </div>
+                <div class="table-wrap">
+                  <table class="table">
+                    <thead>
+                      <tr>
+                        <th>{{ 'writedownReport.period' | t }}</th>
+                        <th>{{ 'apportion.method' | t }}</th>
+                        <th class="right">{{ 'vatReport.ratio' | t }}</th>
+                        <th class="right">{{ 'vatReport.nonReclaimable' | t }}</th>
+                        <th class="right">{{ 'writedownReport.adjustment' | t }}</th>
+                        <th>{{ 'writedownReport.journal' | t }}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      @for (a of v.apportionments; track a.uid) {
+                        <tr>
+                          <td>{{ a.period }} · {{ 'vatReport.kind.' + a.kind | t }}</td>
+                          <td>{{ 'vatReport.method.' + a.method | t }}</td>
+                          <td class="right">{{ a.ratioPercent }}%</td>
+                          <td class="right">{{ a.nonReclaimable | money }}</td>
+                          <td class="right">{{ a.adjustment | money }}</td>
+                          <td class="mono">{{ a.journalNumber ?? '—' }}</td>
+                        </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            }
+            @if (v.debitNotes; as d) {
+              <div class="card mt" data-testid="vat-debit-notes">
+                <div class="card-head">
+                  <h3>{{ 'vatReport.debitNotes' | t }}</h3>
+                </div>
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th></th>
+                      <th class="right">{{ 'vatReport.net' | t }}</th>
+                      <th class="right">{{ 'vatReport.vat' | t }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>{{ 'vatReport.salesDebitNotes' | t }}</td>
+                      <td class="right">{{ d.salesNet | money }}</td>
+                      <td class="right">{{ d.salesTax | money }}</td>
+                    </tr>
+                    <tr>
+                      <td>{{ 'vatReport.purchaseDebitNotes' | t }}</td>
+                      <td class="right">{{ d.purchasesNet | money }}</td>
+                      <td class="right">{{ d.purchasesVat | money }}</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+            }
+          }
+        }
+        @case ('writedown') {
+          <p class="muted mb">{{ 'writedownReport.sub' | t }}</p>
+          @for (run of writedown.value() ?? []; track run.uid) {
+            <div class="card mb" [attr.data-testid]="'writedown-' + run.period">
+              <div class="card-head row between wrap">
+                <h3>{{ run.period }}</h3>
+                <span class="muted mono">{{ run.journalNumber ?? '—' }}</span>
+              </div>
+              @if (!run.enabled) {
+                <p class="muted card-pad">{{ 'writedownReport.off' | t }}</p>
+              }
+              <div class="table-wrap">
+                <table class="table">
+                  <thead>
+                    <tr>
+                      <th>{{ 'writedownReport.branch' | t }}</th>
+                      <th>{{ 'writedown.days' | t }}</th>
+                      <th class="right">{{ 'writedown.percent' | t }}</th>
+                      <th class="right">{{ 'writedownReport.costAtRisk' | t }}</th>
+                      <th class="right">{{ 'writedownReport.provision' | t }}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    @for (b of run.branches; track b.branchUid) {
+                      @for (band of b.bands; track band.daysToExpiry; let first = $first) {
+                        <tr>
+                          <td>{{ first ? branchName(b.branchUid) : '' }}</td>
+                          <td>
+                            {{
+                              band.daysToExpiry === 0
+                                ? ('writedown.expired' | t)
+                                : ('writedown.within' | t: { days: band.daysToExpiry })
+                            }}
+                          </td>
+                          <td class="right">{{ band.percent }}%</td>
+                          <td class="right">{{ band.costAtRisk | money }}</td>
+                          <td class="right">{{ band.provision | money }}</td>
+                        </tr>
+                      }
+                    }
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colspan="3">
+                        {{ 'writedownReport.stockAtCost' | t }}: {{ run.stockAtCost | money }}
+                      </td>
+                      <td class="right">
+                        {{ 'writedownReport.previous' | t }}: {{ run.previousProvision | money }}
+                      </td>
+                      <td class="right strong">
+                        {{ run.provision | money }}
+                        <br /><small class="muted"
+                          >{{ 'writedownReport.adjustment' | t }}:
+                          {{ run.adjustment | money }}</small
+                        >
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            </div>
+          } @empty {
+            <div class="card card-pad muted" data-testid="writedown-none">
+              {{ 'writedownReport.none' | t }}
+            </div>
           }
         }
         @case ('stock') {
@@ -380,7 +541,8 @@ type Tab = 'balance' | 'trial' | 'vat' | 'stock' | 'cashiers';
 })
 export default class StatementsPage {
   private readonly translations = inject(Translations);
-  protected readonly tabs: Tab[] = ['balance', 'trial', 'vat', 'stock', 'cashiers'];
+  private readonly session = inject(SessionStore);
+  protected readonly tabs: Tab[] = ['balance', 'trial', 'vat', 'stock', 'writedown', 'cashiers'];
   protected readonly tab = signal<Tab>('balance');
   protected readonly from = signal(isoDay(-29));
   protected readonly to = signal(isoDay());
@@ -401,6 +563,17 @@ export default class StatementsPage {
   protected readonly stock = loaded<BranchStock[]>(() =>
     this.tab() === 'stock' ? { path: '/reports/stock-valuation' } : null,
   );
+  /** The monthly expiry write-down runs in the range (STD-3). */
+  protected readonly writedown = loaded<ExpiryProvisionRun[]>(() =>
+    this.tab() === 'writedown'
+      ? { path: '/reports/expiry-provision', query: { from: this.from(), to: this.to() } }
+      : null,
+  );
+
+  /** A branch's name from the workspace, or its uid when it is not one of them. */
+  protected branchName(uid: string): string {
+    return this.session.branches().find((b) => b.uid === uid)?.name ?? uid;
+  }
   protected readonly cashiers = loaded<Cashier[]>(() =>
     this.tab() === 'cashiers'
       ? { path: '/reports/cashiers', query: { from: this.from(), to: this.to() } }
@@ -497,6 +670,31 @@ export default class StatementsPage {
             s.costValue,
             s.retailValue,
           ]),
+        );
+        break;
+      case 'writedown':
+        downloadCsv(
+          `expiry-write-down-${this.from()}-${this.to()}.csv`,
+          [
+            t('writedownReport.period'),
+            t('writedownReport.branch'),
+            t('writedown.days'),
+            t('writedown.percent'),
+            t('writedownReport.costAtRisk'),
+            t('writedownReport.provision'),
+          ],
+          (this.writedown.value() ?? []).flatMap((run) =>
+            run.branches.flatMap((b) =>
+              b.bands.map((band) => [
+                run.period,
+                this.branchName(b.branchUid),
+                band.daysToExpiry,
+                band.percent,
+                band.costAtRisk,
+                band.provision,
+              ]),
+            ),
+          ),
         );
         break;
       case 'cashiers':

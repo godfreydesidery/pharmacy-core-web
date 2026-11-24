@@ -24,7 +24,8 @@ export interface SupplierBalance {
   awaitingCredit?: number;
 }
 
-export type StatementLineType = 'OPENING' | 'RECEIPT' | 'PAYMENT' | 'RETURN';
+/** DEBIT_NOTE: a supplier's debit note raising what is owed (STD-2). */
+export type StatementLineType = 'OPENING' | 'RECEIPT' | 'PAYMENT' | 'RETURN' | 'DEBIT_NOTE';
 
 /**
  * GET /api/v1/suppliers/{uid}/statement?from&to&cursor (base currency): a period of at most 366

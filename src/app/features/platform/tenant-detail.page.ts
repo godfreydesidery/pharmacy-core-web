@@ -1,10 +1,16 @@
 import { HttpClient } from '@angular/common/http';
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
-import { ConfirmService } from '../../core/ui/confirm';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { downloadFrom } from '../../core/ui/export.component';
 import { Router } from '@angular/router';
 import { Api } from '../../core/api/api.service';
-import { Branch, Tenant } from '../../core/api/models';
+import { Branch, RootApproval, RootApprovalAction, Tenant } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -13,9 +19,10 @@ import { Translations } from '../../core/i18n/translations.store';
 import { TenantEditComponent } from './tenant-edit.component';
 
 import { TenantSubscriptionComponent } from './tenant-subscription.component';
+import { RootApprovalsComponent } from './root-approvals.component';
 @Component({
   selector: 'app-tenant-detail',
-  imports: [...SHARED, TenantEditComponent, TenantSubscriptionComponent],
+  imports: [...SHARED, TenantEditComponent, TenantSubscriptionComponent, RootApprovalsComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -45,7 +52,13 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
                 <app-icon name="download" [size]="16" /> {{ 'close.export' | t }}
               </button>
               @if (t.legalHold) {
-                <button class="btn" type="button" [disabled]="busy()" (click)="liftHold()">
+                <button
+                  class="btn"
+                  type="button"
+                  data-testid="lift-hold"
+                  [disabled]="busy()"
+                  (click)="lifting.set(true)"
+                >
                   <app-icon name="lock" [size]="16" /> {{ 'close.liftHold' | t }}
                 </button>
               } @else {
@@ -139,6 +152,11 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
             }}
           </div>
         }
+        <app-root-approvals
+          [tenantUid]="t.uid"
+          [showEmpty]="false"
+          (changed)="approvalChanged($event)"
+        />
         <div class="grid two">
           <div class="card card-pad">
             <h3 class="mb">{{ 'common.details' | t }}</h3>
@@ -337,6 +355,41 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
       </ng-container>
     </app-modal>
 
+    <app-modal
+      [open]="lifting()"
+      [title]="'rootApproval.liftTitle' | t"
+      (closed)="lifting.set(false)"
+    >
+      <div class="stack">
+        <p>{{ 'rootApproval.liftText' | t }}</p>
+        <div class="field">
+          <label for="lift-reason">{{ 'rootApproval.reason' | t }}</label>
+          <textarea
+            id="lift-reason"
+            class="input"
+            data-testid="lift-reason"
+            [placeholder]="'rootApproval.reasonPlaceholder' | t"
+            [value]="requestReason()"
+            (input)="requestReason.set($any($event.target).value)"
+          ></textarea>
+        </div>
+      </div>
+      <ng-container footer>
+        <button class="btn" type="button" (click)="lifting.set(false)">
+          {{ 'common.cancel' | t }}
+        </button>
+        <button
+          class="btn primary"
+          type="button"
+          data-testid="lift-request"
+          [disabled]="busy() || !requestReason().trim()"
+          (click)="request('LIFT_LEGAL_HOLD')"
+        >
+          {{ 'rootApproval.ask' | t }}
+        </button>
+      </ng-container>
+    </app-modal>
+
     @if (tenant.value(); as t) {
       <app-modal [open]="erasing()" [title]="'close.eraseTitle' | t" (closed)="erasing.set(false)">
         <div class="stack">
@@ -352,6 +405,18 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
               (input)="eraseCode.set($any($event.target).value)"
             />
           </app-field>
+          <div class="field">
+            <label for="erase-reason">{{ 'rootApproval.reason' | t }}</label>
+            <textarea
+              id="erase-reason"
+              class="input"
+              data-testid="erase-reason"
+              [placeholder]="'rootApproval.reasonPlaceholder' | t"
+              [value]="requestReason()"
+              (input)="requestReason.set($any($event.target).value)"
+            ></textarea>
+            <span class="hint">{{ 'rootApproval.sub' | t }}</span>
+          </div>
         </div>
         <ng-container footer>
           <button class="btn" type="button" (click)="erasing.set(false)">
@@ -361,10 +426,14 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
             class="btn danger"
             type="button"
             data-testid="erase-confirm"
-            [disabled]="busy() || eraseCode().trim().toUpperCase() !== t.code.toUpperCase()"
-            (click)="erase()"
+            [disabled]="
+              busy() ||
+              eraseCode().trim().toUpperCase() !== t.code.toUpperCase() ||
+              !requestReason().trim()
+            "
+            (click)="request('ERASE_TENANT')"
           >
-            {{ 'close.erase' | t }}
+            {{ 'rootApproval.ask' | t }}
           </button>
         </ng-container>
       </app-modal>
@@ -385,8 +454,12 @@ export default class TenantDetailPage {
   protected readonly erasing = signal(false);
   protected readonly exporting = signal(false);
   protected readonly eraseCode = signal('');
+  /** Asking to lift the legal hold (a second root administrator approves it). */
+  protected readonly lifting = signal(false);
+  /** Why the hold may be lifted or the pharmacy erased, for the request and the audit trail. */
+  protected readonly requestReason = signal('');
+  private readonly approvals = viewChild(RootApprovalsComponent);
   private readonly http = inject(HttpClient);
-  private readonly confirm = inject(ConfirmService);
   protected readonly editing = signal(false);
   protected readonly tenant = loaded<Tenant>(() => ({
     path: `/platform/tenants/${this.uid()}`,
@@ -455,43 +528,39 @@ export default class TenantDetailPage {
     this.holding.set(false);
   }
 
-  protected async liftHold(): Promise<void> {
-    const ok = await this.confirm.ask({
-      title: this.translations.t('close.liftHold'),
-      text: this.translations.t('close.liftHoldText'),
-      icon: 'warning',
-    });
-    if (!ok) {
-      return;
-    }
+  /**
+   * Lifting a legal hold and erasing a pharmacy need a second root administrator (FRD-18): this
+   * sends the request; another root administrator approves it under Pending approvals (here or on
+   * the approvals page), and only then does it happen. With one root administrator the API says
+   * so (second_root_admin_required) and the toast shows why.
+   */
+  protected async request(action: RootApprovalAction): Promise<void> {
     this.busy.set(true);
     try {
-      this.tenant.set(
-        await this.api.delete<Tenant>(`/platform/tenants/${this.uid()}/legal-hold`, {
-          noBranch: true,
-        }),
+      await this.api.post<RootApproval>(
+        '/platform/approvals',
+        {
+          action,
+          tenantUid: this.uid(),
+          reason: this.requestReason().trim(),
+          ...(action === 'ERASE_TENANT' ? { confirmCode: this.eraseCode().trim() } : {}),
+        },
+        { noBranch: true },
       );
-      this.toasts.success(this.translations.t('toast.holdLifted'));
+      this.lifting.set(false);
+      this.erasing.set(false);
+      this.eraseCode.set('');
+      this.requestReason.set('');
+      this.toasts.success(this.translations.t('rootApproval.requested'));
+      await this.approvals()?.reload();
     } finally {
       this.busy.set(false);
     }
   }
 
-  protected async erase(): Promise<void> {
-    this.busy.set(true);
-    try {
-      const erased = await this.api.post<{ tenant: Tenant }>(
-        `/platform/tenants/${this.uid()}/erase`,
-        { confirmCode: this.eraseCode().trim() },
-        { noBranch: true },
-      );
-      this.tenant.set(erased.tenant);
-      this.erasing.set(false);
-      this.eraseCode.set('');
-      this.toasts.success(this.translations.t('toast.pharmacyErased'));
-    } finally {
-      this.busy.set(false);
-    }
+  /** Another root administrator approved (the hold is lifted, or the pharmacy erased). */
+  protected async approvalChanged(_approval: RootApproval): Promise<void> {
+    await this.tenant.reload();
   }
 
   protected async exportData(): Promise<void> {

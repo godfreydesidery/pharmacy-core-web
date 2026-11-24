@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, OnInit, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { SINGLE_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
@@ -137,6 +138,7 @@ import { SignInChallengeComponent } from './sign-in-challenge.component';
                       autocomplete="new-password"
                       [class.invalid]="error()"
                     />
+                    <span class="hint">{{ 'password.minLength' | t: { min: newAccountMin } }}</span>
                     @if (error(); as message) {
                       <span class="error">{{ message }}</span>
                     }
@@ -184,6 +186,7 @@ import { SignInChallengeComponent } from './sign-in-challenge.component';
   ],
 })
 export default class AcceptInvitationPage implements OnInit {
+  protected readonly newAccountMin = SINGLE_FACTOR_MIN_PASSWORD;
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastService);
@@ -200,7 +203,7 @@ export default class AcceptInvitationPage implements OnInit {
   protected readonly mode = signal<'new' | 'existing'>('new');
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: [''],
-    password: ['', [Validators.required, Validators.minLength(8)]],
+    password: ['', passwordValidators(SINGLE_FACTOR_MIN_PASSWORD)],
   });
   protected readonly signInForm = inject(FormBuilder).nonNullable.group({
     email: ['', Validators.required],

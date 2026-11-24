@@ -175,9 +175,34 @@ export interface Settings {
   vrn?: string | null;
   /** FRD-19: the owners' and admins' morning digest of sensitive actions (on by default). */
   sensitiveDigest?: boolean;
+  /**
+   * Shared counter PCs (WEB-5): the session ends when the browser closes, and parked sales expire
+   * at the end of the pharmacy's day. Off by default.
+   */
+  sharedCounterPcs?: boolean;
+  /** The monthly expiry write-down (STD-3) of stock near or past its expiry date. */
+  expiryProvisionEnabled?: boolean;
+  /** The write-down bands, days to expiry ascending (0 = already expired). */
+  expiryProvisionBands?: ExpiryProvisionBand[];
+  /** How input VAT serving both taxable and exempt sales is split (STD-2). */
+  vatApportionmentMethod?: VatApportionmentMethod;
+  /** The recoverable share agreed with TRA or the accountant, when the method is FIXED. */
+  vatFixedRecoverablePercent?: number | null;
+  /** The month the financial year ends (1 to 12): the yearly true-up is made then. */
+  vatYearEndMonth?: number;
+  /** Round the automatic ratio up to the next whole percent. */
+  vatRatioRoundUp?: boolean;
   /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
   version: number;
 }
+
+/** One expiry write-down band: stock expiring within `daysToExpiry` is written down by `percent`. */
+export interface ExpiryProvisionBand {
+  daysToExpiry: number;
+  percent: number;
+}
+
+export type VatApportionmentMethod = 'AUTOMATIC' | 'FIXED';
 
 /** `POST /auth/activity`: the session's inactivity limit after the person used the app. */
 export interface SessionActivity {
@@ -1413,4 +1438,66 @@ export interface AdverseReaction extends AdverseReactionInput {
   productName: string;
   createdAt: IsoDateTime;
   createdBy: string | null;
+}
+
+/** A root administrator's request that a second one must approve (FRD-18). */
+export type RootApprovalAction = 'LIFT_LEGAL_HOLD' | 'ERASE_TENANT';
+export type RootApprovalStatus = 'PENDING' | 'EXECUTED' | 'CANCELLED' | 'EXPIRED';
+
+export interface RootApproval {
+  uid: Uid;
+  action: RootApprovalAction;
+  tenantUid: Uid;
+  tenantCode: string;
+  tenantName: string;
+  reason: string;
+  status: RootApprovalStatus;
+  requestedByUid: Uid;
+  requestedByName: string;
+  requestedAt: IsoDateTime;
+  expiresAt: IsoDateTime;
+  approvedByUid: Uid | null;
+  approvedByName: string | null;
+  approvedAt: IsoDateTime | null;
+  cancelledAt: IsoDateTime | null;
+}
+
+/** One month's expiry write-down (STD-3), `GET /reports/expiry-provision`. */
+export interface ExpiryProvisionRun {
+  uid: Uid;
+  /** The month measured, such as 2026-11. */
+  period: string;
+  measuredOn: IsoDate;
+  enabled: boolean;
+  bands: ExpiryProvisionBand[];
+  stockAtCost: number;
+  provision: number;
+  previousProvision: number;
+  adjustment: number;
+  journalNumber: string | null;
+  branches: {
+    branchUid: Uid;
+    stockAtCost: number;
+    provision: number;
+    bands: (ExpiryProvisionBand & { costAtRisk: number; provision: number })[];
+  }[];
+  createdAt: IsoDateTime;
+}
+
+/** One VAT apportionment run (STD-2): a month's provisional split or the year's true-up. */
+export interface VatApportionmentRun {
+  uid: Uid;
+  period: string;
+  kind: 'MONTHLY' | 'ANNUAL';
+  method: VatApportionmentMethod;
+  ratioPercent: number;
+  taxableSales: number;
+  exemptSales: number;
+  directTaxableVat: number;
+  directExemptVat: number;
+  residualVat: number;
+  nonReclaimable: number;
+  adjustment: number;
+  journalNumber: string | null;
+  createdAt: IsoDateTime;
 }

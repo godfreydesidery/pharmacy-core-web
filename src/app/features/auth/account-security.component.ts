@@ -8,6 +8,7 @@ import {
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { SINGLE_FACTOR_MIN_PASSWORD } from '../../core/session/password-rule';
 import { ActivatedRoute } from '@angular/router';
 import QRCode from 'qrcode';
 import { ApiError } from '../../core/api/api-error';
@@ -136,6 +137,11 @@ import { Translations } from '../../core/i18n/translations.store';
               {{ 'ui.sec.turnOff' | t }}
             </button>
           </div>
+          @if (overview()?.passwordLongEnoughAlone === false) {
+            <p class="notice tone-amber" data-testid="password-change-first">
+              {{ 'password.changeFirst' | t: { min: singleFactorMin } }}
+            </p>
+          }
         } @else {
           <div class="row">
             <button class="btn primary" type="button" [disabled]="busy()" (click)="begin()">
@@ -533,6 +539,9 @@ export class AccountSecurityComponent implements OnInit {
       await this.api.get<SessionInfo[]>('/auth/sessions', undefined, { silent: true }),
     );
   }
+
+  /** The password a person needs before turning two-factor off (STD-21). */
+  protected readonly singleFactorMin = SINGLE_FACTOR_MIN_PASSWORD;
 
   private async run(work: () => Promise<void>): Promise<void> {
     this.busy.set(true);

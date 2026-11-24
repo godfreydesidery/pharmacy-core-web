@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { SINGLE_FACTOR_MIN_PASSWORD, passwordValidators } from '../../core/session/password-rule';
 import { Router } from '@angular/router';
 import { ApiError } from '../../core/api/api-error';
 import { Api } from '../../core/api/api.service';
@@ -58,7 +59,7 @@ import { TemporaryPasswordHandoff } from './temporary-password';
             autocomplete="new-password"
             [class.invalid]="error('newPassword')"
           />
-          <span class="hint">{{ 'logins.newPasswordHint' | t }}</span>
+          <span class="hint">{{ 'password.minLength' | t: { min: minLength } }}</span>
           @if (error('newPassword'); as message) {
             <span class="error">{{ message }}</span>
           }
@@ -98,6 +99,8 @@ import { TemporaryPasswordHandoff } from './temporary-password';
   ],
 })
 export default class ChoosePasswordPage {
+  /** A staff login has no second factor yet when it chooses its first password: 15 (STD-21). */
+  protected readonly minLength = SINGLE_FACTOR_MIN_PASSWORD;
   private readonly api = inject(Api);
   private readonly router = inject(Router);
   private readonly toasts = inject(ToastService);
@@ -111,7 +114,7 @@ export default class ChoosePasswordPage {
   protected readonly mismatch = signal(false);
   protected readonly form = inject(FormBuilder).nonNullable.group({
     currentPassword: [this.given ?? '', Validators.required],
-    newPassword: ['', [Validators.required, Validators.minLength(8)]],
+    newPassword: ['', passwordValidators(SINGLE_FACTOR_MIN_PASSWORD)],
     confirm: ['', Validators.required],
   });
 

@@ -83,7 +83,16 @@ import { AccountView, CoverageQuote, MemberView } from '../../core/api/credit.mo
 import { Translations } from '../../core/i18n/translations.store';
 import { SubscriptionStore } from '../../core/subscription/subscription.store';
 import { LineBatch, nextBatch } from './fefo';
-import { ParkedLine, ParkedSale, park, parkedKey, readParked, unpark, writeParked } from './parked';
+import {
+  ParkedExpiry,
+  ParkedLine,
+  ParkedSale,
+  park,
+  parkedKey,
+  readParked,
+  unpark,
+  writeParked,
+} from './parked';
 
 /** How many suggestions the entry row offers under the search box. */
 const SUGGESTIONS = 8;
@@ -1094,13 +1103,25 @@ export default class PosPage {
   );
   protected readonly parkedOpen = signal(false);
   /**
+   * Shared counter PCs (WEB-5): parked sales last until the end of the pharmacy's business day;
+   * otherwise 12 hours. Read again when the setting or the time zone arrives.
+   */
+  private readonly parkedExpiry = computed<ParkedExpiry>(
+    () => ({
+      sharedPc: this.settings.settings()?.sharedCounterPcs ?? false,
+      timeZone: this.settings.settings()?.timezone ?? null,
+    }),
+    { equal: (a, b) => a.sharedPc === b.sharedPc && a.timeZone === b.timeZone },
+  );
+  /**
    * Reads this cashier's parked sales at this branch, dropping expired ones and any personal data
    * an older version stored. An unconfirmed checkout comes back on screen, still locked.
    */
   private readonly parkedWatch = effect(() => {
     const key = this.parkedStore();
+    const expiry = this.parkedExpiry();
     untracked(() => {
-      const list = key ? readParked(this.storage(), key) : [];
+      const list = key ? readParked(this.storage(), key, Date.now(), expiry) : [];
       if (key) writeParked(this.storage(), key, list);
       this.parked.set(list);
       const waiting = list.find((p) => p.pending);
