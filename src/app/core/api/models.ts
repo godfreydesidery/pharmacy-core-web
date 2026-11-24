@@ -173,9 +173,34 @@ export interface Settings {
   /** Taxpayer Identification Number (9 digits, kept without dashes) and VAT Registration Number. */
   tin?: string | null;
   vrn?: string | null;
+  /**
+   * Shared counter PCs (WEB-5): the session ends when the browser closes, and parked sales expire
+   * at the end of the pharmacy's day. Off by default.
+   */
+  sharedCounterPcs?: boolean;
+  /** The monthly expiry write-down (STD-3) of stock near or past its expiry date. */
+  expiryProvisionEnabled?: boolean;
+  /** The write-down bands, days to expiry ascending (0 = already expired). */
+  expiryProvisionBands?: ExpiryProvisionBand[];
+  /** How input VAT serving both taxable and exempt sales is split (STD-2). */
+  vatApportionmentMethod?: VatApportionmentMethod;
+  /** The recoverable share agreed with TRA or the accountant, when the method is FIXED. */
+  vatFixedRecoverablePercent?: number | null;
+  /** The month the financial year ends (1 to 12): the yearly true-up is made then. */
+  vatYearEndMonth?: number;
+  /** Round the automatic ratio up to the next whole percent. */
+  vatRatioRoundUp?: boolean;
   /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
   version: number;
 }
+
+/** One expiry write-down band: stock expiring within `daysToExpiry` is written down by `percent`. */
+export interface ExpiryProvisionBand {
+  daysToExpiry: number;
+  percent: number;
+}
+
+export type VatApportionmentMethod = 'AUTOMATIC' | 'FIXED';
 
 /** `POST /auth/activity`: the session's inactivity limit after the person used the app. */
 export interface SessionActivity {
