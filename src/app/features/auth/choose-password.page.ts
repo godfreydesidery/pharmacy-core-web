@@ -12,6 +12,7 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { IconComponent } from '../../core/ui/icon.component';
 import { ToastService } from '../../core/ui/toast.service';
 import { AUTH_CARD_STYLES } from './auth-card';
+import { TemporaryPasswordHandoff } from './temporary-password';
 
 /**
  * A staff login the pharmacy created signs in on a temporary password and must choose its own
@@ -103,9 +104,8 @@ export default class ChoosePasswordPage {
   private readonly translations = inject(Translations);
   private readonly session = inject(SessionStore);
 
-  /** The temporary password typed at sign-in, when the navigation brought it. */
-  protected readonly given: string | null =
-    (this.router.getCurrentNavigation()?.extras.state?.['temporary'] as string | undefined) ?? null;
+  /** The temporary password typed at sign-in, handed over in memory (WEB-16), once. */
+  protected readonly given: string | null = inject(TemporaryPasswordHandoff).take();
   protected readonly busy = signal(false);
   protected readonly failure = signal<string | null>(null);
   protected readonly mismatch = signal(false);

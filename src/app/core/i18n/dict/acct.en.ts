@@ -55,6 +55,7 @@ export const ACCT_EN: Readonly<Record<string, string>> = {
   'acct.ev.PASSKEY_REMOVED': 'Passkey removed',
   'acct.ev.EMAIL_CHANGE_REQUESTED': 'Email change asked for',
   'acct.ev.EMAIL_CHANGED': 'Email changed',
+  'acct.ev.EMAIL_CHANGE_REVERTED': 'Email change undone',
   'acct.ev.PHONE_CODE_SENT': 'Phone code sent',
   'acct.ev.PHONE_VERIFIED': 'Phone verified',
   'acct.ev.PHONE_REMOVED': 'Phone removed',
@@ -85,6 +86,10 @@ export const ACCT_EN: Readonly<Record<string, string>> = {
   'acct.recoverHint': 'Choose a new password. You will sign in with the address this link came to.',
   'acct.onHold': 'This recovery link works from {{time}}. Come back then.',
   'acct.confirmed': 'Done. Sign in with your new email.',
+  'acct.revertTitle': 'Undo the email change',
+  'acct.revertHint':
+    'This puts this address back as your sign-in, signs out every device and removes passkeys. Choose a new password: whoever changed the email may know the old one.',
+  'acct.reverted': 'Done. Sign in with this address and your new password.',
   'acct.cancelTitle': 'Cancel the recovery of your account',
   'acct.cancelHint':
     'Someone asked support to move your account to another email. If it was not you, cancel it.',

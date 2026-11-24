@@ -44,6 +44,7 @@
     "erase_refused",
     "exchange_rate_mismatch",
     "expiry_after_inputs",
+    "field_not_allowed",
     "file_too_compressed",
     "file_too_large_uncompressed",
     "file_too_many_entries",
@@ -250,6 +251,7 @@
     "export_running": [
       "uid"
     ],
+    "field_not_allowed": [],
     "file_not_allowed": [],
     "file_not_found": [],
     "file_too_compressed": [],
@@ -586,6 +588,7 @@
     "unsupported_media_type": [],
     "unsupported_type": [],
     "upload_missing": [],
+    "upload_used": [],
     "url_expired": [],
     "user_not_found": [],
     "username_taken": [],

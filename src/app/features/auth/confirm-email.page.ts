@@ -12,8 +12,10 @@ import { AUTH_CARD_STYLES } from './auth-card';
 
 /**
  * The link in the new mailbox (`?token=`): confirms an email change, or completes an account
- * recovery started by support, which also sets a new password. Nothing happens until the person
- * presses the button, so a mail scanner that opens links cannot use the token.
+ * recovery started by support, which also sets a new password. At `/revert-email`, the link sent
+ * to the old address after a change (AUTH-13): it puts that address back, with a new password.
+ * Nothing happens until the person presses the button, so a mail scanner that opens links cannot
+ * use the token.
  */
 @Component({
   selector: 'app-confirm-email',
@@ -23,21 +25,21 @@ import { AUTH_CARD_STYLES } from './auth-card';
     <div class="auth-card-page">
       <form class="auth-card" [formGroup]="form" (ngSubmit)="confirm()" novalidate>
         <app-logo [size]="40" />
-        <h1>{{ (recovery ? 'acct.recoverTitle' : 'acct.confirmTitle') | t }}</h1>
+        <h1>{{ title() | t }}</h1>
         @if (!token) {
           <div class="notice tone-amber">
             <app-icon name="alert" /> {{ 'acct.missingToken' | t }}
           </div>
         } @else if (done()) {
           <div class="notice tone-green" data-testid="email-confirmed">
-            <app-icon name="check" /> {{ 'acct.confirmed' | t }}
+            <app-icon name="check" /> {{ (revert ? 'acct.reverted' : 'acct.confirmed') | t }}
           </div>
         } @else {
-          <p class="muted">{{ (recovery ? 'acct.recoverHint' : 'acct.confirmHint') | t }}</p>
+          <p class="muted">{{ hint() | t }}</p>
           @if (failure()) {
             <div class="notice tone-red"><app-icon name="alert" /> {{ failure() }}</div>
           }
-          @if (recovery) {
+          @if (needsPassword) {
             <div class="field">
               <label for="newPassword">{{ 'acct.newPassword' | t }}</label>
               <input
@@ -82,14 +84,35 @@ export default class ConfirmEmailPage {
   protected readonly token = inject(ActivatedRoute).snapshot.queryParamMap.get('token');
   /** A recovery's token starts prc_ (an email change's pec_). */
   protected readonly recovery = !!this.token?.startsWith('prc_');
+  /** The undo link sent to the old address after a change (per_), at /revert-email. */
+  protected readonly revert =
+    !!this.token?.startsWith('per_') ||
+    inject(ActivatedRoute).snapshot.routeConfig?.path === 'revert-email';
+  protected readonly needsPassword = this.recovery || this.revert;
   protected readonly busy = signal(false);
   protected readonly done = signal(false);
   protected readonly failure = signal<string | null>(null);
   protected readonly mismatch = signal(false);
   protected readonly form = inject(FormBuilder).nonNullable.group({
-    newPassword: ['', this.recovery ? [Validators.required, Validators.minLength(8)] : []],
+    newPassword: ['', this.needsPassword ? [Validators.required, Validators.minLength(8)] : []],
     confirm: [''],
   });
+
+  protected title(): string {
+    return this.revert
+      ? 'acct.revertTitle'
+      : this.recovery
+        ? 'acct.recoverTitle'
+        : 'acct.confirmTitle';
+  }
+
+  protected hint(): string {
+    return this.revert
+      ? 'acct.revertHint'
+      : this.recovery
+        ? 'acct.recoverHint'
+        : 'acct.confirmHint';
+  }
 
   protected error(): string | null {
     return controlError(this.form.controls.newPassword);
@@ -97,7 +120,7 @@ export default class ConfirmEmailPage {
 
   protected async confirm(): Promise<void> {
     const { newPassword, confirm } = this.form.getRawValue();
-    this.mismatch.set(this.recovery && newPassword !== confirm);
+    this.mismatch.set(this.needsPassword && newPassword !== confirm);
     if (!validate(this.form) || this.mismatch()) {
       return;
     }
@@ -105,12 +128,12 @@ export default class ConfirmEmailPage {
     this.failure.set(null);
     try {
       await this.api.post(
-        '/auth/email-change/confirm',
-        { token: this.token, newPassword: this.recovery ? newPassword : null },
+        this.revert ? '/auth/email-change/revert' : '/auth/email-change/confirm',
+        { token: this.token, newPassword: this.needsPassword ? newPassword : null },
         { silent: true },
       );
-      if (this.recovery) {
-        // Every session of the account ended with the recovery.
+      if (this.needsPassword) {
+        // Every session of the account ended with the recovery or the undo.
         this.session.signOut();
       }
       this.done.set(true);

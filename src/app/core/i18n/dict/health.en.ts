@@ -8,6 +8,9 @@ export const HEALTH_EN: Readonly<Record<string, string>> = {
   'perm.sales.dispense_rx': 'Dispense prescription medicines',
   'perm.health.view': 'View health details: prescriptions, patients, diagnoses, adverse reactions',
   'perm.adr.report': 'Report adverse drug reactions',
+  'perm.insurance.claims_export':
+    'Export insurance claim batches for the payer (patients and diagnoses)',
+  'perm.partners.create_at_till': 'Add a walk-in customer at the till (name, phone and email only)',
 
   // POS prescription
   'pos.prescriptionDate': 'Prescription date',
