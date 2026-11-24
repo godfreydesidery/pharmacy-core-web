@@ -2,6 +2,7 @@ import { SellableProduct, TillMethod } from '../../core/api/models';
 import {
   addToCart,
   available,
+  baseValue,
   cartTotals,
   changeDue,
   coveringAmount,
@@ -234,4 +235,52 @@ describe('Exact, in whole minor units', () => {
     expect(coveringAmount(1000, 0.7, 0)).toBe(1429); // 1428 × 0.7 is 999.60: short
     expect(coveringAmount(10.02, null, 2)).toBe(10.02);
   });
+});
+
+describe('money per currency: half-up at the base currency’s minor units, as the API', () => {
+  const usd = (amount: number, exchangeRate: number) => ({
+    method: 'CASH' as const,
+    amount,
+    reference: null,
+    currency: 'USD',
+    exchangeRate,
+  });
+
+  it('rounds a tie away from zero, not to the even cent', () => {
+    // 10% of 10.25 is 1.025: half-up 1.03 (half-even would give 1.02)
+    const totals = cartTotals([{ product: product({ sellingPrice: 10.25 }), quantity: 1 }], 10);
+    expect(totals.discount).toBe(1.03);
+    expect(totals.total).toBe(9.22);
+  });
+
+  it('works a UGX sale in whole shillings', () => {
+    const line = { product: product({ sellingPrice: 1255, taxRatePercent: 18 }), quantity: 1 };
+    const totals = cartTotals([line], 10, undefined, false, 0);
+    expect(totals.discount).toBe(126); // 125.5
+    expect(totals.tax).toBe(203); // 1,129 × 18% = 203.22
+    expect(totals.total).toBe(1332);
+    const included = cartTotals(
+      [{ product: product({ sellingPrice: 3545, taxRatePercent: 18 }), quantity: 1 }],
+      0,
+      undefined,
+      true,
+      0,
+    );
+    expect(included.tax).toBe(541); // 3,545 × 18 ÷ 118 = 540.76
+    expect(included.total).toBe(3545);
+  });
+
+  it('converts a foreign tender to the base’s minor units', () => {
+    // USD 3.77 at 3,700.5 UGX/USD is 13,950.885: UGX 13,951
+    expect(baseValue(usd(3.77, 3700.5), 0)).toBe(13951);
+    expect(baseValue(usd(3.77, 3700.5))).toBe(13950.89);
+    expect(paidTotal([usd(3.77, 3700.5), cash(49)], 0)).toBe(14000);
+    expect(changeDue([usd(3.77, 3700.5), cash(100)], 14000, 0)).toBe(51);
+    // Exact in USD for a UGX total: the fewest cents whose UGX value covers it
+    expect(exactTender(13951, [usd(0, 3700.5)], 2, 0)).toBe(3.77);
+  });
+
+  function cash(amount: number) {
+    return { method: 'CASH' as const, amount, reference: null };
+  }
 });

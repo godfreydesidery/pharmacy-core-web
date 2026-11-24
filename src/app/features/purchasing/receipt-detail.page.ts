@@ -54,6 +54,12 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
               <dt>{{ 'purchasing.total' | t }}</dt>
               <dd>{{ r.total | money: r.currency }}</dd>
             </div>
+            @if (r.vatTotal) {
+              <div>
+                <dt>{{ 'vat.onTheInvoice' | t }}</dt>
+                <dd data-testid="receipt-vat-total">{{ r.vatTotal | money: r.currency }}</dd>
+              </div>
+            }
             @if (r.currency !== base()) {
               <div>
                 <dt>{{ 'purchasing.rate' | t }}</dt>

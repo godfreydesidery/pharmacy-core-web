@@ -8,7 +8,9 @@ import {
   computed,
 } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import { Settings, CurrencyInfo } from '../../core/api/models';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
@@ -69,8 +71,9 @@ import { Translations } from '../../core/i18n/translations.store';
               }
             </div>
             <div class="field">
-              <label>{{ 'admin.defaultTaxRate' | t }}</label
+              <label for="standard-vat-rate">{{ 'vat.standardRate' | t }}</label
               ><input
+                id="standard-vat-rate"
                 class="input"
                 type="number"
                 min="0"
@@ -78,7 +81,52 @@ import { Translations } from '../../core/i18n/translations.store';
                 step="any"
                 formControlName="defaultTaxRatePercent"
               />
+              <span class="hint">{{ 'vat.standardRateHint' | t }}</span>
             </div>
+            <div class="field full">
+              <label class="check" data-testid="vat-registered">
+                <input type="checkbox" formControlName="vatRegistered" />
+                {{ 'vat.registered' | t }}
+              </label>
+              <span class="hint">{{ 'vat.registeredHint' | t }}</span>
+            </div>
+            <div class="field">
+              <label for="vat-tin">{{ 'vat.tin' | t }}</label
+              ><input
+                id="vat-tin"
+                class="input"
+                formControlName="tin"
+                inputmode="numeric"
+                autocomplete="off"
+                data-testid="vat-tin"
+              />
+              @if (err('tin'); as m) {
+                <span class="error">{{ m }}</span>
+              }
+              <span class="hint">{{ 'vat.tinHint' | t }}</span>
+            </div>
+            <div class="field">
+              <label for="vat-vrn">{{ 'vat.vrn' | t }}</label
+              ><input
+                id="vat-vrn"
+                class="input"
+                formControlName="vrn"
+                autocomplete="off"
+                style="text-transform:uppercase"
+                data-testid="vat-vrn"
+              />
+              @if (err('vrn'); as m) {
+                <span class="error">{{ m }}</span>
+              }
+              <span class="hint">{{ 'vat.vrnHint' | t }}</span>
+            </div>
+            @if (numbersMissing()) {
+              <div class="field full">
+                <div class="notice tone-amber" data-testid="vat-numbers-missing">
+                  {{ 'vat.numbersMissing' | t }}
+                </div>
+              </div>
+            }
             <div class="field full">
               <label>{{ 'admin.receiptFooter' | t }}</label
               ><textarea class="input" formControlName="receiptFooter"></textarea>
@@ -354,6 +402,7 @@ export default class SettingsPage implements OnInit {
   private readonly files = inject(FilesService);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly stale = inject(StaleRecordService);
   protected readonly settings = this.store.settings;
   protected readonly busy = signal(false);
   /** The accepted foreign currencies (the base is always accepted). */
@@ -379,18 +428,43 @@ export default class SettingsPage implements OnInit {
     approvalLimit: [50000, [Validators.required, Validators.min(0)]],
     returnWindowDays: [7, [Validators.required, Validators.min(0), Validators.max(365)]],
     requireOpenShift: [false],
+    vatRegistered: [true],
+    /** 9 digits, dashes and spaces allowed (the API keeps the digits); verify with TRA. */
+    tin: ['', Validators.pattern(/^\s*(\d[\s-]?){8}\d\s*$|^\s*$/)],
+    vrn: ['', Validators.pattern(/^\s*([0-9][0-9A-Za-z-]{7,14})?\s*$/)],
+  });
+
+  private readonly vatValues = toSignal(this.form.valueChanges, {
+    initialValue: this.form.getRawValue(),
+  });
+  /** Registered for VAT without its TIN or VRN: every receipt would lack them. */
+  protected readonly numbersMissing = computed(() => {
+    const v = this.vatValues();
+    return !!v.vatRegistered && (!v.tin?.trim() || !v.vrn?.trim());
   });
 
   async ngOnInit(): Promise<void> {
-    const settings = await this.api.get<Settings>('/settings', undefined, { noBranch: true });
-    this.store.set(settings);
-    this.form.patchValue({ ...settings, receiptFooter: settings.receiptFooter ?? '' });
-    this.foreign.set((settings.acceptedCurrencies ?? []).filter((c) => c !== settings.currency));
+    await this.load();
     this.catalogue.set(
       await this.api
         .get<CurrencyInfo[]>('/currencies', undefined, { silent: true, noBranch: true })
         .catch(() => []),
     );
+  }
+
+  /** Reads the settings into the form as they are on the server, their version included. */
+  private async load(): Promise<void> {
+    const settings = await this.api.get<Settings>('/settings', undefined, { noBranch: true });
+    this.store.set(settings);
+    this.form.reset({
+      ...this.form.getRawValue(),
+      ...settings,
+      receiptFooter: settings.receiptFooter ?? '',
+      vatRegistered: settings.vatRegistered ?? true,
+      tin: settings.tin ?? '',
+      vrn: settings.vrn ?? '',
+    });
+    this.foreign.set((settings.acceptedCurrencies ?? []).filter((c) => c !== settings.currency));
   }
 
   protected addCurrency(select: HTMLSelectElement): void {
@@ -422,6 +496,8 @@ export default class SettingsPage implements OnInit {
       return;
     }
     const v = this.form.getRawValue();
+    // The version as last loaded or saved: the page may save several times without reloading.
+    const version = this.settings()?.version;
     this.busy.set(true);
     try {
       const saved = await this.api.put<Settings>(
@@ -431,13 +507,19 @@ export default class SettingsPage implements OnInit {
           ...v,
           invoicePrefix: v.invoicePrefix.toUpperCase(),
           receiptFooter: v.receiptFooter || null,
+          // Blank clears the number; the API keeps a TIN as its 9 digits and a VRN in upper case.
+          tin: v.tin.trim(),
+          vrn: v.vrn.trim().toUpperCase(),
           acceptedCurrencies: [this.settings()?.currency, ...this.foreign()].filter(Boolean),
         },
-        { silent: true, noBranch: true },
+        { silent: true, noBranch: true, headers: ifMatch(version) },
       );
       this.store.set(saved);
       this.toasts.success(this.translations.t('toast.settingsSaved'));
     } catch (failure) {
+      if (await this.stale.handle(failure, () => this.load())) {
+        return;
+      }
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);
       }

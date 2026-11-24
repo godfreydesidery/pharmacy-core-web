@@ -1,6 +1,6 @@
 import { CurrencyRateComponent } from '../../core/ui/currency-rate.component';
 import { SettingsStore } from '../../core/format/settings.store';
-import { convertHalfEven } from '../../core/format/format';
+import { convertMoney, roundMoney } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -120,10 +120,7 @@ type LineGroup = FormGroup<{
                         />
                       </td>
                       <td class="right">
-                        {{
-                          (line.value.quantity ?? 0) * (line.value.unitCost ?? 0)
-                            | money: currency()
-                        }}
+                        {{ lineTotal(line) | money: currency() }}
                       </td>
                       <td class="right">
                         <button
@@ -208,16 +205,25 @@ export default class OrderFormPage {
   protected get lines(): FormArray<LineGroup> {
     return this.form.controls.lines;
   }
+  /**
+   * A line's total in the document's currency, as the API works it: the unit cost rounded to the
+   * currency's minor units, times the quantity, rounded again (half-up, USD 2 decimals, UGX none).
+   */
+  protected lineTotal(line: LineGroup): number {
+    const currency = this.currency();
+    const unitCost = roundMoney(line.value.unitCost ?? 0, currency);
+    return roundMoney(unitCost * (line.value.quantity ?? 0), currency);
+  }
   protected readonly total = computed(() => {
     this.version();
-    return this.lines.controls.reduce(
-      (sum, l) => sum + (l.value.quantity ?? 0) * (l.value.unitCost ?? 0),
-      0,
+    return roundMoney(
+      this.lines.controls.reduce((sum, l) => sum + this.lineTotal(l), 0),
+      this.currency(),
     );
   });
 
   protected readonly baseTotal = computed(() =>
-    convertHalfEven(this.total(), this.rate(), this.base()),
+    convertMoney(this.total(), this.rate(), this.base()),
   );
 
   /** Leaving with an order half typed asks first (UX-4). */

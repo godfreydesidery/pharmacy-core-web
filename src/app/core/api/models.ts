@@ -135,12 +135,15 @@ export interface Branch {
   licenceNumber: string | null;
   headOffice: boolean;
   active: boolean;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
   createdAt: IsoDateTime;
 }
 
 export interface Settings {
   currency: string;
   timezone: string;
+  /** The standard VAT rate: what a STANDARD product is sold at while the pharmacy is registered. */
   defaultTaxRatePercent: number;
   invoicePrefix: string;
   receiptFooter: string | null;
@@ -165,6 +168,13 @@ export interface Settings {
   returnWindowDays: number;
   /** A cashier opens a till shift before selling, refunding or issuing a voucher. */
   requireOpenShift: boolean;
+  /** Registered for VAT with TRA: false charges no VAT on any sale and books no input VAT. */
+  vatRegistered?: boolean;
+  /** Taxpayer Identification Number (9 digits, kept without dashes) and VAT Registration Number. */
+  tin?: string | null;
+  vrn?: string | null;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
 }
 
 /** `POST /auth/activity`: the session's inactivity limit after the person used the app. */
@@ -221,6 +231,8 @@ export interface Role {
   description: string | null;
   system: boolean;
   permissions: string[];
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
 }
 
 export interface Permission {
@@ -278,6 +290,9 @@ export interface Manufacturer {
 }
 
 export type Schedule = 'OTC' | 'PRESCRIPTION' | 'CONTROLLED';
+/** STD-2: STANDARD at the standard rate; ZERO_RATED at 0% (input VAT recoverable); EXEMPT outside VAT. */
+export type TaxCategory = 'STANDARD' | 'ZERO_RATED' | 'EXEMPT';
+export const TAX_CATEGORIES: readonly TaxCategory[] = ['STANDARD', 'ZERO_RATED', 'EXEMPT'];
 export type Storage = 'ROOM_TEMPERATURE' | 'COOL_DRY' | 'REFRIGERATED';
 
 export interface ProductInput {
@@ -295,7 +310,10 @@ export interface ProductInput {
   schedule: Schedule;
   sellingPrice: number;
   costPrice: number;
+  /** Derived from `taxCategory` by the API: the standard rate for STANDARD, else 0. */
   taxRatePercent: number;
+  /** How VAT treats it; most medicines are EXEMPT in Tanzania (verify each with the accountant). */
+  taxCategory?: TaxCategory;
   reorderLevel: number;
   storage: Storage;
   productType: ProductType;
@@ -307,6 +325,8 @@ export interface ProductInput {
   warrantyMonths: number | null;
   /** SERIAL products only: the POS asks for each unit's serial number. */
   requiresSerialAtSale: boolean | null;
+  /** The product's TMDA (Tanzania Medicines and Medical Devices Authority) registration number. */
+  tmdaRegistrationNumber?: string | null;
 }
 
 export interface Product extends ProductInput {
@@ -341,7 +361,68 @@ export interface CustomerInput {
 export interface Customer extends CustomerInput {
   uid: Uid;
   code: string;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
   createdAt: IsoDateTime;
+  /** When the person's details were erased (STD-5): the record stays, nameless and inactive. */
+  anonymisedAt?: IsoDateTime | null;
+}
+
+/** What a customer may agree to (STD-5). */
+export type ConsentPurpose = 'SMS_RECEIPTS' | 'MARKETING' | 'INSURER_SHARING';
+export type ConsentStatus = 'GIVEN' | 'WITHDRAWN' | 'NONE';
+
+/** Sent with a customer's create or update: only the purposes present, and changed, are recorded. */
+export type ConsentChoices = Partial<Record<ConsentPurpose, boolean>>;
+
+export interface ConsentState {
+  purpose: ConsentPurpose;
+  status: ConsentStatus;
+  since: IsoDateTime | null;
+  /** SMS receipts unless WITHDRAWN; marketing and insurer sharing only when GIVEN. */
+  effective: boolean;
+}
+
+export interface ConsentRecord {
+  uid: Uid;
+  purpose: ConsentPurpose;
+  givenAt: IsoDateTime | null;
+  givenBy: string | null;
+  withdrawnAt: IsoDateTime | null;
+  withdrawnBy: string | null;
+  note: string | null;
+  inForce: boolean;
+}
+
+/** GET/POST /customers/{uid}/consents: the state of each purpose, and the history newest first. */
+export interface CustomerConsents {
+  current: ConsentState[];
+  history: ConsentRecord[];
+}
+
+export type DataSubjectRequestKind =
+  'ACCESS' | 'CORRECTION' | 'ERASURE' | 'OBJECTION' | 'RESTRICTION';
+export type DataSubjectRequestStatus = 'OPEN' | 'COMPLETED' | 'REFUSED';
+
+/** A data-subject request (Administration → Data requests). */
+export interface DataSubjectRequest {
+  uid: Uid;
+  number: string;
+  kind: DataSubjectRequestKind;
+  status: DataSubjectRequestStatus;
+  customerUid: Uid;
+  customerCode: string | null;
+  customerName: string | null;
+  receivedAt: IsoDateTime;
+  /** Received + 30 days. */
+  dueOn: IsoDate;
+  completedAt: IsoDateTime | null;
+  completedBy: string | null;
+  outcome: string | null;
+  note: string | null;
+  overdue: boolean;
+  createdAt: IsoDateTime;
+  createdBy: string | null;
 }
 
 export interface SupplierInput {
@@ -360,6 +441,8 @@ export interface SupplierInput {
 export interface Supplier extends SupplierInput {
   uid: Uid;
   code: string;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
   createdAt: IsoDateTime;
 }
 
@@ -565,6 +648,9 @@ export interface GoodsReceipt {
   currency: string;
   exchangeRate: number;
   baseTotal: number;
+  /** The invoice's input VAT, on top of the lines (in the receipt currency, and in the base). */
+  vatTotal?: number;
+  baseVatTotal?: number;
 }
 
 /* ---------- sales ---------- */
@@ -603,6 +689,8 @@ export interface SellableProduct {
   unitOfMeasure: UnitOfMeasure;
   /** The POS asks for (or scans) each unit's serial number. */
   requiresSerialAtSale: boolean;
+  /** Its VAT category; `taxRatePercent` is already 0 when the pharmacy is not VAT-registered. */
+  taxCategory?: TaxCategory;
 }
 
 export interface Prescription {
@@ -610,6 +698,8 @@ export interface Prescription {
   prescriberRegistration: string;
   reference: string;
   patientName: string;
+  /** The day the prescriber wrote it ("YYYY-MM-DD"); valid for 6 months (STD-7). */
+  prescriptionDate?: IsoDate | null;
 }
 
 export interface CheckoutRequest {
@@ -664,6 +754,53 @@ export interface SaleLine {
   returnedSerialNumbers: string[];
   /** The medicine's dispensing class when it was sold (null on sales before Batch 4). */
   schedule?: 'OTC' | 'PRESCRIPTION' | 'CONTROLLED' | null;
+  /** The VAT it was sold under. */
+  taxCategory?: TaxCategory;
+  taxRatePercent?: number;
+}
+
+export type FiscalStatus = 'PENDING' | 'ISSUED' | 'FAILED';
+export type FiscalDocumentKind = 'RECEIPT' | 'CREDIT_NOTE' | 'Z_REPORT';
+
+/** A document the tax authority (TRA VFD) issues: a sale's receipt, a credit note, a Z report. */
+export interface FiscalDocument {
+  uid: Uid;
+  kind: FiscalDocumentKind;
+  status: FiscalStatus;
+  provider: string;
+  branchUid: Uid;
+  sourceUid: Uid;
+  /** The sale's or return's number, or the Z report's (Z-HQ-20261124). */
+  sourceNumber: string;
+  saleUid: Uid | null;
+  businessDate: IsoDate;
+  sellerTin: string | null;
+  sellerVrn: string | null;
+  total: number;
+  taxTotal: number;
+  /** The authority's number, verification code and QR payload, once ISSUED. */
+  receiptNumber: string | null;
+  verificationCode: string | null;
+  qrPayload: string | null;
+  /** The branch's counters (the VFD's GC and DC). */
+  globalCounter: number | null;
+  dailyCounter: number | null;
+  issuedAt: IsoDateTime | null;
+  attempts: number;
+  lastError: string | null;
+  createdAt: IsoDateTime;
+  /** A Z report's figures. */
+  z: {
+    receipts: number;
+    receiptsTotal: number;
+    receiptsTax: number;
+    creditNotes: number;
+    creditNotesTotal: number;
+    creditNotesTax: number;
+    standardNet: number;
+    zeroRatedNet: number;
+    exemptNet: number;
+  } | null;
 }
 
 export interface Sale {
@@ -686,8 +823,20 @@ export interface Sale {
   lines: SaleLine[];
   payments: SalePayment[];
   prescription: Prescription | null;
+  /** The seller who dispensed its prescription lines; null when it has none. */
+  dispensedBy?: string | null;
+  /** The sale has a prescription the caller may not see (no `health.view`): `prescription` is null. */
+  prescriptionWithheld?: boolean;
   cashierName: string;
   createdAt: IsoDateTime;
+  /** The authority's receipt number, once issued. */
+  fiscalReference?: string | null;
+  /** The fiscal receipt is still to be issued. */
+  fiscalDue?: boolean;
+  /** Its fiscal receipt's status; null without one (no fiscal integration). */
+  fiscalStatus?: FiscalStatus | null;
+  /** The receipt, then the credit notes of its returns (read with the sale). */
+  fiscalDocuments?: FiscalDocument[];
 }
 
 export interface SaleSummary {
@@ -701,6 +850,7 @@ export interface SaleSummary {
   status: SaleStatus;
   cashierName: string;
   createdAt: IsoDateTime;
+  fiscalStatus?: FiscalStatus | null;
 }
 
 export interface SaleReturn {
@@ -724,6 +874,9 @@ export interface SaleReturn {
   lines: SaleReturnLine[];
   createdAt: IsoDateTime;
   createdBy: string;
+  /** Its credit note's status (null: the sale had no fiscal receipt) and number. */
+  fiscalStatus?: FiscalStatus | null;
+  fiscalReference?: string | null;
 }
 
 export interface SaleReturnLine {
@@ -768,6 +921,8 @@ export interface Expense {
   branchUid?: Uid | null;
   createdAt?: IsoDateTime;
   createdBy?: string;
+  /** The input VAT in the amount (VAT-registered pharmacies). */
+  vatAmount?: number;
 }
 
 export type AccountType = 'ASSET' | 'LIABILITY' | 'EQUITY' | 'REVENUE' | 'EXPENSE';
@@ -992,6 +1147,8 @@ export interface PriceList {
   /** An insurer's plan: the default for its members' sales. */
   payerUid?: Uid | null;
   payerName?: string | null;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
 }
 
 /** A pricing plan; uid null is Normal Sale. rulePercent null: no rule (blocks). */
@@ -1020,6 +1177,11 @@ export interface PlanCard {
   validFrom: string | null;
   validTo: string | null;
   priced: number;
+  /**
+   * The plan's version, when the cards carry it; otherwise the plan is read
+   * (`GET /price-lists/{uid}`) for it before a save.
+   */
+  version?: number;
 }
 
 /** One row of a plan's page; price null: not priced in the plan. */
@@ -1166,4 +1328,87 @@ export interface Voucher {
   status: 'ACTIVE' | 'SPENT' | 'VOID';
   createdAt: string;
   createdBy: string;
+}
+
+/* ---------- controlled drugs ---------- */
+/** GET /controlled-drugs: a Page of these, by name. */
+export interface ControlledProduct {
+  productUid: Uid;
+  name: string;
+  strength: string | null;
+  dosageForm: string | null;
+  onHand: number;
+  schedule?: Schedule;
+  /** False for a product that was controlled once and is not now: its register stays. */
+  controlledNow?: boolean;
+}
+
+/** One line of a controlled drug's register. Without `health.view` the patient details are null. */
+export interface ControlledRegisterLine {
+  uid: Uid;
+  at: IsoDateTime;
+  type: string;
+  reference: string | null;
+  batchNumber: string | null;
+  quantityIn: number;
+  quantityOut: number;
+  balance: number;
+  patientName: string | null;
+  prescriberName: string | null;
+  prescriberRegistration: string | null;
+  prescriptionReference: string | null;
+  prescriptionDate?: IsoDate | null;
+  dispensedBy?: string | null;
+  /** The prescription details are hidden from this caller (no `health.view`). */
+  withheld?: boolean;
+  note: string | null;
+  recordedBy: string;
+}
+
+/* ---------- adverse drug reactions (STD-8) ---------- */
+export type AdrSeriousness = 'SERIOUS' | 'NOT_SERIOUS';
+export type AdrSeriousReason =
+  | 'DEATH'
+  | 'LIFE_THREATENING'
+  | 'HOSPITALISATION'
+  | 'DISABILITY'
+  | 'CONGENITAL_ANOMALY'
+  | 'OTHER_MEDICALLY_IMPORTANT';
+export type AdrOutcome =
+  'RECOVERED' | 'RECOVERING' | 'NOT_RECOVERED' | 'RECOVERED_WITH_SEQUELAE' | 'FATAL' | 'UNKNOWN';
+export type PatientSex = 'FEMALE' | 'MALE';
+
+/** POST /adverse-reactions: the report's editable fields. */
+export interface AdverseReactionInput {
+  customerUid: Uid | null;
+  patientName: string | null;
+  patientAge: number | null;
+  patientSex: PatientSex | null;
+  patientWeightKg: number | null;
+  productUid: Uid;
+  batchNumber: string | null;
+  dose: string | null;
+  route: string | null;
+  indication: string | null;
+  therapyStarted: IsoDate | null;
+  therapyStopped: IsoDate | null;
+  reaction: string;
+  onsetDate: IsoDate;
+  seriousness: AdrSeriousness;
+  seriousReason: AdrSeriousReason | null;
+  outcome: AdrOutcome;
+  /** Left out: the signed-in user's name. */
+  reporterName: string | null;
+  reporterProfession: string | null;
+  reporterPhone: string | null;
+  note: string | null;
+}
+
+export interface AdverseReaction extends AdverseReactionInput {
+  uid: Uid;
+  number: string;
+  branchUid: Uid | null;
+  productName: string;
+  createdAt: IsoDateTime;
+  createdBy: string | null;
 }

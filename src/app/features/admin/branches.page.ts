@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import { Branch } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
@@ -124,6 +125,7 @@ export default class BranchesPage {
   private readonly session = inject(SessionStore);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly stale = inject(StaleRecordService);
   protected readonly list = loaded<Branch[]>(() => ({
     path: '/branches',
     options: { noBranch: true },
@@ -171,6 +173,13 @@ export default class BranchesPage {
     );
   }
 
+  /** Someone else changed the branch: it is read again into the form, their change shown. */
+  private async reload(uid: string): Promise<void> {
+    const fresh = await this.api.get<Branch>(`/branches/${uid}`, undefined, { noBranch: true });
+    this.edit(fresh);
+    void this.list.reload();
+  }
+
   protected async save(): Promise<void> {
     if (!validate(this.form)) {
       return;
@@ -190,7 +199,7 @@ export default class BranchesPage {
         await this.api.put(
           `/branches/${current.uid}`,
           { ...body, active: v.active },
-          { silent: true, noBranch: true },
+          { silent: true, noBranch: true, headers: ifMatch(current.version) },
         );
       } else {
         await this.api.post('/branches', body, { silent: true, noBranch: true });
@@ -199,6 +208,9 @@ export default class BranchesPage {
       this.open.set(false);
       await Promise.all([this.list.reload(), this.refreshSwitcher()]);
     } catch (failure) {
+      if (current && (await this.stale.handle(failure, () => this.reload(current.uid)))) {
+        return;
+      }
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);
       }

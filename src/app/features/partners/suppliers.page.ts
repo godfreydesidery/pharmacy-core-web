@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import { PaymentTerms, Supplier, SupplierInput } from '../../core/api/models';
 import { debounced, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
@@ -161,6 +162,7 @@ export default class SuppliersPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly stale = inject(StaleRecordService);
   protected readonly terms = TERMS;
   protected readonly q = signal('');
   private readonly query = debounced(this.q);
@@ -204,6 +206,13 @@ export default class SuppliersPage {
     this.open.set(true);
   }
 
+  /** Someone else changed the supplier: it is read again into the form, their change shown. */
+  private async reload(uid: string): Promise<void> {
+    const fresh = await this.api.get<Supplier>(`/suppliers/${uid}`, undefined, { noBranch: true });
+    this.edit(fresh);
+    void this.list.reload();
+  }
+
   protected async save(): Promise<void> {
     if (!validate(this.form)) {
       return;
@@ -224,7 +233,11 @@ export default class SuppliersPage {
     this.busy.set(true);
     try {
       if (current) {
-        await this.api.put(`/suppliers/${current.uid}`, body, { silent: true, noBranch: true });
+        await this.api.put(`/suppliers/${current.uid}`, body, {
+          silent: true,
+          noBranch: true,
+          headers: ifMatch(current.version),
+        });
       } else {
         await this.api.post('/suppliers', body, { silent: true, noBranch: true });
       }
@@ -232,6 +245,9 @@ export default class SuppliersPage {
       this.open.set(false);
       await this.list.reload();
     } catch (failure) {
+      if (current && (await this.stale.handle(failure, () => this.reload(current.uid)))) {
+        return;
+      }
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);
       }

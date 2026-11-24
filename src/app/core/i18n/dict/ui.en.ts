@@ -472,4 +472,11 @@ export const UI_EN: Readonly<Record<string, string>> = {
   // POS phone cart bar
   'ui.pos.cartBar': '{{count}} item(s)',
   'ui.pos.pay': 'Pay',
+
+  // a save that crossed someone else's change (412 precondition_failed, STD-10)
+  'ui.stale.title': 'Someone else changed this',
+  'ui.stale.text':
+    'Someone else changed this; reload to see their change. Reloading drops the changes you made here.',
+  'ui.stale.reload': 'Reload',
+  'ui.stale.keep': 'Keep editing',
 };

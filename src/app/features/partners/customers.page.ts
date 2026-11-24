@@ -1,7 +1,16 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
-import { Customer, CustomerInput, CustomerType, PaymentTerms } from '../../core/api/models';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
+import {
+  ConsentChoices,
+  ConsentPurpose,
+  Customer,
+  CustomerConsents,
+  CustomerInput,
+  CustomerType,
+  PaymentTerms,
+} from '../../core/api/models';
 import { debounced, pagedList } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -9,6 +18,21 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { ToastService } from '../../core/ui/toast.service';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
+import { CONSENT_PURPOSES, CustomerPrivacyComponent } from './customer-privacy.component';
+
+/** The consent checkboxes of the customer form, by purpose. */
+const CONSENT_CONTROLS = {
+  SMS_RECEIPTS: 'smsReceipts',
+  MARKETING: 'marketing',
+  INSURER_SHARING: 'insurerSharing',
+} as const satisfies Record<ConsentPurpose, string>;
+
+/** Before anything is recorded: SMS receipts are part of the sale; the others need a yes. */
+const DEFAULT_CONSENTS: Record<ConsentPurpose, boolean> = {
+  SMS_RECEIPTS: true,
+  MARKETING: false,
+  INSURER_SHARING: false,
+};
 
 const TYPES: CustomerType[] = [
   'RETAIL',
@@ -22,7 +46,7 @@ const TYPES: CustomerType[] = [
 
 @Component({
   selector: 'app-customers',
-  imports: [TranslatePipe, ...SHARED],
+  imports: [TranslatePipe, ...SHARED, CustomerPrivacyComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="page">
@@ -103,7 +127,14 @@ const TYPES: CustomerType[] = [
                         } @else {
                           <b>{{ c.name }}</b>
                         }
-                        <small>{{ c.code }}</small>
+                        <small
+                          >{{ c.code }}
+                          @if (c.anonymisedAt) {
+                            <span class="badge gray" data-testid="anonymised-badge">{{
+                              'privacy.anonymisedBadge' | t
+                            }}</span>
+                          }
+                        </small>
                       </div>
                     </div>
                   </td>
@@ -132,12 +163,21 @@ const TYPES: CustomerType[] = [
                   <td class="right">{{ c.creditLimit | money }}</td>
                   <td class="muted">{{ c.paymentTerms | label: 'PaymentTerms' }}</td>
                   <td><app-status [value]="c.active ? 'ACTIVE' : 'INACTIVE'" /></td>
-                  <td class="right">
-                    @if (session.can('partners.manage')) {
-                      <button class="btn sm" type="button" (click)="edit(c)">
+                  <td class="right nowrap">
+                    @if (session.can('partners.manage') && !c.anonymisedAt) {
+                      <button class="btn sm" type="button" data-testid="edit" (click)="edit(c)">
                         <app-icon name="edit" [size]="14" /> {{ 'partners.edit' | t }}
                       </button>
                     }
+                    <button
+                      class="btn sm"
+                      type="button"
+                      data-testid="privacy"
+                      [attr.aria-label]="'privacy.openFor' | t: { name: c.name }"
+                      (click)="privacy.set(c)"
+                    >
+                      <app-icon name="shield" [size]="14" /> {{ 'privacy.title' | t }}
+                    </button>
                   </td>
                 </tr>
               } @empty {
@@ -200,6 +240,33 @@ const TYPES: CustomerType[] = [
             ><input type="checkbox" formControlName="active" /> {{ 'partners.active' | t }}</label
           >
         }
+        @if (consentsReady()) {
+          <fieldset class="full consents" data-testid="consent-toggles">
+            <legend>{{ 'privacy.consents' | t }}</legend>
+            <label class="check"
+              ><input type="checkbox" formControlName="smsReceipts" />
+              {{ 'privacy.purpose.SMS_RECEIPTS' | t }}</label
+            >
+            <label class="check"
+              ><input type="checkbox" formControlName="marketing" />
+              {{ 'privacy.purpose.MARKETING' | t }}</label
+            >
+            <label class="check"
+              ><input type="checkbox" formControlName="insurerSharing" />
+              {{ 'privacy.purpose.INSURER_SHARING' | t }}</label
+            >
+          </fieldset>
+        }
+        @if (current()) {
+          <label class="check full"
+            ><input
+              type="checkbox"
+              formControlName="dataSubjectRequest"
+              data-testid="correction-request"
+            />
+            {{ 'privacy.correctionRequest' | t }}</label
+          >
+        }
       </form>
       <ng-container footer>
         <button class="btn" type="button" (click)="open.set(false)">
@@ -210,8 +277,37 @@ const TYPES: CustomerType[] = [
         </button>
       </ng-container>
     </app-modal>
+    <app-drawer
+      [open]="!!privacy()"
+      [title]="'privacy.title' | t"
+      [subtitle]="privacy() ? privacy()!.name + ' · ' + privacy()!.code : ''"
+      (closed)="privacy.set(null)"
+    >
+      @if (privacy(); as p) {
+        <app-customer-privacy [customer]="p" (changed)="privacyChanged(p.uid)" />
+      }
+    </app-drawer>
   `,
   styles: `
+    .nowrap {
+      white-space: nowrap;
+    }
+    .nowrap .btn + .btn {
+      margin-left: 6px;
+    }
+    .consents {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 10px 12px;
+    }
+    .consents legend {
+      padding: 0 4px;
+      font-size: 12.5px;
+      color: var(--muted);
+    }
     .avatar {
       width: 34px;
       height: 34px;
@@ -231,6 +327,7 @@ export default class CustomersPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly stale = inject(StaleRecordService);
   protected readonly types = TYPES;
   protected readonly paymentTerms: readonly PaymentTerms[] = [
     'COD',
@@ -250,6 +347,13 @@ export default class CustomersPage {
   protected readonly open = signal(false);
   protected readonly busy = signal(false);
   protected readonly current = signal<Customer | null>(null);
+  /** The customer whose privacy drawer is open. */
+  protected readonly privacy = signal<Customer | null>(null);
+  /** The consent checkboxes show once the customer's consents are known (always for a new one). */
+  protected readonly consentsReady = signal(false);
+  /** The consents as they were when the form opened: only the ones changed are sent. */
+  private consentsBefore: Record<ConsentPurpose, boolean> = { ...DEFAULT_CONSENTS };
+  private opening = 0;
   protected readonly form = inject(FormBuilder).nonNullable.group({
     name: ['', Validators.required],
     phone: [''],
@@ -261,6 +365,11 @@ export default class CustomersPage {
     paymentTerms: ['NET_30' as PaymentTerms],
     address: [''],
     active: [true],
+    smsReceipts: [true],
+    marketing: [false],
+    insurerSharing: [false],
+    /** Logs the change as the customer's own correction request (STD-5). */
+    dataSubjectRequest: [false],
   });
 
   protected initials(name: string): string {
@@ -293,7 +402,14 @@ export default class CustomersPage {
       paymentTerms: customer?.paymentTerms ?? 'NET_30',
       address: customer?.address ?? '',
       active: customer?.active ?? true,
+      dataSubjectRequest: false,
     });
+    this.setConsents({ ...DEFAULT_CONSENTS });
+    this.consentsReady.set(!customer);
+    const opening = ++this.opening;
+    if (customer) {
+      void this.loadConsents(customer, opening);
+    }
     // Setting a limit is its own permission (accountants and managers): shown, not editable.
     if (this.canSetLimit()) {
       this.form.controls.creditLimit.enable();
@@ -303,12 +419,19 @@ export default class CustomersPage {
     this.open.set(true);
   }
 
+  /** Someone else changed the customer: it is read again into the form, their change shown. */
+  private async reload(uid: string): Promise<void> {
+    const fresh = await this.api.get<Customer>(`/customers/${uid}`, undefined, { noBranch: true });
+    this.edit(fresh);
+    void this.list.reload();
+  }
+
   protected async save(): Promise<void> {
     if (!validate(this.form)) {
       return;
     }
     const v = this.form.getRawValue();
-    const body: CustomerInput = {
+    const body: CustomerInput & { consents?: ConsentChoices } = {
       name: v.name,
       phone: v.phone || null,
       email: v.email || null,
@@ -321,11 +444,23 @@ export default class CustomersPage {
       address: v.address || null,
       active: v.active,
     };
+    const consents = this.changedConsents();
+    if (consents) {
+      body.consents = consents;
+    }
     const current = this.current();
     this.busy.set(true);
     try {
       if (current) {
-        await this.api.put(`/customers/${current.uid}`, body, { silent: true, noBranch: true });
+        // A correction the customer asked for is logged as their data-subject request (STD-5).
+        const path = v.dataSubjectRequest
+          ? `/customers/${current.uid}?dataSubjectRequest=true`
+          : `/customers/${current.uid}`;
+        await this.api.put(path, body, {
+          silent: true,
+          noBranch: true,
+          headers: ifMatch(current.version),
+        });
       } else {
         await this.api.post('/customers', body, { silent: true, noBranch: true });
       }
@@ -333,11 +468,68 @@ export default class CustomersPage {
       this.open.set(false);
       await this.list.reload();
     } catch (failure) {
+      if (current && (await this.stale.handle(failure, () => this.reload(current.uid)))) {
+        return;
+      }
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);
       }
     } finally {
       this.busy.set(false);
+    }
+  }
+
+  /** The edited customer's consents, as the checkboxes start from; hidden if they cannot be read. */
+  private async loadConsents(customer: Customer, opening: number): Promise<void> {
+    try {
+      const consents = await this.api.get<CustomerConsents>(
+        `/customers/${customer.uid}/consents`,
+        undefined,
+        { silent: true, noBranch: true },
+      );
+      if (opening !== this.opening) {
+        return;
+      }
+      const state = { ...DEFAULT_CONSENTS };
+      for (const c of consents.current) {
+        state[c.purpose] = c.effective;
+      }
+      this.setConsents(state);
+      this.consentsReady.set(true);
+    } catch {
+      // Without them the form still saves the customer; its consents are left as they are.
+    }
+  }
+
+  private setConsents(state: Record<ConsentPurpose, boolean>): void {
+    this.consentsBefore = state;
+    for (const purpose of CONSENT_PURPOSES) {
+      this.form.controls[CONSENT_CONTROLS[purpose]].setValue(state[purpose]);
+    }
+  }
+
+  /** The purposes whose checkbox changed since the form opened; null when none did. */
+  private changedConsents(): ConsentChoices | null {
+    if (!this.consentsReady()) {
+      return null;
+    }
+    const v = this.form.getRawValue();
+    const changed: ConsentChoices = {};
+    for (const purpose of CONSENT_PURPOSES) {
+      const now = v[CONSENT_CONTROLS[purpose]];
+      if (now !== this.consentsBefore[purpose]) {
+        changed[purpose] = now;
+      }
+    }
+    return Object.keys(changed).length ? changed : null;
+  }
+
+  /** After an anonymisation or a consent change: the list, and the drawer's customer, read again. */
+  protected async privacyChanged(uid: string): Promise<void> {
+    await this.list.reload();
+    const fresh = this.list.items().find((c) => c.uid === uid);
+    if (fresh) {
+      this.privacy.set(fresh);
     }
   }
 }

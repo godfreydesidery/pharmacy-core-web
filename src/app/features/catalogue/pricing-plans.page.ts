@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import {
   BulkResult,
   Category,
@@ -17,7 +18,8 @@ import {
   Product,
 } from '../../core/api/models';
 import { debounced, loaded, pagedList } from '../../core/data/data';
-import { isoDay } from '../../core/format/format';
+import { isoDay, roundMoney } from '../../core/format/format';
+import { SettingsStore } from '../../core/format/settings.store';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
@@ -38,6 +40,8 @@ const CUSTOMER_TYPES: CustomerType[] = [
 
 interface PlanDraft {
   uid: string | null;
+  /** The plan's version as the form opened, sent as `If-Match` on its save; null for a new plan. */
+  version: number | null;
   name: string;
   target: 'everyone' | 'type' | 'customer' | 'insurer';
   customerType: CustomerType | '';
@@ -927,8 +931,10 @@ export default class PricingPlansPage {
   private readonly http = inject(HttpClient);
   private readonly toasts = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  private readonly stale = inject(StaleRecordService);
   private readonly translations = inject(Translations);
   private readonly session = inject(SessionStore);
+  private readonly base = inject(SettingsStore).currency;
 
   protected readonly canEdit = computed(() => this.session.can('catalogue.manage'));
   protected readonly roundings = ['NEAREST', 'UP', 'DOWN'] as const;
@@ -1089,7 +1095,15 @@ export default class PricingPlansPage {
 
   protected placeholder(c: PlanCard, row: PlanItemRow): string {
     if (!c.uid || c.rulePercent === null) return '';
-    return String(Math.round(row.normalPrice * (1 + c.rulePercent / 100) * 100) / 100);
+    return String(this.rulePrice(row.normalPrice, c.rulePercent));
+  }
+
+  /**
+   * A price at the plan's rule, as the API works it: price × (100 + rule) ÷ 100, rounded half-up
+   * to the base currency's minor units, never below zero.
+   */
+  private rulePrice(price: number, rulePercent: number): number {
+    return Math.max(roundMoney((price * (100 + rulePercent)) / 100, this.base()), 0);
   }
 
   protected diff(row: PlanItemRow): number | null {
@@ -1151,9 +1165,7 @@ export default class PricingPlansPage {
     const c = this.card();
     if (p && c) {
       this.addPrice.set(
-        c.rulePercent === null
-          ? p.sellingPrice
-          : Math.round(p.sellingPrice * (1 + c.rulePercent / 100) * 100) / 100,
+        c.rulePercent === null ? p.sellingPrice : this.rulePrice(p.sellingPrice, c.rulePercent),
       );
     }
   }
@@ -1191,6 +1203,7 @@ export default class PricingPlansPage {
   protected newPlan(): void {
     this.draft.set({
       uid: null,
+      version: null,
       name: '',
       target: 'everyone',
       customerType: '',
@@ -1206,9 +1219,21 @@ export default class PricingPlansPage {
     });
   }
 
-  protected editPlan(c: PlanCard): void {
+  /** The plan's version: the card's, or else read from the plan itself. */
+  private async planVersion(c: PlanCard): Promise<number | null> {
+    if (!c.uid) return null;
+    if (typeof c.version === 'number') return c.version;
+    const plan = await this.api.get<PriceList>(`/price-lists/${c.uid}`, undefined, {
+      noBranch: true,
+    });
+    return plan.version ?? null;
+  }
+
+  protected async editPlan(c: PlanCard): Promise<void> {
+    const version = await this.planVersion(c);
     this.draft.set({
       uid: c.uid,
+      version,
       name: c.name,
       target: c.payerUid
         ? 'insurer'
@@ -1274,7 +1299,17 @@ export default class PricingPlansPage {
     this.busy.set(true);
     try {
       if (d.uid) {
-        await this.api.put(`/price-lists/${d.uid}`, this.body(d), { noBranch: true });
+        const uid = d.uid;
+        try {
+          await this.api.put(`/price-lists/${uid}`, this.body(d), {
+            noBranch: true,
+            headers: ifMatch(d.version),
+          });
+        } catch (failure) {
+          // Someone else changed the plan: Reload reads it again into the form.
+          if (await this.stale.handle(failure, () => this.reloadPlan(uid))) return;
+          throw failure;
+        }
       } else {
         const made = await this.api.post<PriceList>('/price-lists', this.body(d), {
           noBranch: true,
@@ -1289,12 +1324,33 @@ export default class PricingPlansPage {
     }
   }
 
+  /** Reads the plans again and opens the plan as someone else left it. */
+  private async reloadPlan(uid: string): Promise<void> {
+    await this.refresh();
+    const fresh = (this.cards.value() ?? []).find((c) => c.uid === uid);
+    if (fresh) {
+      await this.editPlan(fresh);
+    } else {
+      this.draft.set(null);
+    }
+  }
+
   protected async toggleActive(c: PlanCard): Promise<void> {
     if (!c.uid) return;
-    this.editPlan(c);
+    await this.editPlan(c);
     const d = this.draft()!;
     d.active = !c.active;
-    await this.api.put(`/price-lists/${c.uid}`, this.body(d), { noBranch: true });
+    try {
+      await this.api.put(`/price-lists/${c.uid}`, this.body(d), {
+        noBranch: true,
+        headers: ifMatch(d.version),
+      });
+    } catch (failure) {
+      this.draft.set(null);
+      // Someone else changed the plan: Reload shows it as it is now.
+      if (await this.stale.handle(failure, () => this.cards.reload())) return;
+      throw failure;
+    }
     this.draft.set(null);
     this.toasts.success(this.translations.t(d.active ? 'plans.activated' : 'plans.deactivated'));
     await this.cards.reload();

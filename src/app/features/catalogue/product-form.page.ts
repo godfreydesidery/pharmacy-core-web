@@ -11,6 +11,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import {
   Category,
   Manufacturer,
@@ -23,7 +24,10 @@ import {
   UnitOfMeasure,
   PlanPriceView,
   PriceChange,
+  TAX_CATEGORIES,
+  TaxCategory,
 } from '../../core/api/models';
+import { SettingsStore } from '../../core/format/settings.store';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -211,6 +215,18 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                     }
                   </select>
                 </app-field>
+                <app-field
+                  [label]="'catalogue.tmdaRegistration' | t"
+                  [hint]="'catalogue.tmdaRegistrationHint' | t"
+                  [error]="err('tmdaRegistrationNumber')"
+                >
+                  <input
+                    class="input"
+                    formControlName="tmdaRegistrationNumber"
+                    data-testid="tmda-registration"
+                    maxlength="60"
+                  />
+                </app-field>
               </div>
             </fieldset>
           } @else {
@@ -224,6 +240,18 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                 </app-field>
                 <app-field [label]="'catalogue.model' | t">
                   <input class="input" formControlName="model" placeholder="Action 1" />
+                </app-field>
+                <app-field
+                  [label]="'catalogue.tmdaRegistration' | t"
+                  [hint]="'catalogue.tmdaRegistrationHint' | t"
+                  [error]="err('tmdaRegistrationNumber')"
+                >
+                  <input
+                    class="input"
+                    formControlName="tmdaRegistrationNumber"
+                    data-testid="tmda-registration"
+                    maxlength="60"
+                  />
                 </app-field>
                 <app-field [label]="'catalogue.packSize' | t">
                   <input class="input" formControlName="packSize" placeholder="Box of 100" />
@@ -271,15 +299,17 @@ const STORAGE: Storage[] = ['ROOM_TEMPERATURE', 'COOL_DRY', 'REFRIGERATED'];
                 formControlName="sellingPrice"
               />
             </app-field>
-            <app-field [label]="'catalogue.taxRate' | t">
-              <input
-                class="input"
-                type="number"
-                min="0"
-                max="100"
-                step="any"
-                formControlName="taxRatePercent"
-              />
+            <app-field [label]="'vat.category' | t">
+              <select class="select" formControlName="taxCategory" data-testid="tax-category">
+                @for (c of taxCategories; track c) {
+                  <option [value]="c">{{ 'enum.' + c | t }}</option>
+                }
+              </select>
+              <span class="hint" data-testid="tax-rate-hint">{{
+                vatRegistered()
+                  ? ('vat.soldAt' | t: { rate: taxRate() })
+                  : ('vat.notRegisteredHint' | t)
+              }}</span>
             </app-field>
             <app-field [label]="'catalogue.reorderLevel' | t">
               <input class="input" type="number" min="0" formControlName="reorderLevel" />
@@ -470,6 +500,7 @@ export default class ProductFormPage implements OnInit {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly stale = inject(StaleRecordService);
   readonly uid = input<string | undefined>();
   protected readonly schedules = SCHEDULES;
   protected readonly storage = STORAGE;
@@ -528,9 +559,12 @@ export default class ProductFormPage implements OnInit {
     model: [''],
     warrantyMonths: [null as number | null, [Validators.min(0), Validators.max(120)]],
     requiresSerialAtSale: [true],
+    /** TMDA registers medicines and medical devices alike (STD-8). */
+    tmdaRegistrationNumber: ['', Validators.maxLength(60)],
     costPrice: [0, [Validators.required, Validators.min(0)]],
     sellingPrice: [0, [Validators.required, Validators.min(0)]],
-    taxRatePercent: [0, [Validators.min(0), Validators.max(100)]],
+    /** STD-2: the category decides the VAT; the rate is derived (the standard rate or 0). */
+    taxCategory: ['EXEMPT' as TaxCategory, Validators.required],
     reorderLevel: [0, Validators.min(0)],
     active: [true],
   });
@@ -541,6 +575,21 @@ export default class ProductFormPage implements OnInit {
   private readonly trackingValue = toSignal(this.form.controls.trackingMode.valueChanges, {
     initialValue: this.form.controls.trackingMode.value,
   });
+  private readonly settings = inject(SettingsStore);
+  protected readonly taxCategories = TAX_CATEGORIES;
+  private readonly categoryValue = toSignal(this.form.controls.taxCategory.valueChanges, {
+    initialValue: this.form.controls.taxCategory.value,
+  });
+  /** Whether the pharmacy charges VAT at all (its settings; registered until they say otherwise). */
+  protected readonly vatRegistered = computed(
+    () => this.settings.settings()?.vatRegistered ?? true,
+  );
+  /** The VAT rate the product is sold at: the standard rate for STANDARD, else 0. */
+  protected readonly taxRate = computed(() =>
+    this.categoryValue() === 'STANDARD'
+      ? (this.settings.settings()?.defaultTaxRatePercent ?? 0)
+      : 0,
+  );
   protected readonly type = computed(() => this.typeValue());
   protected readonly tracking = computed(() => this.trackingValue());
   protected readonly medicine = computed(() => this.type() === 'MEDICINE');
@@ -571,9 +620,13 @@ export default class ProductFormPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    if (!this.editing()) {
-      return;
+    if (this.editing()) {
+      await this.load();
     }
+  }
+
+  /** Reads the product into the form, as it is now on the server (its version included). */
+  private async load(): Promise<void> {
     const product = await this.api.get<Product>(`/products/${this.uid()}`, undefined, {
       noBranch: true,
     });
@@ -606,7 +659,10 @@ export default class ProductFormPage implements OnInit {
       model: product.model ?? '',
       warrantyMonths: product.warrantyMonths ?? null,
       requiresSerialAtSale: product.requiresSerialAtSale ?? true,
+      taxCategory: product.taxCategory ?? (product.taxRatePercent > 0 ? 'STANDARD' : 'EXEMPT'),
+      tmdaRegistrationNumber: product.tmdaRegistrationNumber ?? '',
     });
+    this.form.markAsPristine();
   }
 
   /** A new type brings its usual tracking and unit, unless the product is being edited. */
@@ -654,7 +710,9 @@ export default class ProductFormPage implements OnInit {
       storage: v.storage,
       costPrice: Number(v.costPrice),
       sellingPrice: Number(v.sellingPrice),
-      taxRatePercent: Number(v.taxRatePercent),
+      taxCategory: v.taxCategory,
+      // Kept for older readers; the API derives it from the category.
+      taxRatePercent: v.taxCategory === 'STANDARD' ? this.taxRate() : 0,
       reorderLevel: Number(v.reorderLevel),
       productType: v.productType,
       trackingMode: v.trackingMode,
@@ -666,6 +724,7 @@ export default class ProductFormPage implements OnInit {
           ? null
           : Number(v.warrantyMonths),
       requiresSerialAtSale: v.trackingMode === 'SERIAL' ? v.requiresSerialAtSale : null,
+      tmdaRegistrationNumber: nullable(v.tmdaRegistrationNumber),
     };
     this.busy.set(true);
     try {
@@ -673,7 +732,7 @@ export default class ProductFormPage implements OnInit {
         const saved = await this.api.put<Product>(
           `/products/${this.uid()}`,
           { ...body, active: v.active, version: this.version() },
-          { silent: true, noBranch: true },
+          { silent: true, noBranch: true, headers: ifMatch(this.version()) },
         );
         this.version.set(saved.version);
         this.form.markAsPristine();
@@ -688,6 +747,10 @@ export default class ProductFormPage implements OnInit {
         await this.router.navigate(['/catalogue/products', saved.uid], { replaceUrl: true });
       }
     } catch (failure) {
+      // Someone else saved the product meanwhile: offer to reload it (their change) into the form.
+      if (await this.stale.handle(failure, () => this.load())) {
+        return;
+      }
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);
       }

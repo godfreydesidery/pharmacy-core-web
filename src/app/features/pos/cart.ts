@@ -1,4 +1,7 @@
 import { PaymentMethod, SalePayment, SellableProduct, TillMethod } from '../../core/api/models';
+import { fromMinor, roundHalfUp, toMinor } from '../../core/format/format';
+
+export { fromMinor, toMinor };
 
 /** Pure POS arithmetic. The API prices the sale itself; this previews the same rules. */
 
@@ -17,12 +20,22 @@ export interface CartTotals {
   total: number;
 }
 
-export const round2 = (value: number): number => Math.round((value + Number.EPSILON) * 100) / 100;
+/**
+ * Money in the base currency, rounded half-up to its minor units (`digits`: 2 for TZS, 0 for UGX),
+ * as the API rounds every amount.
+ */
+export const money = (value: number, digits = 2): number => roundHalfUp(value, digits);
+
+/** `percent` of `amount` as the API works it (Amounts.percentOf): to 6 places, then money. */
+export function percentOf(amount: number, percent: number, digits = 2): number {
+  return percent ? money(roundHalfUp((amount * percent) / 100, 6), digits) : 0;
+}
 
 /**
  * Gross per line, then the sale-wide discount on each line. Prices that exclude tax get tax added on
  * what remains; prices that include it keep what remains as the line's total, the tax inside it
- * being rate ÷ (100 + rate) of it. The API applies the same rules (SaleTotals).
+ * being rate ÷ (100 + rate) of it. Each amount is rounded half-up to the base currency's minor
+ * units (`baseDigits`). The API applies the same rules (SaleTotals).
  */
 /** A line's unit price: the catalogue price unless pricing (lists, promotions) says otherwise. */
 export type PriceOf = (line: CartLine) => number;
@@ -32,6 +45,7 @@ export function cartTotals(
   discountPercent: number,
   priceOf: PriceOf = (line) => line.product.sellingPrice,
   taxIncluded = false,
+  baseDigits = 2,
 ): CartTotals {
   const rate = Math.min(Math.max(discountPercent || 0, 0), 100);
   let subtotal = 0;
@@ -39,22 +53,24 @@ export function cartTotals(
   let tax = 0;
   let items = 0;
   for (const line of lines) {
-    const gross = round2(priceOf(line) * line.quantity);
-    const lineDiscount = round2((gross * rate) / 100);
+    const gross = money(priceOf(line) * line.quantity, baseDigits);
+    const lineDiscount = percentOf(gross, rate, baseDigits);
     const taxRate = line.product.taxRatePercent || 0;
     const lineTax = taxIncluded
-      ? round2(((gross - lineDiscount) * taxRate) / (100 + taxRate))
-      : round2(((gross - lineDiscount) * taxRate) / 100);
+      ? taxRate
+        ? money(roundHalfUp(((gross - lineDiscount) * taxRate) / (100 + taxRate), 6), baseDigits)
+        : 0
+      : percentOf(gross - lineDiscount, taxRate, baseDigits);
     subtotal += gross;
     discount += lineDiscount;
     tax += lineTax;
     items += line.quantity;
   }
-  subtotal = round2(subtotal);
-  discount = round2(discount);
-  tax = round2(tax);
+  subtotal = money(subtotal, baseDigits);
+  discount = money(discount, baseDigits);
+  tax = money(tax, baseDigits);
   const total = taxIncluded ? subtotal - discount : subtotal - discount + tax;
-  return { items, subtotal, discount, tax, total: round2(total) };
+  return { items, subtotal, discount, tax, total: money(total, baseDigits) };
 }
 
 /**
@@ -114,25 +130,11 @@ export function setQuantity(
 
 /**
  * A payment's value in the base currency: its amount at the rate locked when it was taken (a
- * payment in the base currency has no rate). The API's figure, rounded half-even, is authoritative.
+ * payment in the base currency has no rate), rounded half-up to the base's minor units
+ * (`baseDigits`) as the API converts a tender. The API's figure is authoritative.
  */
-export function baseValue(payment: SalePayment): number {
-  return round2((Number(payment.amount) || 0) * (payment.exchangeRate ?? 1));
-}
-
-/**
- * An amount as a whole number of the currency's minor units (cents), rounded half up. The product
- * is cleaned to six places first: 10.075 × 100 is 1007.4999999999999 in floating point, which a
- * plain Math.round would take down to 1007.
- */
-export function toMinor(amount: number, digits: number): number {
-  const scaled = Number(((Number(amount) || 0) * 10 ** digits).toFixed(6));
-  return Math.sign(scaled) * Math.round(Math.abs(scaled));
-}
-
-/** A whole number of minor units back as an amount with exactly that many decimals. */
-export function fromMinor(minor: number, digits: number): number {
-  return Number((minor / 10 ** digits).toFixed(digits));
+export function baseValue(payment: SalePayment, baseDigits = 2): number {
+  return money((Number(payment.amount) || 0) * (payment.exchangeRate ?? 1), baseDigits);
 }
 
 /**
@@ -170,7 +172,9 @@ export function exactTender(
   digits: number,
   baseDigits = 2,
 ): number {
-  const others = payments.slice(1).reduce((sum, p) => sum + toMinor(baseValue(p), baseDigits), 0);
+  const others = payments
+    .slice(1)
+    .reduce((sum, p) => sum + toMinor(baseValue(p, baseDigits), baseDigits), 0);
   const dueMinor = Math.max(toMinor(total, baseDigits) - others, 0);
   return coveringAmount(
     fromMinor(dueMinor, baseDigits),
@@ -181,18 +185,24 @@ export function exactTender(
 }
 
 /** What the payments cover in the base currency, whatever currencies they are in. */
-export function paidTotal(payments: readonly SalePayment[]): number {
-  return round2(payments.reduce((sum, p) => sum + baseValue(p), 0));
+export function paidTotal(payments: readonly SalePayment[], baseDigits = 2): number {
+  return money(
+    payments.reduce((sum, p) => sum + baseValue(p, baseDigits), 0),
+    baseDigits,
+  );
 }
 
 /**
  * Change is given only from cash (in any currency), always in base cash, and never more than the
  * cash handed over.
  */
-export function changeDue(payments: readonly SalePayment[], total: number): number {
-  const paid = paidTotal(payments);
-  const cash = paidTotal(payments.filter((p) => p.method === 'CASH'));
-  return round2(Math.max(0, Math.min(paid - total, cash)));
+export function changeDue(payments: readonly SalePayment[], total: number, baseDigits = 2): number {
+  const paid = paidTotal(payments, baseDigits);
+  const cash = paidTotal(
+    payments.filter((p) => p.method === 'CASH'),
+    baseDigits,
+  );
+  return money(Math.max(0, Math.min(paid - total, cash)), baseDigits);
 }
 
 /**

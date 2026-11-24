@@ -5,7 +5,7 @@ import {
   TillMethod,
   TillPlans,
 } from '../../core/api/models';
-import { formatMoney, minorUnits } from '../../core/format/format';
+import { formatMoney, isoDay, minorUnits, roundHalfUp } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -38,7 +38,7 @@ import { debounced, loaded } from '../../core/data/data';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
-import { controlError, validate } from '../../core/ui/forms';
+import { applyApiError, controlError, notAfterToday, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { LeaveGuard } from '../../core/session/leave-guard';
 import { ConfirmService } from '../../core/ui/confirm';
@@ -55,7 +55,7 @@ import {
   baseValue,
   coveringAmount,
   exactTender,
-  round2,
+  percentOf,
   setQuantity,
   splitPayment,
   withSerials,
@@ -135,6 +135,8 @@ const NOTES: Readonly<Record<string, number[]>> = {
 export default class PosPage {
   protected readonly session = inject(SessionStore);
   protected readonly settings = inject(SettingsStore);
+  /** The base currency's minor units (2 for TZS, 0 for UGX): every till amount is rounded to them. */
+  private readonly baseDigits = computed(() => minorUnits(this.settings.currency()));
   private readonly subscription = inject(SubscriptionStore);
   private readonly api = inject(Api);
   private readonly files = inject(FilesService);
@@ -315,7 +317,9 @@ export default class PosPage {
       set({ busy: false });
     }
   }
-  protected readonly baseValue = baseValue;
+  /** A payment's value in the base currency, rounded to the base's minor units. */
+  protected readonly baseValue = (payment: SalePayment): number =>
+    baseValue(payment, this.baseDigits());
   private readonly customerLookup = viewChild<LookupComponent>('customerLookup');
   private readonly shiftBar = viewChild(ShiftBarComponent);
   /** The shift strip shows only when till shifts are switched on. */
@@ -449,10 +453,17 @@ export default class PosPage {
   /** A line's share of the sale-wide discount, as cartTotals() works it out. */
   protected lineDiscount(line: CartLine): number {
     const rate = Math.min(Math.max(this.discountPercent() || 0, 0), 100);
-    return round2((round2(this.priceOf(line) * line.quantity) * rate) / 100);
+    const digits = this.baseDigits();
+    return percentOf(roundHalfUp(this.priceOf(line) * line.quantity, digits), rate, digits);
   }
   protected readonly totals = computed(() =>
-    cartTotals(this.lines(), this.discountPercent(), this.priceOf, this.taxIncluded()),
+    cartTotals(
+      this.lines(),
+      this.discountPercent(),
+      this.priceOf,
+      this.taxIncluded(),
+      this.baseDigits(),
+    ),
   );
   private quoteSeq = 0;
   /** Re-prices the basket whenever its products, quantities or customer change. */
@@ -520,9 +531,11 @@ export default class PosPage {
       });
   });
 
-  protected readonly paid = computed(() => paidTotal(this.payments()));
-  protected readonly change = computed(() => changeDue(this.payments(), this.totals().total));
-  protected readonly balance = computed(() => round2(this.totals().total - this.paid()));
+  protected readonly paid = computed(() => paidTotal(this.payments(), this.baseDigits()));
+  protected readonly change = computed(() =>
+    changeDue(this.payments(), this.totals().total, this.baseDigits()),
+  );
+  protected readonly balance = computed(() => this.roundBase(this.totals().total - this.paid()));
   protected readonly rxNeeded = computed(() => needsPrescription(this.lines()));
   protected readonly maxDiscount = computed(
     () => this.settings.settings()?.maxDiscountPercent ?? 0,
@@ -546,9 +559,12 @@ export default class PosPage {
   );
   /** A card or mobile money overpayment beyond what cash can give back as change. */
   protected readonly nonCashExcess = computed(() => {
-    const over = round2(this.paid() - this.totals().total);
-    const cash = paidTotal(this.payments().filter((p) => p.method === 'CASH'));
-    return Math.max(0, round2(over - cash));
+    const over = this.roundBase(this.paid() - this.totals().total);
+    const cash = paidTotal(
+      this.payments().filter((p) => p.method === 'CASH'),
+      this.baseDigits(),
+    );
+    return Math.max(0, this.roundBase(over - cash));
   });
   private coverageTimer: ReturnType<typeof setTimeout> | undefined;
   private readonly coverageWatch = effect(() => {
@@ -569,11 +585,20 @@ export default class PosPage {
     prescriberRegistration: ['', Validators.required],
     reference: ['', Validators.required],
     patientName: ['', Validators.required],
+    /** The day it was written: not in the future, and valid 6 months (STD-7, checked by the API). */
+    prescriptionDate: ['', [Validators.required, notAfterToday]],
   });
+  /** The latest prescription date the date picker offers. */
+  protected readonly today = isoDay;
 
   /** The message under a prescription field once it was touched or the form was submitted. */
   protected rxErr(
-    name: 'prescriberName' | 'prescriberRegistration' | 'reference' | 'patientName',
+    name:
+      | 'prescriberName'
+      | 'prescriberRegistration'
+      | 'reference'
+      | 'patientName'
+      | 'prescriptionDate',
   ): string | null {
     return controlError(this.rxForm.controls[name]);
   }
@@ -1424,7 +1449,7 @@ export default class PosPage {
       quote.covered > 0 ? [{ method: 'INSURANCE', amount: quote.covered, reference: null }] : [];
     this.payments.set([
       ...insurance,
-      { ...first, amount: round2(quote.patientPays) },
+      { ...first, amount: this.roundBase(quote.patientPays) },
       ...others.slice(1),
     ]);
   }
@@ -1483,6 +1508,11 @@ export default class PosPage {
   });
   protected readonly base = this.settings.currency;
 
+  /** An amount in the base currency, rounded half-up to its minor units, as the API rounds it. */
+  private roundBase(value: number): number {
+    return roundHalfUp(value, this.baseDigits());
+  }
+
   /**
    * Switches a payment to another accepted currency at today's rate, keeping its base value. With
    * no rate the payment stays as it was, and so does the select: a native select keeps showing the
@@ -1495,7 +1525,7 @@ export default class PosPage {
       select.value = payment?.currency ?? this.base();
       return;
     }
-    const baseNow = baseValue(payment);
+    const baseNow = this.baseValue(payment);
     if (currency === this.base()) {
       this.patchPayment(index, { currency: null, exchangeRate: null, amount: baseNow });
       return;
@@ -1511,12 +1541,7 @@ export default class PosPage {
           this.translations.t('toast.staleRate', { currency, date: latest.effectiveOn }),
         );
       }
-      const amount = coveringAmount(
-        baseNow,
-        latest.rate,
-        minorUnits(currency),
-        minorUnits(this.base()),
-      );
+      const amount = coveringAmount(baseNow, latest.rate, minorUnits(currency), this.baseDigits());
       this.patchPayment(index, { currency, exchangeRate: latest.rate, amount });
     } catch {
       select.value = this.payments()[index]?.currency ?? this.base();
@@ -1532,7 +1557,9 @@ export default class PosPage {
     const first = this.payments()[0];
     const currency = first?.currency ?? this.base();
     const rate = first?.exchangeRate ?? 1;
-    const due = Math.max(this.totals().total - paidTotal(this.payments().slice(1)), 0) / rate;
+    const due =
+      Math.max(this.totals().total - paidTotal(this.payments().slice(1), this.baseDigits()), 0) /
+      rate;
     const notes = NOTES[currency] ?? [1, 5, 10, 20, 50, 100];
     const amounts = new Set<number>();
     for (const note of notes) {
@@ -1588,7 +1615,7 @@ export default class PosPage {
   protected exact(): void {
     const payments = this.payments();
     const digits = minorUnits(payments[0]?.currency ?? this.base());
-    this.setAmount(0, exactTender(this.totals().total, payments, digits, minorUnits(this.base())));
+    this.setAmount(0, exactTender(this.totals().total, payments, digits, this.baseDigits()));
   }
 
   /** Empties the screen for a new sale, with a new token and key; never while one is unconfirmed. */
@@ -1678,7 +1705,7 @@ export default class PosPage {
     if (needsCustomer(payments.map((p) => p.method)) && !this.customer()) {
       return refuse(t('toast.customerNeeded'));
     }
-    const short = round2(this.totals().total - paidTotal(payments));
+    const short = this.roundBase(this.totals().total - paidTotal(payments, this.baseDigits()));
     if (short > 0 && !this.balanceToAccount()) {
       return refuse(t('toast.paymentsShort'));
     }
@@ -1691,7 +1718,8 @@ export default class PosPage {
     if (this.member()?.requiresPreauth && this.useInsurance() && !this.preauthNumber()) {
       return refuse(t('toast.preauthNeeded'));
     }
-    const tendered = paidTotal(payments.map((p) => ({ ...p, amount: baseValue(p) })));
+    // Each payment at its base value (paidTotal converts the foreign ones once).
+    const tendered = paidTotal(payments, this.baseDigits());
     if (
       this.change() > 0 &&
       tendered > Math.max(this.totals().total * 5, this.totals().total + 100) &&
@@ -1829,7 +1857,17 @@ export default class PosPage {
         this.showPending();
       } else {
         this.settlePending();
-        this.problem.set(error.message || this.translations.t('pos.checkoutFailed'));
+        this.problem.set(
+          error.reason === 'dispense_not_allowed'
+            ? this.translations.t('pos.dispenseNotAllowed')
+            : error.message || this.translations.t('pos.checkoutFailed'),
+        );
+        // A prescription detail refused (incomplete, dated ahead, older than 6 months): its field
+        // shows why, and the prescription opens again to correct it.
+        if (error.field?.startsWith('prescription') && applyApiError(this.rxForm, failure)) {
+          this.prescription.set(null);
+          this.rxOpen.set(true);
+        }
       }
     } finally {
       if (attempt === this.attempt) {
@@ -1888,7 +1926,7 @@ export default class PosPage {
 
   /** A sale in the lookup with the same total as the unconfirmed one: likely the same sale. */
   protected likelyMatch(sale: SaleSummary): boolean {
-    return round2(sale.total) === this.totals().total;
+    return this.roundBase(sale.total) === this.totals().total;
   }
 
   /**

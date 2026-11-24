@@ -998,6 +998,20 @@
         <span class="error">{{ m }}</span>
       }
     </div>
+    <div class="field">
+      <label>{{ 'pos.prescriptionDate' | t }}</label
+      ><input
+        class="input"
+        type="date"
+        formControlName="prescriptionDate"
+        data-testid="rx-date"
+        [max]="today()"
+      />
+      <span class="hint">{{ 'pos.prescriptionDateHint' | t }}</span>
+      @if (rxErr('prescriptionDate'); as m) {
+        <span class="error">{{ m }}</span>
+      }
+    </div>
     <div class="field full">
       <label>{{ 'files.prescriptionImage' | t }}</label>
       <app-upload

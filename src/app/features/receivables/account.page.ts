@@ -2,6 +2,8 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { FormBuilder, Validators } from '@angular/forms';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
+import { Customer } from '../../core/api/models';
 import {
   AccountView,
   ENTRY_LABELS,
@@ -13,6 +15,7 @@ import {
   WHOLE_STATEMENT,
 } from '../../core/api/credit.models';
 import { loaded } from '../../core/data/data';
+import { convertMoney, roundMoney } from '../../core/format/format';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
 import { SessionStore } from '../../core/session/session.store';
@@ -408,7 +411,7 @@ const METHODS = ['CASH', 'CARD', 'MOBILE_MONEY', 'BANK_TRANSFER', 'CHEQUE'];
           <button
             class="btn primary"
             type="button"
-            [disabled]="busy() || newLimit() < 0"
+            [disabled]="busy() || !limitReady() || newLimit() < 0"
             (click)="saveLimit()"
           >
             {{ 'common.save' | t }}
@@ -645,12 +648,15 @@ export default class CustomerAccountPage {
   protected readonly foreign = computed(
     () => !!this.currency() && this.currency() !== this.settings.currency(),
   );
+  /** The payment in the base currency: a foreign one converted half-up, as the API books it. */
   protected readonly baseValue = computed(() =>
-    this.foreign() ? Math.round(this.amount() * this.rate() * 100) / 100 : this.amount(),
+    this.foreign()
+      ? convertMoney(this.amount(), this.rate(), this.settings.currency())
+      : this.amount(),
   );
   protected readonly overpay = computed(() => {
     const owed = Math.max(0, this.account.value()?.balance ?? 0);
-    return Math.max(0, Math.round((this.baseValue() - owed) * 100) / 100);
+    return Math.max(0, roundMoney(this.baseValue() - owed, this.settings.currency()));
   });
   protected readonly usedPercent = computed(() => {
     const a = this.account.value();
@@ -713,23 +719,57 @@ export default class CustomerAccountPage {
 
   protected readonly limiting = signal(false);
   protected readonly newLimit = signal(0);
+  /** The customer's version as the limit dialog opened, sent as `If-Match` with the new limit. */
+  private readonly limitVersion = signal<number | null>(null);
+  /** The customer's version has been read (or could not be): the limit may be saved. */
+  protected readonly limitReady = signal(false);
+  private readonly stale = inject(StaleRecordService);
 
-  protected openLimit(current: number): void {
+  protected async openLimit(current: number): Promise<void> {
     this.newLimit.set(current ?? 0);
     this.limiting.set(true);
+    await this.readLimitVersion();
+  }
+
+  /**
+   * The customer's version, from `GET /customers/{uid}`. The account view carries none; when the
+   * customer cannot be read the limit goes without `If-Match`, as before.
+   */
+  private async readLimitVersion(): Promise<void> {
+    this.limitReady.set(false);
+    const customer = await this.api
+      .get<Customer>(`/customers/${this.customerUid}`, undefined, { noBranch: true, silent: true })
+      .catch(() => null);
+    this.limitVersion.set(customer?.version ?? null);
+    this.limitReady.set(true);
   }
 
   /** Only the limit changes (`partners.credit_limit`); the rest of the customer stays. */
   protected async saveLimit(): Promise<void> {
     await this.run(async () => {
-      await this.api.put(
-        `/customers/${this.customerUid}/credit-limit`,
-        { creditLimit: Number(this.newLimit()) || 0 },
-        { noBranch: true },
-      );
+      try {
+        const saved = await this.api.put<Customer | null>(
+          `/customers/${this.customerUid}/credit-limit`,
+          { creditLimit: Number(this.newLimit()) || 0 },
+          { noBranch: true, headers: ifMatch(this.limitVersion()) },
+        );
+        this.limitVersion.set(saved?.version ?? null);
+      } catch (failure) {
+        // Someone else changed the customer meanwhile: Reload shows the limit as it is now.
+        if (await this.stale.handle(failure, () => this.reloadLimit())) {
+          return;
+        }
+        throw failure;
+      }
       this.toasts.success(this.translations.t('creditLimit.saved'));
       this.limiting.set(false);
     });
+  }
+
+  private async reloadLimit(): Promise<void> {
+    await this.account.reload();
+    this.newLimit.set(this.account.value()?.creditLimit ?? 0);
+    await this.readLimitVersion();
   }
 
   protected openHold(): void {

@@ -18,6 +18,8 @@ import { RECEIVABLES_EN } from './receivables.en';
 import { REPORTS_EN } from './reports.en';
 import { CATALOGUE_EN } from './catalogue.en';
 import { CONTROLLED_EN } from './controlled.en';
+import { PRIVACY_EN } from './privacy.en';
+import { HEALTH_EN } from './health.en';
 import { COUNTS_EN } from './counts.en';
 import { PAYABLES_EN } from './payables.en';
 import { ACCOUNTS_EN } from './accounts.en';
@@ -28,6 +30,7 @@ import { SHIFTS_EN } from './shifts.en';
 import { PAYMENTS_EN } from './payments.en';
 import { REPACK_EN } from './repack.en';
 import { PRICING_EN } from './pricing.en';
+import { FISCAL_EN } from './fiscal.en';
 import { STATEMENTS_EN } from './statements.en';
 import { ENUM_EN } from './enum.en';
 import { ERRORS_EN } from './errors.en';
@@ -70,6 +73,8 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...PROVIDERS_EN,
   ...PLANS_EN,
   ...CONTROLLED_EN,
+  ...PRIVACY_EN,
+  ...HEALTH_EN,
   ...COUNTS_EN,
   ...PAYABLES_EN,
   ...ACCOUNTS_EN,
@@ -80,6 +85,7 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...PAYMENTS_EN,
   ...REPACK_EN,
   ...PRICING_EN,
+  ...FISCAL_EN,
   ...STATEMENTS_EN,
   ...PARTNERS_EN,
   ...ENUM_EN,

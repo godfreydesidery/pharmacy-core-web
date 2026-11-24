@@ -1,6 +1,6 @@
 import { CurrencyRateComponent } from '../../core/ui/currency-rate.component';
 import { SettingsStore } from '../../core/format/settings.store';
-import { convertHalfEven } from '../../core/format/format';
+import { convertMoney, roundMoney } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -15,6 +15,7 @@ import {
 } from '@angular/core';
 import { FormArray, FormBuilder, FormControl, FormGroup, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Api } from '../../core/api/api.service';
 import {
   GoodsReceipt,
@@ -92,6 +93,19 @@ type ReceiptLine = FormGroup<{
             <app-field [label]="'purchasing.note' | t">
               <input class="input" formControlName="note" />
             </app-field>
+            @if (vatRegistered()) {
+              <app-field [label]="'vat.onTheInvoice' | t" [error]="err('vatAmount')">
+                <input
+                  class="input"
+                  type="number"
+                  min="0"
+                  step="any"
+                  formControlName="vatAmount"
+                  data-testid="receipt-vat"
+                />
+                <span class="hint">{{ 'vat.onTheInvoiceHint' | t }}</span>
+              </app-field>
+            }
             <app-field class="full" [label]="'purchasing.currency' | t">
               <app-currency-rate
                 [(currency)]="currency"
@@ -197,10 +211,7 @@ type ReceiptLine = FormGroup<{
                         />
                       </td>
                       <td class="right">
-                        {{
-                          (line.value.quantity ?? 0) * (line.value.unitCost ?? 0)
-                            | money: currency()
-                        }}
+                        {{ lineTotal(line) | money: currency() }}
                       </td>
                       <td class="right">
                         <button
@@ -253,6 +264,13 @@ type ReceiptLine = FormGroup<{
                     <td class="right">{{ total() | money: currency() }}</td>
                     <td></td>
                   </tr>
+                  @if (vat() > 0) {
+                    <tr class="muted" data-testid="receipt-owed">
+                      <td colspan="5">{{ 'vat.owed' | t }}</td>
+                      <td class="right">{{ total() + vat() | money: currency() }}</td>
+                      <td></td>
+                    </tr>
+                  }
                   @if (currency() !== base()) {
                     <tr class="muted">
                       <td colspan="5">
@@ -323,20 +341,41 @@ export default class ReceiptFormPage implements OnInit {
     supplierUid: ['', Validators.required],
     supplierInvoiceNumber: [''],
     note: [''],
+    /** The invoice's input VAT, on top of the lines (VAT-registered pharmacies only). */
+    vatAmount: [0, Validators.min(0)],
     lines: this.fb.array<ReceiptLine>([]),
   });
+  private readonly settingsStore = inject(SettingsStore);
+  protected readonly vatRegistered = computed(
+    () => this.settingsStore.settings()?.vatRegistered ?? false,
+  );
+  private readonly vatValue = toSignal(this.form.controls.vatAmount.valueChanges, {
+    initialValue: 0,
+  });
+  protected readonly vat = computed(() =>
+    this.vatRegistered() ? Number(this.vatValue()) || 0 : 0,
+  );
   protected get lines(): FormArray<ReceiptLine> {
     return this.form.controls.lines;
   }
+  /**
+   * A line's total in the document's currency, as the API works it: the unit cost rounded to the
+   * currency's minor units, times the quantity, rounded again (half-up, USD 2 decimals, UGX none).
+   */
+  protected lineTotal(line: ReceiptLine): number {
+    const currency = this.currency();
+    const unitCost = roundMoney(line.value.unitCost ?? 0, currency);
+    return roundMoney(unitCost * (line.value.quantity ?? 0), currency);
+  }
   protected readonly total = computed(() => {
     this.version();
-    return this.lines.controls.reduce(
-      (sum, l) => sum + (l.value.quantity ?? 0) * (l.value.unitCost ?? 0),
-      0,
+    return roundMoney(
+      this.lines.controls.reduce((sum, l) => sum + this.lineTotal(l), 0),
+      this.currency(),
     );
   });
   protected readonly baseTotal = computed(() =>
-    convertHalfEven(this.total(), this.rate(), this.base()),
+    convertMoney(this.total(), this.rate(), this.base()),
   );
   /** Leaving with a receipt half typed asks first (UX-4). */
   private readonly unsaved = guardUnsavedWork(
@@ -480,6 +519,7 @@ export default class ReceiptFormPage implements OnInit {
           ),
           currency: this.currency() || this.base(),
           exchangeRate: this.currency() === this.base() ? null : this.rate(),
+          vatAmount: this.vat() > 0 ? this.vat() : null,
         },
         { silent: true },
       );

@@ -6,11 +6,12 @@ import { LogoComponent } from '../../core/layout/logo.component';
 import { SessionStore } from '../../core/session/session.store';
 import { TenantLogoStore } from '../../core/files/tenant-logo.store';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
+import { FiscalBlockComponent } from './fiscal-block.component';
 
 /** A printable receipt; `window.print()` prints only `.print-area`. */
 @Component({
   selector: 'app-receipt',
-  imports: [TranslatePipe, LogoComponent, ...FORMAT_PIPES],
+  imports: [TranslatePipe, LogoComponent, FiscalBlockComponent, ...FORMAT_PIPES],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="receipt print-area">
@@ -110,6 +111,7 @@ import { TranslatePipe } from '../../core/i18n/t.pipe';
           </div>
         }
       </div>
+      <app-fiscal-block [sale]="sale()" />
       <p class="center muted small footer">
         {{ settings.settings()?.receiptFooter ?? ('ui.l.thankYouGetWellSoon' | t) }}
       </p>

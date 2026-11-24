@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
+import { SettingsStore } from '../../core/format/settings.store';
 import { Expense, ExpenseCategory } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
 import { isoDay } from '../../core/format/format';
@@ -137,6 +138,19 @@ const METHODS = ['CASH', 'BANK_TRANSFER', 'MOBILE_MONEY', 'CARD'];
         <app-field [label]="'finance.amount' | t" [error]="err('amount')">
           <input class="input" type="number" min="0" step="any" formControlName="amount" />
         </app-field>
+        @if (vatRegistered()) {
+          <app-field [label]="'vat.inTheAmount' | t" [error]="err('vatAmount')">
+            <input
+              class="input"
+              type="number"
+              min="0"
+              step="any"
+              formControlName="vatAmount"
+              data-testid="expense-vat"
+            />
+            <span class="hint">{{ 'vat.inTheAmountHint' | t }}</span>
+          </app-field>
+        }
         <app-field [label]="'finance.date' | t">
           <input class="input" type="date" formControlName="expenseDate" [max]="today" />
         </app-field>
@@ -201,7 +215,14 @@ export default class ExpensesPage {
     expenseDate: [isoDay(), Validators.required],
     paymentMethod: ['CASH'],
     reference: [''],
+    /** The input VAT in the amount (VAT-registered pharmacies only). */
+    vatAmount: [0, Validators.min(0)],
   });
+  private readonly settingsStore = inject(SettingsStore);
+  /** Only a VAT-registered pharmacy books input VAT. */
+  protected readonly vatRegistered = computed(
+    () => this.settingsStore.settings()?.vatRegistered ?? false,
+  );
 
   protected err(name: string): string | null {
     return controlError(this.form.get(name));
@@ -215,6 +236,7 @@ export default class ExpensesPage {
       expenseDate: isoDay(),
       paymentMethod: 'CASH',
       reference: '',
+      vatAmount: 0,
     });
     this.open.set(true);
   }
@@ -228,7 +250,12 @@ export default class ExpensesPage {
     try {
       await this.api.post(
         '/expenses',
-        { ...v, amount: Number(v.amount), reference: v.reference || null },
+        {
+          ...v,
+          amount: Number(v.amount),
+          reference: v.reference || null,
+          vatAmount: this.vatRegistered() ? Number(v.vatAmount) || 0 : null,
+        },
         { silent: true },
       );
       this.toasts.success(this.translations.t('toast.expenseRecorded'));

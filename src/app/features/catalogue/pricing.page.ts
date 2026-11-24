@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import {
   BranchPrice,
   Category,
@@ -33,6 +34,8 @@ const CUSTOMER_TYPES: CustomerType[] = [
 
 interface ListDraft {
   uid: string | null;
+  /** The plan's version as read, sent as `If-Match` on its save; null for a new plan. */
+  version: number | null;
   name: string;
   target: 'type' | 'customer' | 'insurer';
   customerType: CustomerType | '';
@@ -595,6 +598,7 @@ export default class PricingPage {
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   private readonly confirm = inject(ConfirmService);
+  private readonly stale = inject(StaleRecordService);
   // Price lists (pricing plans) are managed on the Pricing plans page.
   protected readonly tabs: Tab[] = ['branch', 'promotions'];
   protected readonly tab = signal<Tab>('branch');
@@ -637,6 +641,7 @@ export default class PricingPage {
       : summary;
     this.list.set({
       uid: l?.uid ?? null,
+      version: l?.version ?? null,
       name: l?.name ?? '',
       target: l?.payerUid ? 'insurer' : l?.customerUid ? 'customer' : 'type',
       customerType: l?.customerType ?? '',
@@ -719,7 +724,19 @@ export default class PricingPage {
         })),
       };
       if (l.uid) {
-        await this.api.put(`/price-lists/${l.uid}`, body, { noBranch: true });
+        const uid = l.uid;
+        try {
+          await this.api.put(`/price-lists/${uid}`, body, {
+            noBranch: true,
+            headers: ifMatch(l.version),
+          });
+        } catch (failure) {
+          // Someone else changed the plan: Reload reads it again into the form.
+          if (await this.stale.handle(failure, () => this.editList({ uid } as PriceList))) {
+            return;
+          }
+          throw failure;
+        }
       } else {
         await this.api.post('/price-lists', body, { noBranch: true });
       }
