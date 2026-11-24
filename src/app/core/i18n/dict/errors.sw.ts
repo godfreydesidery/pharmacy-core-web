@@ -158,6 +158,7 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.upload_missing': 'Faili haijamaliza kupakiwa; jaribu tena.',
   'errors.url_expired': 'Muda wa kiungo hiki cha faili umeisha; kifungue tena.',
   'errors.invalid_signature': 'Kiungo hiki cha faili si halali.',
+  'errors.upload_used': 'Kiungo hiki cha kupakia kimeshatumika; anza kupakia upya.',
 
   'errors.invalid_input': 'Kagua taarifa ulizoweka.',
 

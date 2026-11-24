@@ -586,6 +586,7 @@
     "unsupported_media_type": [],
     "unsupported_type": [],
     "upload_missing": [],
+    "upload_used": [],
     "url_expired": [],
     "user_not_found": [],
     "username_taken": [],

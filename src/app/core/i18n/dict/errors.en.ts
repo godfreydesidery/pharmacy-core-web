@@ -163,6 +163,7 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.upload_missing': 'The file has not finished uploading; try again.',
   'errors.url_expired': 'This file link has expired; open it again.',
   'errors.invalid_signature': 'This file link is not valid.',
+  'errors.upload_used': 'This upload link has been used; start the upload again.',
 
   // The fallback for an `invalid_<field>` reason with no line of its own (see localizeError).
   'errors.invalid_input': 'Check the information entered.',

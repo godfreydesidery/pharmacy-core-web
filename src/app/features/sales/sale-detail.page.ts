@@ -298,13 +298,16 @@ type Disposition = 'SHELF' | 'QUARANTINE' | 'DAMAGED';
           </div>
         }
 
-        <app-attachments
-          class="block mt"
-          ownerType="SALE"
-          [ownerUid]="s.uid"
-          purpose="PRESCRIPTION"
-          [canManage]="session.can('sales.sell')"
-        />
+        <!-- A sale's files are its prescription scans: health data (health.view). -->
+        @if (session.can('health.view')) {
+          <app-attachments
+            class="block mt"
+            ownerType="SALE"
+            [ownerUid]="s.uid"
+            purpose="PRESCRIPTION"
+            [canManage]="session.can('sales.sell')"
+          />
+        }
 
         <app-modal [open]="printing()" [title]="'sales.receipt' | t" (closed)="printing.set(false)">
           <app-receipt [sale]="s" />

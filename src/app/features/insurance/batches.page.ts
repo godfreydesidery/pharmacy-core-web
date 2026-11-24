@@ -76,12 +76,17 @@ import { Translations } from '../../core/i18n/translations.store';
                     >
                   </td>
                   <td class="right nowrap">
-                    <button class="btn sm" type="button" (click)="download(b, 'CSV')">
-                      <app-icon name="download" [size]="14" /> CSV
-                    </button>
-                    <button class="btn sm" type="button" (click)="download(b, 'JSON')">
-                      <app-icon name="activity" [size]="14" /> FHIR
-                    </button>
+                    <!-- Claims name patients and carry diagnoses: data.export and health.view. -->
+                    @if (canExport()) {
+                      <button class="btn sm" type="button" (click)="download(b, 'CSV')">
+                        <app-icon name="download" [size]="14" /> CSV
+                      </button>
+                      <button class="btn sm" type="button" (click)="download(b, 'JSON')">
+                        <app-icon name="activity" [size]="14" /> FHIR
+                      </button>
+                    } @else {
+                      <span class="muted">—</span>
+                    }
                   </td>
                 </tr>
               } @empty {
@@ -166,6 +171,11 @@ import { Translations } from '../../core/i18n/translations.store';
 })
 export default class BatchesPage {
   protected readonly session = inject(SessionStore);
+
+  /** The export holds patients and diagnoses: it needs data.export and health.view too. */
+  protected canExport(): boolean {
+    return this.session.can('data.export') && this.session.can('health.view');
+  }
   private readonly api = inject(Api);
   private readonly http = inject(HttpClient);
   private readonly toasts = inject(ToastService);

@@ -55,6 +55,7 @@ export const ACCT_SW: Readonly<Record<string, string>> = {
   'acct.ev.PASSKEY_REMOVED': 'Passkey imeondolewa',
   'acct.ev.EMAIL_CHANGE_REQUESTED': 'Kubadilisha barua pepe kumeombwa',
   'acct.ev.EMAIL_CHANGED': 'Barua pepe imebadilishwa',
+  'acct.ev.EMAIL_CHANGE_REVERTED': 'Mabadiliko ya barua pepe yametenguliwa',
   'acct.ev.PHONE_CODE_SENT': 'Msimbo wa simu umetumwa',
   'acct.ev.PHONE_VERIFIED': 'Simu imethibitishwa',
   'acct.ev.PHONE_REMOVED': 'Simu imeondolewa',
@@ -83,6 +84,10 @@ export const ACCT_SW: Readonly<Record<string, string>> = {
   'acct.recoverHint': 'Chagua nenosiri jipya. Utaingia kwa anwani ambayo kiungo hiki kimekuja.',
   'acct.onHold': 'Kiungo hiki cha urejeshaji kinafanya kazi kuanzia {{time}}. Rudi wakati huo.',
   'acct.confirmed': 'Imekamilika. Ingia kwa barua pepe yako mpya.',
+  'acct.revertTitle': 'Tengua mabadiliko ya barua pepe',
+  'acct.revertHint':
+    'Hii inarudisha anwani hii kuwa ya kuingia, inatoa kila kifaa na kuondoa nenosiri-funguo. Chagua nenosiri jipya: aliyebadilisha barua pepe anaweza kujua la zamani.',
+  'acct.reverted': 'Imekamilika. Ingia kwa anwani hii na nenosiri lako jipya.',
   'acct.cancelTitle': 'Sitisha urejeshaji wa akaunti yako',
   'acct.cancelHint':
     'Mtu ameomba msaada kuhamisha akaunti yako kwenda barua pepe nyingine. Kama si wewe, sitisha.',
