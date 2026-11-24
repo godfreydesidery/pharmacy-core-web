@@ -17,6 +17,7 @@ import { SessionStore } from '../session/session.store';
 import { SignOutService } from '../session/sign-out';
 import { ToastService } from '../ui/toast.service';
 import { ApiError, localizeError } from './api-error';
+import { isStaleWrite } from './concurrency';
 
 /** Do not show a toast for a failure: the caller shows it itself, such as a form field error. */
 export const SILENT = new HttpContextToken<boolean>(() => false);
@@ -41,6 +42,15 @@ const APPROVAL_HEADER = 'X-Approval';
  */
 const IDEMPOTENT =
   /^\/api\/v1\/(receivables\/(payments|write-offs)|finance\/supplier-payments|expenses|sales\/[^/]+\/returns|sales\/returns\/[^/]+\/lines\/[^/]+\/release|vouchers(\/[^/]+\/void)?|stock\/(adjustments|opening)|transfers(\/[^/]+\/receive)?|insurance\/remittances|goods-receipts|destructions|supplier-returns|pos\/payment-requests)$/;
+
+/**
+ * A save sent with `If-Match` that crossed someone else's change (412, or the product's 409
+ * stale_version): the form that sent it explains it in its reload dialog (StaleRecordService), so
+ * a toast as well would say it twice.
+ */
+function explainedByForm(request: HttpRequest<unknown>, error: ApiError): boolean {
+  return request.headers.has('If-Match') && isStaleWrite(error);
+}
 
 interface Envelope {
   success: boolean;
@@ -178,7 +188,7 @@ export const apiInterceptor: HttpInterceptorFn = (request, next) => {
       // G16: this pharmacy requires a second factor; set one up, then come back.
       toasts.error(error.message);
       void injector.get(Router).navigateByUrl('/account?setup=2fa');
-    } else if (!attempt.context.get(SILENT)) {
+    } else if (!attempt.context.get(SILENT) && !explainedByForm(attempt, error)) {
       toasts.error(error.message);
     }
     return throwError(() => error);

@@ -11,6 +11,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Router } from '@angular/router';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import {
   Category,
   Manufacturer,
@@ -499,6 +500,7 @@ export default class ProductFormPage implements OnInit {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly router = inject(Router);
+  private readonly stale = inject(StaleRecordService);
   readonly uid = input<string | undefined>();
   protected readonly schedules = SCHEDULES;
   protected readonly storage = STORAGE;
@@ -618,9 +620,13 @@ export default class ProductFormPage implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
-    if (!this.editing()) {
-      return;
+    if (this.editing()) {
+      await this.load();
     }
+  }
+
+  /** Reads the product into the form, as it is now on the server (its version included). */
+  private async load(): Promise<void> {
     const product = await this.api.get<Product>(`/products/${this.uid()}`, undefined, {
       noBranch: true,
     });
@@ -656,6 +662,7 @@ export default class ProductFormPage implements OnInit {
       taxCategory: product.taxCategory ?? (product.taxRatePercent > 0 ? 'STANDARD' : 'EXEMPT'),
       tmdaRegistrationNumber: product.tmdaRegistrationNumber ?? '',
     });
+    this.form.markAsPristine();
   }
 
   /** A new type brings its usual tracking and unit, unless the product is being edited. */
@@ -725,7 +732,7 @@ export default class ProductFormPage implements OnInit {
         const saved = await this.api.put<Product>(
           `/products/${this.uid()}`,
           { ...body, active: v.active, version: this.version() },
-          { silent: true, noBranch: true },
+          { silent: true, noBranch: true, headers: ifMatch(this.version()) },
         );
         this.version.set(saved.version);
         this.form.markAsPristine();
@@ -740,6 +747,10 @@ export default class ProductFormPage implements OnInit {
         await this.router.navigate(['/catalogue/products', saved.uid], { replaceUrl: true });
       }
     } catch (failure) {
+      // Someone else saved the product meanwhile: offer to reload it (their change) into the form.
+      if (await this.stale.handle(failure, () => this.load())) {
+        return;
+      }
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);
       }

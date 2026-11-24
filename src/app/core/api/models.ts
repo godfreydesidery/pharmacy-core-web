@@ -135,6 +135,8 @@ export interface Branch {
   licenceNumber: string | null;
   headOffice: boolean;
   active: boolean;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
   createdAt: IsoDateTime;
 }
 
@@ -171,6 +173,8 @@ export interface Settings {
   /** Taxpayer Identification Number (9 digits, kept without dashes) and VAT Registration Number. */
   tin?: string | null;
   vrn?: string | null;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
 }
 
 /** `POST /auth/activity`: the session's inactivity limit after the person used the app. */
@@ -227,6 +231,8 @@ export interface Role {
   description: string | null;
   system: boolean;
   permissions: string[];
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
 }
 
 export interface Permission {
@@ -355,6 +361,8 @@ export interface CustomerInput {
 export interface Customer extends CustomerInput {
   uid: Uid;
   code: string;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
   createdAt: IsoDateTime;
   /** When the person's details were erased (STD-5): the record stays, nameless and inactive. */
   anonymisedAt?: IsoDateTime | null;
@@ -433,6 +441,8 @@ export interface SupplierInput {
 export interface Supplier extends SupplierInput {
   uid: Uid;
   code: string;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
   createdAt: IsoDateTime;
 }
 
@@ -1137,6 +1147,8 @@ export interface PriceList {
   /** An insurer's plan: the default for its members' sales. */
   payerUid?: Uid | null;
   payerName?: string | null;
+  /** Optimistic concurrency (STD-10): sent back as `If-Match: "<version>"` on a save. */
+  version: number;
 }
 
 /** A pricing plan; uid null is Normal Sale. rulePercent null: no rule (blocks). */
@@ -1165,6 +1177,11 @@ export interface PlanCard {
   validFrom: string | null;
   validTo: string | null;
   priced: number;
+  /**
+   * The plan's version, when the cards carry it; otherwise the plan is read
+   * (`GET /price-lists/{uid}`) for it before a save.
+   */
+  version?: number;
 }
 
 /** One row of a plan's page; price null: not priced in the plan. */

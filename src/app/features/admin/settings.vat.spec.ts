@@ -24,6 +24,7 @@ const SETTINGS: Settings = {
   vatRegistered: true,
   tin: '123456789',
   vrn: null,
+  version: 1,
 };
 
 /** The API as the settings page uses it: the settings in, the change out. */

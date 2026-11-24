@@ -66,6 +66,7 @@ function customer(uid: string, name: string, extra: Partial<Customer> = {}): Cus
     address: null,
     active: true,
     paymentTerms: 'NET_30',
+    version: 3,
     createdAt: '2026-11-01T08:00:00Z',
     anonymisedAt: null,
     ...extra,
@@ -372,7 +373,10 @@ describe('Customers page: privacy (STD-5)', () => {
       await settle();
       click('.btn.primary', el().querySelector('app-modal footer')!);
       await settle();
-      expect(api.last('PUT', '/customers/c1?dataSubjectRequest=true')).toBeDefined();
+      const correction = api.last('PUT', '/customers/c1?dataSubjectRequest=true');
+      expect(correction).toBeDefined();
+      // The correction is a save like any other: it carries the version it was loaded at.
+      expect(correction?.options?.headers).toEqual({ 'If-Match': '"3"' });
       expect(api.last('PUT', '/customers/c1')).toBeUndefined();
     });
 

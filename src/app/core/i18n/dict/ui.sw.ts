@@ -478,4 +478,11 @@ export const UI_SW: Readonly<Record<string, string>> = {
   // POS phone cart bar
   'ui.pos.cartBar': 'Bidhaa {{count}}',
   'ui.pos.pay': 'Lipa',
+
+  // a save that crossed someone else's change (412 precondition_failed, STD-10)
+  'ui.stale.title': 'Mtu mwingine amebadilisha hii',
+  'ui.stale.text':
+    'Mtu mwingine amebadilisha hii; pakia upya ili kuona mabadiliko yake. Kupakia upya kunaondoa mabadiliko uliyofanya hapa.',
+  'ui.stale.reload': 'Pakia upya',
+  'ui.stale.keep': 'Endelea kuhariri',
 };
