@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/cor
 import { Api } from '../../core/api/api.service';
 import { Batch, GoodsReceipt, Product, Supplier } from '../../core/api/models';
 import { pagedList } from '../../core/data/data';
+import { isoDay } from '../../core/format/format';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
@@ -35,6 +36,24 @@ interface SupplierReturn {
   /** The recorder's name (older records: their reference). */
   createdByName?: string;
   lines: ReturnLine[];
+  /** PENDING_CREDIT until the supplier's credit note is recorded, then CREDITED (FRD-16). */
+  status?: 'PENDING_CREDIT' | 'CREDITED';
+  /** The supplier's credit note; null while pending and for returns from before credit notes. */
+  credit?: CreditNote | null;
+}
+
+/** POST /supplier-returns/{uid}/credit-note answers the return with it. */
+interface CreditNote {
+  number: string;
+  date: string;
+  /** In the goods receipt's currency (the base currency without a receipt). */
+  currency: string;
+  amount: number;
+  baseAmount: number;
+  /** What came off the goods receipt's open amount; the rest is credit on the supplier's account. */
+  appliedToReceipt: number;
+  recordedAt: string;
+  recordedBy: string;
 }
 
 interface DraftLine {
@@ -64,6 +83,16 @@ interface DraftLine {
             <button class="btn" type="button" (click)="print()">
               <app-icon name="printer" [size]="16" /> {{ 'sret.print' | t }}
             </button>
+            @if (current()?.status === 'PENDING_CREDIT' && session.can('finance.manage')) {
+              <button
+                class="btn primary"
+                type="button"
+                data-testid="record-credit"
+                (click)="openCredit()"
+              >
+                <app-icon name="check" [size]="16" /> {{ 'moneyops.recordCredit' | t }}
+              </button>
+            }
           } @else if (session.branch() && session.can('purchasing.receive')) {
             <button class="btn primary" type="button" (click)="open()">
               <app-icon name="plus" [size]="16" /> {{ 'sret.new' | t }}
@@ -110,7 +139,35 @@ interface DraftLine {
                 <dd>{{ r.note }}</dd>
               </div>
             }
+            <div>
+              <dt>{{ 'moneyops.status' | t }}</dt>
+              <dd>
+                @if (r.status === 'PENDING_CREDIT') {
+                  <span class="badge amber">{{ 'moneyops.PENDING_CREDIT' | t }}</span>
+                } @else {
+                  <span class="badge green">{{ 'moneyops.CREDITED' | t }}</span>
+                }
+              </dd>
+            </div>
+            @if (r.credit; as c) {
+              <div>
+                <dt>{{ 'moneyops.creditNote' | t }}</dt>
+                <dd>
+                  <span class="mono">{{ c.number }}</span> · {{ c.date | day }} ·
+                  {{ c.amount | money: c.currency }}
+                  @if (c.appliedToReceipt > 0) {
+                    <small class="muted block">{{
+                      'moneyops.appliedToReceipt'
+                        | t: { amount: (c.appliedToReceipt | money: c.currency) }
+                    }}</small>
+                  }
+                </dd>
+              </div>
+            }
           </div>
+          @if (r.status === 'PENDING_CREDIT') {
+            <div class="card-pad muted no-print">{{ 'moneyops.pendingHint' | t }}</div>
+          }
           <div class="table-wrap">
             <table class="table">
               <thead>
@@ -156,6 +213,7 @@ interface DraftLine {
                   <th>{{ 'sret.supplier' | t }}</th>
                   <th>{{ 'sret.receipt' | t }}</th>
                   <th>{{ 'sret.reason' | t }}</th>
+                  <th>{{ 'moneyops.status' | t }}</th>
                   <th class="right">{{ 'sret.total' | t }}</th>
                 </tr>
               </thead>
@@ -169,11 +227,18 @@ interface DraftLine {
                     <td>{{ r.supplierName }}</td>
                     <td class="mono">{{ r.goodsReceiptNumber ?? '—' }}</td>
                     <td>{{ r.reason }}</td>
+                    <td>
+                      @if (r.status === 'PENDING_CREDIT') {
+                        <span class="badge amber">{{ 'moneyops.PENDING_CREDIT' | t }}</span>
+                      } @else {
+                        <span class="badge green">{{ 'moneyops.CREDITED' | t }}</span>
+                      }
+                    </td>
                     <td class="right">{{ r.total | money }}</td>
                   </tr>
                 } @empty {
                   <tr>
-                    <td colspan="6">
+                    <td colspan="7">
                       <app-empty [for]="returns" icon="truck" [title]="'sret.none' | t" />
                     </td>
                   </tr>
@@ -275,6 +340,52 @@ interface DraftLine {
         </button>
       </ng-container>
     </app-modal>
+
+    <app-modal
+      [open]="crediting()"
+      [title]="'moneyops.recordCredit' | t"
+      (closed)="crediting.set(false)"
+    >
+      <p class="muted">{{ 'moneyops.creditHint' | t }}</p>
+      <div class="form-grid">
+        <app-field class="full" [label]="'moneyops.creditNumber' | t">
+          <input
+            class="input"
+            data-testid="credit-number"
+            [value]="creditNumber()"
+            (input)="creditNumber.set(sel($event))"
+          />
+        </app-field>
+        <app-field [label]="'moneyops.creditDate' | t">
+          <input
+            class="input"
+            type="date"
+            [max]="today"
+            [value]="creditDate()"
+            (change)="creditDate.set(sel($event))"
+          />
+        </app-field>
+        <app-field [label]="'moneyops.creditAmount' | t">
+          <input
+            class="input"
+            type="number"
+            min="0"
+            step="any"
+            data-testid="credit-amount"
+            [value]="creditAmount()"
+            (input)="creditAmount.set(+sel($event))"
+          />
+        </app-field>
+      </div>
+      <ng-container footer>
+        <button class="btn" type="button" (click)="crediting.set(false)">
+          {{ 'sret.cancel' | t }}
+        </button>
+        <button class="btn primary" type="button" [disabled]="busy()" (click)="saveCredit()">
+          {{ 'moneyops.recordCredit' | t }}
+        </button>
+      </ng-container>
+    </app-modal>
   `,
 })
 export default class SupplierReturnsPage {
@@ -369,6 +480,44 @@ export default class SupplierReturnsPage {
     }
   }
 
+  protected readonly today = isoDay();
+  protected readonly crediting = signal(false);
+  protected readonly creditNumber = signal('');
+  protected readonly creditDate = signal(isoDay());
+  protected readonly creditAmount = signal(0);
+
+  /** The supplier's credit note for the return on screen, its amount the return's to start. */
+  protected openCredit(): void {
+    this.creditNumber.set('');
+    this.creditDate.set(isoDay());
+    this.creditAmount.set(this.current()?.total ?? 0);
+    this.crediting.set(true);
+  }
+
+  protected async saveCredit(): Promise<void> {
+    const current = this.current();
+    if (!current || !this.creditNumber().trim() || !(this.creditAmount() > 0)) {
+      this.toasts.error(this.translations.t('moneyops.creditIncomplete'));
+      return;
+    }
+    this.busy.set(true);
+    try {
+      const saved = await this.api.post<SupplierReturn>(
+        `/supplier-returns/${current.uid}/credit-note`,
+        {
+          number: this.creditNumber().trim(),
+          date: this.creditDate() || null,
+          amount: this.creditAmount(),
+        },
+      );
+      this.toasts.success(this.translations.t('moneyops.credited'));
+      this.crediting.set(false);
+      this.current.set(saved);
+      this.returns.reload();
+    } finally {
+      this.busy.set(false);
+    }
+  }
   protected print(): void {
     window.print();
   }
