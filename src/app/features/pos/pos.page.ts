@@ -1253,8 +1253,29 @@ export default class PosPage {
       confirmText: this.translations.t('pos.discard'),
     });
     if (ok) {
+      if (sale && !sale.pending) {
+        this.reportTillEvent('PARKED_DISCARDED', sale.lines.length, sale.total);
+      }
       this.saveParked(unpark(this.parked(), id).rest);
     }
+  }
+
+  /**
+   * FRD-20: tells the server about a sale that did not happen (a cart cancelled with lines on it, a
+   * parked sale thrown away), for the managers' no-sale report. Best effort: the till never waits
+   * for it, and a failure (offline, no permission) changes nothing on screen.
+   */
+  private reportTillEvent(
+    kind: 'CART_CANCELLED' | 'CART_CLEARED' | 'PARKED_DISCARDED' | 'NO_SALE',
+    lines: number,
+    value: number,
+  ): void {
+    if (!this.session.branch()) {
+      return;
+    }
+    void this.api
+      .post('/till-events', { kind, lines, value: Math.max(value, 0) }, { silent: true })
+      .catch(() => undefined);
   }
 
   /** A new sale: what is on screen is parked, not lost. */
@@ -1285,6 +1306,9 @@ export default class PosPage {
       }))
     ) {
       return;
+    }
+    if (this.lines().length) {
+      this.reportTillEvent('CART_CANCELLED', this.lines().length, this.totals().total);
     }
     this.clear();
     this.focusSearch();

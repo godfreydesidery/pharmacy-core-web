@@ -658,4 +658,46 @@ describe('POS page', () => {
       );
     });
   });
+
+  describe('sales that did not happen (FRD-20)', () => {
+    type Till = Page & { cancelSale(): Promise<void>; discard(id: string): Promise<void> };
+
+    function tillEvents(): { kind: string; lines: number; value: number }[] {
+      return api.sent
+        .filter((s) => s.method === 'POST' && s.path === '/till-events')
+        .map((s) => s.body as { kind: string; lines: number; value: number });
+    }
+
+    it('a cart cancelled with lines on it is reported, with its lines and value', async () => {
+      api.posts.set('/till-events', () => Promise.resolve({}));
+      await cart();
+      await (page as Till).cancelSale();
+      await settle();
+      expect(page.lines()).toEqual([]);
+      expect(tillEvents()).toEqual([{ kind: 'CART_CANCELLED', lines: 1, value: 3000 }]);
+    });
+
+    it('an empty cart cancelled reports nothing, and a failed report changes nothing', async () => {
+      await (page as Till).cancelSale();
+      await settle();
+      expect(tillEvents()).toEqual([]);
+      await cart();
+      await (page as Till).cancelSale();
+      await settle();
+      expect(page.lines()).toEqual([]);
+      expect(toasts.error).not.toHaveBeenCalled();
+    });
+
+    it('a parked sale thrown away is reported; one kept survives', async () => {
+      api.posts.set('/till-events', () => Promise.resolve({}));
+      await cart();
+      page.parkSale();
+      await settle();
+      const parked = page.parkedList()[0];
+      await (page as Till).discard(parked.id);
+      await settle();
+      expect(page.parkedList()).toEqual([]);
+      expect(tillEvents().map((e) => e.kind)).toEqual(['PARKED_DISCARDED']);
+    });
+  });
 });
