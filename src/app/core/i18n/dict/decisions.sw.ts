@@ -50,6 +50,8 @@ export const DECISIONS_SW: Readonly<Record<string, string>> = {
   'password.changeFirst':
     'Kuzima uthibitishaji wa hatua mbili kunahitaji nenosiri la angalau herufi {{min}}. Badilisha nenosiri lako kwanza.',
 
+  'nav.platform-approvals': 'Idhini zinazosubiri',
+  'nav.platform.approvals': 'Idhini zinazosubiri',
   'rootApproval.title': 'Idhini zinazosubiri',
   'rootApproval.sub':
     'Kuondoa zuio la kisheria na kufuta duka la dawa kunahitaji msimamizi mkuu wa pili.',
@@ -83,6 +85,7 @@ export const DECISIONS_SW: Readonly<Record<string, string>> = {
   'rootApproval.ask': 'Tuma kwa idhini',
   'rootApproval.pendingHere': 'Ombi linasubiri msimamizi mkuu wa pili.',
 
+  'statements.tab.writedown': 'Upunguzaji kwa kuisha muda',
   'writedownReport.title': 'Upunguzaji wa thamani kwa kuisha muda',
   'writedownReport.sub':
     'Akiba ya kila mwezi kwa bidhaa zinazokaribia au zilizopita muda, kwa tawi na kundi. Mhasibu wako athibitishe njia.',
@@ -113,7 +116,7 @@ export const DECISIONS_SW: Readonly<Record<string, string>> = {
   'vatReport.net': 'Halisi',
   'vatReport.vat': 'VAT',
 
-  'statement.DEBIT_NOTE': 'Hati ya deni',
+  'payables.type.DEBIT_NOTE': 'Hati ya deni ya msambazaji',
 
   'errors.invalid_provision_bands':
     'Makundi ya upunguzaji si sahihi: makundi 1 hadi {{maxBands}}, siku hadi kuisha muda zikiongezeka kutoka 0 hadi {{maxDays}}, kila asilimia kutoka 0 hadi 100 bila kuongezeka.',

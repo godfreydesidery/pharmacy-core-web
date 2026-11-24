@@ -1437,3 +1437,65 @@ export interface AdverseReaction extends AdverseReactionInput {
   createdAt: IsoDateTime;
   createdBy: string | null;
 }
+
+/** A root administrator's request that a second one must approve (FRD-18). */
+export type RootApprovalAction = 'LIFT_LEGAL_HOLD' | 'ERASE_TENANT';
+export type RootApprovalStatus = 'PENDING' | 'EXECUTED' | 'CANCELLED' | 'EXPIRED';
+
+export interface RootApproval {
+  uid: Uid;
+  action: RootApprovalAction;
+  tenantUid: Uid;
+  tenantCode: string;
+  tenantName: string;
+  reason: string;
+  status: RootApprovalStatus;
+  requestedByUid: Uid;
+  requestedByName: string;
+  requestedAt: IsoDateTime;
+  expiresAt: IsoDateTime;
+  approvedByUid: Uid | null;
+  approvedByName: string | null;
+  approvedAt: IsoDateTime | null;
+  cancelledAt: IsoDateTime | null;
+}
+
+/** One month's expiry write-down (STD-3), `GET /reports/expiry-provision`. */
+export interface ExpiryProvisionRun {
+  uid: Uid;
+  /** The month measured, such as 2026-11. */
+  period: string;
+  measuredOn: IsoDate;
+  enabled: boolean;
+  bands: ExpiryProvisionBand[];
+  stockAtCost: number;
+  provision: number;
+  previousProvision: number;
+  adjustment: number;
+  journalNumber: string | null;
+  branches: {
+    branchUid: Uid;
+    stockAtCost: number;
+    provision: number;
+    bands: (ExpiryProvisionBand & { costAtRisk: number; provision: number })[];
+  }[];
+  createdAt: IsoDateTime;
+}
+
+/** One VAT apportionment run (STD-2): a month's provisional split or the year's true-up. */
+export interface VatApportionmentRun {
+  uid: Uid;
+  period: string;
+  kind: 'MONTHLY' | 'ANNUAL';
+  method: VatApportionmentMethod;
+  ratioPercent: number;
+  taxableSales: number;
+  exemptSales: number;
+  directTaxableVat: number;
+  directExemptVat: number;
+  residualVat: number;
+  nonReclaimable: number;
+  adjustment: number;
+  journalNumber: string | null;
+  createdAt: IsoDateTime;
+}

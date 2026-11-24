@@ -45,6 +45,13 @@ export const PLATFORM_NAV: NavItem[] = [
     rootOnly: true,
   },
   {
+    id: 'platform-approvals',
+    label: 'Pending approvals',
+    icon: 'check',
+    path: '/platform/approvals',
+    rootOnly: true,
+  },
+  {
     id: 'platform-accounts',
     label: 'Account recovery',
     icon: 'shield',

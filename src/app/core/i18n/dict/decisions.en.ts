@@ -49,6 +49,8 @@ export const DECISIONS_EN: Readonly<Record<string, string>> = {
   'password.changeFirst':
     'Turning two-factor off needs a password of at least {{min}} characters. Change your password first.',
 
+  'nav.platform-approvals': 'Pending approvals',
+  'nav.platform.approvals': 'Pending approvals',
   'rootApproval.title': 'Pending approvals',
   'rootApproval.sub':
     'Lifting a legal hold and erasing a pharmacy need a second root administrator.',
@@ -82,6 +84,7 @@ export const DECISIONS_EN: Readonly<Record<string, string>> = {
   'rootApproval.ask': 'Send for approval',
   'rootApproval.pendingHere': 'A request is waiting for a second root administrator.',
 
+  'statements.tab.writedown': 'Expiry write-down',
   'writedownReport.title': 'Expiry write-down',
   'writedownReport.sub':
     'The monthly provision for stock near or past its expiry, by branch and band. Your accountant should confirm the method.',
@@ -112,7 +115,7 @@ export const DECISIONS_EN: Readonly<Record<string, string>> = {
   'vatReport.net': 'Net',
   'vatReport.vat': 'VAT',
 
-  'statement.DEBIT_NOTE': 'Debit note',
+  'payables.type.DEBIT_NOTE': 'Supplier debit note',
 
   'errors.invalid_provision_bands':
     'The write-down bands are not valid: 1 to {{maxBands}} bands, days to expiry rising from 0 to {{maxDays}}, each percentage from 0 to 100 and not rising.',
