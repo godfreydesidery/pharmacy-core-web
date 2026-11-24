@@ -176,8 +176,7 @@ interface PromotionDraft {
           <div class="card card-pad mb">
             @if (canEdit()) {
               <div class="row wrap" style="gap: 8px; align-items: end">
-                <div class="field grow">
-                  <label>{{ 'pricing.product' | t }}</label>
+                <app-field class="grow" [label]="'pricing.product' | t">
                   <app-lookup
                     #branchProduct
                     path="/products"
@@ -185,7 +184,7 @@ interface PromotionDraft {
                     [display]="productName"
                     (picked)="branchDraft.productUid = $event?.uid ?? null"
                   />
-                </div>
+                </app-field>
                 <div class="field">
                   <label>{{ 'pricing.branch' | t }}</label>
                   <select class="select" #branchSel>
@@ -194,10 +193,9 @@ interface PromotionDraft {
                     }
                   </select>
                 </div>
-                <div class="field">
-                  <label>{{ 'pricing.price' | t }}</label>
+                <app-field [label]="'pricing.price' | t">
                   <input class="input" type="number" min="0" step="any" #branchPriceInput />
-                </div>
+                </app-field>
                 <button
                   class="btn primary"
                   type="button"
@@ -300,12 +298,10 @@ interface PromotionDraft {
     >
       @if (list(); as l) {
         <div class="form-grid">
-          <div class="field">
-            <label>{{ 'pricing.name' | t }}</label>
+          <app-field [label]="'pricing.name' | t">
             <input class="input" [value]="l.name" (input)="l.name = $any($event.target).value" />
-          </div>
-          <div class="field">
-            <label>{{ 'pricing.appliesTo' | t }}</label>
+          </app-field>
+          <app-field [label]="'pricing.appliesTo' | t">
             <select
               class="select"
               [value]="l.target"
@@ -315,7 +311,7 @@ interface PromotionDraft {
               <option value="customer">{{ 'pricing.oneCustomer' | t }}</option>
               <option value="insurer">{{ 'pricing.anInsurer' | t }}</option>
             </select>
-          </div>
+          </app-field>
           @if (l.target === 'insurer') {
             <div class="field">
               <label>{{ 'pricing.insurer' | t }}</label>
@@ -349,8 +345,7 @@ interface PromotionDraft {
               </select>
             </div>
           } @else {
-            <div class="field">
-              <label>{{ 'pricing.customer' | t }}</label>
+            <app-field [label]="'pricing.customer' | t">
               <app-lookup
                 path="/customers"
                 [placeholder]="l.customerName ?? ('pricing.searchCustomer' | t)"
@@ -359,10 +354,9 @@ interface PromotionDraft {
                   l.customerUid = $event?.uid ?? null; l.customerName = $event?.name ?? null
                 "
               />
-            </div>
+            </app-field>
           }
-          <div class="field">
-            <label>{{ 'pricing.noPrice' | t }}</label>
+          <app-field [label]="'pricing.noPrice' | t" [hint]="'pricing.noPriceHint' | t">
             <select
               class="select"
               data-testid="plan-rule"
@@ -372,11 +366,9 @@ interface PromotionDraft {
               <option value="block" [selected]="!l.rule">{{ 'pricing.noPrice.block' | t }}</option>
               <option value="rule" [selected]="l.rule">{{ 'pricing.noPrice.rule' | t }}</option>
             </select>
-            <span class="hint">{{ 'pricing.noPriceHint' | t }}</span>
-          </div>
+          </app-field>
           @if (l.rule) {
-            <div class="field">
-              <label>{{ 'pricing.adjustment' | t }}</label>
+            <app-field [label]="'pricing.adjustment' | t" [hint]="'pricing.adjustmentHint' | t">
               <input
                 class="input"
                 type="number"
@@ -385,27 +377,24 @@ interface PromotionDraft {
                 [value]="l.adjustmentPercent"
                 (input)="l.adjustmentPercent = +$any($event.target).value"
               />
-              <span class="hint">{{ 'pricing.adjustmentHint' | t }}</span>
-            </div>
+            </app-field>
           }
-          <div class="field">
-            <label>{{ 'pricing.validFrom' | t }}</label>
+          <app-field [label]="'pricing.validFrom' | t">
             <input
               class="input"
               type="date"
               [value]="l.validFrom"
               (change)="l.validFrom = $any($event.target).value"
             />
-          </div>
-          <div class="field">
-            <label>{{ 'pricing.validTo' | t }}</label>
+          </app-field>
+          <app-field [label]="'pricing.validTo' | t">
             <input
               class="input"
               type="date"
               [value]="l.validTo"
               (change)="l.validTo = $any($event.target).value"
             />
-          </div>
+          </app-field>
           <label class="check full">
             <input
               type="checkbox"
@@ -494,12 +483,10 @@ interface PromotionDraft {
     >
       @if (promotion(); as p) {
         <div class="form-grid">
-          <div class="field">
-            <label>{{ 'pricing.name' | t }}</label>
+          <app-field [label]="'pricing.name' | t">
             <input class="input" [value]="p.name" (input)="p.name = $any($event.target).value" />
-          </div>
-          <div class="field">
-            <label>{{ 'pricing.percentOff' | t }}</label>
+          </app-field>
+          <app-field [label]="'pricing.percentOff' | t">
             <input
               class="input"
               type="number"
@@ -509,16 +496,15 @@ interface PromotionDraft {
               [value]="p.percentOff"
               (input)="p.percentOff = +$any($event.target).value"
             />
-          </div>
-          <div class="field full">
-            <label>{{ 'pricing.product' | t }}</label>
+          </app-field>
+          <app-field class="full" [label]="'pricing.product' | t">
             <app-lookup
               path="/products"
               [placeholder]="p.productName ?? ('pricing.anyProduct' | t)"
               [display]="productName"
               (picked)="p.productUid = $event?.uid ?? null; p.productName = $event?.name ?? null"
             />
-          </div>
+          </app-field>
           <div class="field">
             <label>{{ 'pricing.category' | t }}</label>
             <select
@@ -547,15 +533,14 @@ interface PromotionDraft {
               }
             </select>
           </div>
-          <div class="field">
-            <label>{{ 'pricing.validFrom' | t }}</label>
+          <app-field [label]="'pricing.validFrom' | t">
             <input
               class="input"
               type="date"
               [value]="p.validFrom"
               (change)="p.validFrom = $any($event.target).value"
             />
-          </div>
+          </app-field>
           <div class="field">
             <label>{{ 'pricing.validTo' | t }}</label>
             <input

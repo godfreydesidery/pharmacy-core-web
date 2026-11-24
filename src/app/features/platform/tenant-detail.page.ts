@@ -258,13 +258,13 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
           </select>
           <span class="hint">{{ 'susp.kindHint' | t }}</span>
         </div>
-        <div class="field">
-          <label>{{ 'platform.reason' | t }}</label><textarea
+        <app-field [label]="'platform.reason' | t">
+          <textarea
             class="input"
             #reason
             [placeholder]="'platform.unpaidSubscriptionLicenceRevoked' | t"
           ></textarea>
-        </div>
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="suspending.set(false)">
@@ -284,14 +284,14 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
     <app-modal [open]="closing()" [title]="'close.closeTitle' | t" (closed)="closing.set(false)">
       <div class="stack">
         <p>{{ 'close.closeText' | t }}</p>
-        <div class="field">
-          <label>{{ 'platform.reason' | t }}</label><textarea
+        <app-field [label]="'platform.reason' | t">
+          <textarea
             class="input"
             #closeReason
             data-testid="close-reason"
             [placeholder]="'close.reasonPlaceholder' | t"
           ></textarea>
-        </div>
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="closing.set(false)">
@@ -312,14 +312,14 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
     <app-modal [open]="holding()" [title]="'close.holdTitle' | t" (closed)="holding.set(false)">
       <div class="stack">
         <p>{{ 'close.holdText' | t }}</p>
-        <div class="field">
-          <label>{{ 'platform.reason' | t }}</label><textarea
+        <app-field [label]="'platform.reason' | t">
+          <textarea
             class="input"
             #holdReason
             data-testid="hold-reason"
             [placeholder]="'close.holdPlaceholder' | t"
           ></textarea>
-        </div>
+        </app-field>
       </div>
       <ng-container footer>
         <button class="btn" type="button" (click)="holding.set(false)">
@@ -343,8 +343,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
           <div class="notice tone-red">
             <app-icon name="alert" /> {{ 'close.eraseText' | t: { name: t.name } }}
           </div>
-          <div class="field">
-            <label>{{ 'close.eraseConfirm' | t: { code: t.code } }}</label>
+          <app-field [label]="'close.eraseConfirm' | t: { code: t.code }">
             <input
               class="input mono"
               data-testid="erase-code"
@@ -352,7 +351,7 @@ import { TenantSubscriptionComponent } from './tenant-subscription.component';
               [value]="eraseCode()"
               (input)="eraseCode.set($any($event.target).value)"
             />
-          </div>
+          </app-field>
         </div>
         <ng-container footer>
           <button class="btn" type="button" (click)="erasing.set(false)">

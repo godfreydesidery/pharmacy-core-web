@@ -133,33 +133,22 @@ import { Translations } from '../../core/i18n/translations.store';
             }
           </select>
         </div>
-        <div class="field">
-          <label>{{ 'insurance.memberNumber' | t }}</label><input
-            class="input mono"
-            formControlName="memberNumber"
-          />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.principalMember' | t }}</label><input
+        <app-field [label]="'insurance.memberNumber' | t">
+          <input class="input mono" formControlName="memberNumber" />
+        </app-field>
+        <app-field [label]="'insurance.principalMember' | t">
+          <input
             class="input"
             formControlName="principalName"
             [placeholder]="'insurance.ifADependant' | t"
           />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.validFrom' | t }}</label><input
-            class="input"
-            type="date"
-            formControlName="validFrom"
-          />
-        </div>
-        <div class="field">
-          <label>{{ 'insurance.validUntil' | t }}</label><input
-            class="input"
-            type="date"
-            formControlName="validUntil"
-          />
-        </div>
+        </app-field>
+        <app-field [label]="'insurance.validFrom' | t">
+          <input class="input" type="date" formControlName="validFrom" />
+        </app-field>
+        <app-field [label]="'insurance.validUntil' | t">
+          <input class="input" type="date" formControlName="validUntil" />
+        </app-field>
         <label class="check"
           ><input type="checkbox" formControlName="active" /> {{ 'insurance.active' | t }}</label
         >

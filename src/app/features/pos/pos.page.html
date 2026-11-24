@@ -1046,65 +1046,42 @@
         </div>
       }
     </div>
-    <div class="field">
-      <label>{{ 'pos.prescriberName' | t }}</label><input
-        class="input"
-        formControlName="prescriberName"
-      />
-      @if (rxErr('prescriberName'); as m) {
-        <span class="error">{{ m }}</span>
-      }
-    </div>
-    <div class="field">
-      <label>{{ 'pos.registrationNo' | t }}</label><input
-        class="input"
-        formControlName="prescriberRegistration"
-        placeholder="MCT-1234"
-      />
-      @if (rxErr('prescriberRegistration'); as m) {
-        <span class="error">{{ m }}</span>
-      }
-    </div>
-    <div class="field">
-      <label>{{ 'pos.prescriptionReference' | t }}</label><input
-        class="input"
-        formControlName="reference"
-      />
-      @if (rxErr('reference'); as m) {
-        <span class="error">{{ m }}</span>
-      }
-    </div>
-    <div class="field">
-      <label>{{ 'pos.patientName' | t }}</label><input
-        class="input"
-        formControlName="patientName"
-      />
-      @if (rxErr('patientName'); as m) {
-        <span class="error">{{ m }}</span>
-      }
-    </div>
-    <div class="field">
-      <label>{{ 'pos.prescriptionDate' | t }}</label><input
+    <app-field [label]="'pos.prescriberName' | t" [error]="rxErr('prescriberName')">
+      <input class="input" formControlName="prescriberName" />
+    </app-field>
+    <app-field [label]="'pos.registrationNo' | t" [error]="rxErr('prescriberRegistration')">
+      <input class="input" formControlName="prescriberRegistration" placeholder="MCT-1234" />
+    </app-field>
+    <app-field [label]="'pos.prescriptionReference' | t" [error]="rxErr('reference')">
+      <input class="input" formControlName="reference" />
+    </app-field>
+    <app-field [label]="'pos.patientName' | t" [error]="rxErr('patientName')">
+      <input class="input" formControlName="patientName" />
+    </app-field>
+    <app-field
+      [label]="'pos.prescriptionDate' | t"
+      [hint]="'pos.prescriptionDateHint' | t"
+      [error]="rxErr('prescriptionDate')"
+    >
+      <input
         class="input"
         type="date"
         formControlName="prescriptionDate"
         data-testid="rx-date"
         [max]="today()"
       />
-      <span class="hint">{{ 'pos.prescriptionDateHint' | t }}</span>
-      @if (rxErr('prescriptionDate'); as m) {
-        <span class="error">{{ m }}</span>
-      }
-    </div>
-    <div class="field full">
-      <label>{{ 'files.prescriptionImage' | t }}</label>
+    </app-field>
+    <app-field
+      class="full"
+      [label]="'files.prescriptionImage' | t"
+      [hint]="'files.prescriptionImageHint' | t"
+    >
       <app-upload
         [compact]="true"
         accept="image/png,image/jpeg,image/webp,application/pdf"
         (picked)="prescriptionFile.set($event)"
       />
-      <span class="hint">{{ 'files.prescriptionImageHint' | t }}</span>
-    </div>
+    </app-field>
   </form>
   <ng-container footer>
     <button class="btn" type="button" (click)="closeRx()">{{ 'pos.cancel' | t }}</button>

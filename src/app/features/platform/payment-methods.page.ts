@@ -78,19 +78,17 @@ const ADAPTERS = ['NONE', 'MANUAL', 'SIMULATOR', 'MPESA', 'MIXX', 'AIRTEL', 'SEL
     <app-modal [open]="!!draft()" [title]="'payments.method' | t" (closed)="draft.set(null)">
       @if (draft(); as d) {
         <div class="form-grid">
-          <div class="field">
-            <label>{{ 'payments.code' | t }}</label>
+          <app-field [label]="'payments.code' | t">
             <input
               class="input mono"
               [value]="d.code"
               [readOnly]="!!d.uid"
               (input)="d.code = $any($event.target).value"
             />
-          </div>
-          <div class="field">
-            <label>{{ 'payments.name' | t }}</label>
+          </app-field>
+          <app-field [label]="'payments.name' | t">
             <input class="input" [value]="d.name" (input)="d.name = $any($event.target).value" />
-          </div>
+          </app-field>
           <div class="field">
             <label>{{ 'payments.kind' | t }}</label>
             <select class="select" [value]="d.kind" (change)="d.kind = $any($event.target).value">
@@ -113,15 +111,14 @@ const ADAPTERS = ['NONE', 'MANUAL', 'SIMULATOR', 'MPESA', 'MIXX', 'AIRTEL', 'SEL
               }
             </select>
           </div>
-          <div class="field">
-            <label>{{ 'payments.order' | t }}</label>
+          <app-field [label]="'payments.order' | t">
             <input
               class="input"
               type="number"
               [value]="d.sortOrder"
               (input)="d.sortOrder = +$any($event.target).value"
             />
-          </div>
+          </app-field>
           <label class="check">
             <input
               type="checkbox"

@@ -146,23 +146,20 @@ import { downgradeLoss, losesAnything } from '../../core/subscription/downgrade'
           {{ i.number }} · <b>{{ i.amount | money: i.currency }}</b>
         </p>
         <div class="form-grid">
-          <div class="field">
-            <label>{{ 'plans.method' | t }}</label>
+          <app-field [label]="'plans.method' | t">
             <select class="select" #method>
               <option value="MOBILE_MONEY">{{ 'enum.MOBILE_MONEY' | t }}</option>
               <option value="BANK_TRANSFER">{{ 'enum.BANK_TRANSFER' | t }}</option>
               <option value="CARD">{{ 'enum.CARD' | t }}</option>
               <option value="CASH">{{ 'enum.CASH' | t }}</option>
             </select>
-          </div>
-          <div class="field">
-            <label>{{ 'plans.reference' | t }}</label>
+          </app-field>
+          <app-field [label]="'plans.reference' | t">
             <input class="input" #reference />
-          </div>
-          <div class="field">
-            <label>{{ 'plans.paidOn' | t }}</label>
+          </app-field>
+          <app-field [label]="'plans.paidOn' | t">
             <input class="input" type="date" #paidOn [value]="today" />
-          </div>
+          </app-field>
         </div>
         <div class="row" style="justify-content: flex-end; gap: 8px; margin-top: 12px">
           <button class="btn" type="button" (click)="paying.set(null)">

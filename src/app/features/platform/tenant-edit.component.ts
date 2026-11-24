@@ -40,32 +40,20 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
     >
       <form [formGroup]="form" class="stack" (ngSubmit)="save()">
         <div class="form-grid three">
-          <div class="field">
-            <label>{{ 'platform.tradingName' | t }}</label><input
-              class="input"
-              formControlName="name"
-            />
-            @if (err('name'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
-          <div class="field">
-            <label>{{ 'platform.legalName' | t }}</label><input
-              class="input"
-              formControlName="legalName"
-            />
-          </div>
-          <div class="field">
-            <label>{{ 'platform.countryIso' | t }}</label><input
+          <app-field [label]="'platform.tradingName' | t" [error]="err('name')">
+            <input class="input" formControlName="name" />
+          </app-field>
+          <app-field [label]="'platform.legalName' | t">
+            <input class="input" formControlName="legalName" />
+          </app-field>
+          <app-field [label]="'platform.countryIso' | t" [error]="err('country')">
+            <input
               class="input"
               formControlName="country"
               maxlength="2"
               style="text-transform:uppercase"
             />
-            @if (err('country'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
+          </app-field>
           <div class="field">
             <label>{{ 'platform.currency' | t }}</label><select
               class="select"
@@ -93,35 +81,18 @@ const CURRENCIES = ['TZS', 'KES', 'UGX', 'RWF', 'NGN', 'ZAR', 'USD'];
         </div>
         <h4 class="muted">{{ 'admin2.contact' | t }}</h4>
         <div class="form-grid">
-          <div class="field">
-            <label>{{ 'admin2.contactName' | t }}</label><input
-              class="input"
-              formControlName="contactName"
-            />
-          </div>
-          <div class="field">
-            <label>{{ 'admin2.contactEmail' | t }}</label><input
-              class="input"
-              type="email"
-              formControlName="contactEmail"
-            />
-            @if (err('contactEmail'); as m) {
-              <span class="error">{{ m }}</span>
-            }
-          </div>
-          <div class="field">
-            <label>{{ 'admin2.contactPhone' | t }}</label><input
-              class="input"
-              formControlName="contactPhone"
-              placeholder="+255754000111"
-            />
-          </div>
-          <div class="field">
-            <label>{{ 'platform.address' | t }}</label><input
-              class="input"
-              formControlName="address"
-            />
-          </div>
+          <app-field [label]="'admin2.contactName' | t">
+            <input class="input" formControlName="contactName" />
+          </app-field>
+          <app-field [label]="'admin2.contactEmail' | t" [error]="err('contactEmail')">
+            <input class="input" type="email" formControlName="contactEmail" />
+          </app-field>
+          <app-field [label]="'admin2.contactPhone' | t">
+            <input class="input" formControlName="contactPhone" placeholder="+255754000111" />
+          </app-field>
+          <app-field [label]="'platform.address' | t">
+            <input class="input" formControlName="address" />
+          </app-field>
           <div class="field full">
             <label class="check"
               ><input type="checkbox" formControlName="directUserCreation" />

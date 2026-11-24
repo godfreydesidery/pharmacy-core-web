@@ -77,34 +77,21 @@ import { Translations } from '../../core/i18n/translations.store';
       (closed)="open.set(false)"
     >
       <form class="form-grid" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field">
-          <label>{{ 'admin.code' | t }}</label><input
-            class="input"
-            formControlName="code"
-            style="text-transform:uppercase"
-          />
-          @if (err('code'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field">
-          <label>{{ 'admin.name' | t }}</label><input class="input" formControlName="name" />
-          @if (err('name'); as m) {
-            <span class="error">{{ m }}</span>
-          }
-        </div>
-        <div class="field full">
-          <label>{{ 'admin.address' | t }}</label><input class="input" formControlName="address" />
-        </div>
-        <div class="field">
-          <label>{{ 'admin.phone' | t }}</label><input class="input" formControlName="phone" />
-        </div>
-        <div class="field">
-          <label>{{ 'admin.premisesLicenceNo' | t }}</label><input
-            class="input"
-            formControlName="licenceNumber"
-          />
-        </div>
+        <app-field [label]="'admin.code' | t" [error]="err('code')">
+          <input class="input" formControlName="code" style="text-transform:uppercase" />
+        </app-field>
+        <app-field [label]="'admin.name' | t" [error]="err('name')">
+          <input class="input" formControlName="name" />
+        </app-field>
+        <app-field class="full" [label]="'admin.address' | t">
+          <input class="input" formControlName="address" />
+        </app-field>
+        <app-field [label]="'admin.phone' | t">
+          <input class="input" formControlName="phone" />
+        </app-field>
+        <app-field [label]="'admin.premisesLicenceNo' | t">
+          <input class="input" formControlName="licenceNumber" />
+        </app-field>
         @if (current()) {
           <label class="check full"
             ><input type="checkbox" formControlName="active" /> {{ 'admin.active' | t }}</label
