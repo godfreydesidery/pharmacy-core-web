@@ -1,6 +1,6 @@
 import { CurrencyRateComponent } from '../../core/ui/currency-rate.component';
 import { SettingsStore } from '../../core/format/settings.store';
-import { convertMoney, roundMoney } from '../../core/format/format';
+import { convertMoney, formatMoney, roundMoney } from '../../core/format/format';
 import {
   ChangeDetectionStrategy,
   Component,
@@ -32,6 +32,7 @@ import { applyApiError, controlError, validate } from '../../core/ui/forms';
 import { LookupComponent } from '../../core/ui/lookup.component';
 import { TRACKING_MODES, defaultTracking, parseSerials } from '../../core/ui/product-types';
 import { ToastService } from '../../core/ui/toast.service';
+import { ConfirmService } from '../../core/ui/confirm';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 
@@ -80,7 +81,10 @@ type ReceiptLine = FormGroup<{
                   path="/suppliers"
                   [placeholder]="'purchasing.searchSuppliers' | t"
                   [display]="supplierName"
-                  (picked)="form.controls.supplierUid.setValue($event?.uid ?? '')"
+                  (picked)="
+                    form.controls.supplierUid.setValue($event?.uid ?? '');
+                    pickedSupplier.set($event?.name ?? null)
+                  "
                 />
               }
             </app-field>
@@ -317,8 +321,11 @@ export default class ReceiptFormPage implements OnInit {
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
   private readonly router = inject(Router);
+  private readonly confirm = inject(ConfirmService);
   private readonly fb = inject(FormBuilder).nonNullable;
   readonly po = input<string | undefined>();
+  /** The supplier picked in the box (an order brings its own), for the confirmation. */
+  protected readonly pickedSupplier = signal<string | null>(null);
   protected readonly order = signal<PurchaseOrder | null>(null);
   protected readonly busy = signal(false);
   protected readonly today = isoDay();
@@ -498,6 +505,32 @@ export default class ReceiptFormPage implements OnInit {
       return;
     }
     const value = this.form.getRawValue();
+    // Receiving adds stock and what the pharmacy owes at once: it is confirmed with its figures
+    // (UX-12).
+    const t = (key: string, params?: Record<string, string | number>) =>
+      this.translations.t(key, params);
+    const units = value.lines.reduce((sum, l) => sum + (Number(l.quantity) || 0), 0);
+    const supplier = this.order()?.supplierName ?? this.pickedSupplier();
+    const sure = await this.confirm.ask({
+      title: t('ux.confirm.receipt.title'),
+      text: t('ux.confirm.receipt.text'),
+      icon: 'question',
+      confirmText: t('ux.confirm.receipt.ok'),
+      details: [
+        ...(supplier ? [{ label: t('ux.confirm.supplier'), value: supplier }] : []),
+        {
+          label: t('ux.confirm.items'),
+          value: t('pos.linesAndUnits', { lines: value.lines.length, units }),
+        },
+        { label: t('ux.confirm.total'), value: formatMoney(this.total(), this.currency()) },
+        ...(this.vat() > 0
+          ? [{ label: t('ux.confirm.vat'), value: formatMoney(this.vat(), this.currency()) }]
+          : []),
+      ],
+    });
+    if (!sure || this.busy()) {
+      return;
+    }
     this.busy.set(true);
     try {
       const receipt = await this.api.post<GoodsReceipt>(
