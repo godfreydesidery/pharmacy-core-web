@@ -7,6 +7,7 @@ import {
   signal,
 } from '@angular/core';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import { Permission, Role } from '../../core/api/models';
 import { loaded } from '../../core/data/data';
 import { SHARED } from '../../core/shared';
@@ -200,6 +201,7 @@ export default class RolesPage {
   private readonly api = inject(Api);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly stale = inject(StaleRecordService);
   protected readonly roles = loaded<Role[]>(() => ({
     path: '/roles',
     options: { noBranch: true },
@@ -280,14 +282,27 @@ export default class RolesPage {
       const saved = await this.api.put<Role>(
         `/roles/${role.uid}`,
         { name: role.name, description: role.description, permissions: [...this.granted()] },
-        { noBranch: true },
+        { noBranch: true, headers: ifMatch(role.version) },
       );
       this.toasts.success(this.translations.t('toast.roleUpdated', { name: saved.name }));
       await this.roles.reload();
       this.select(saved);
+    } catch (failure) {
+      // Someone else changed the role: Reload shows its permissions as they are now. Any other
+      // refusal the interceptor has already shown.
+      if (!(await this.stale.handle(failure, () => this.reload(role.uid)))) {
+        throw failure;
+      }
     } finally {
       this.busy.set(false);
     }
+  }
+
+  /** Reads the role again, as someone else left it, and shows its permissions. */
+  private async reload(uid: string): Promise<void> {
+    const fresh = await this.api.get<Role>(`/roles/${uid}`, undefined, { noBranch: true });
+    this.select(fresh);
+    void this.roles.reload();
   }
 
   protected async create(code: string, name: string, description: string): Promise<void> {

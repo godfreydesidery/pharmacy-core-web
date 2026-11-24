@@ -9,6 +9,7 @@ import {
 } from '@angular/core';
 import { FormBuilder, Validators } from '@angular/forms';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import { Settings, CurrencyInfo } from '../../core/api/models';
 import { SettingsStore } from '../../core/format/settings.store';
 import { SHARED } from '../../core/shared';
@@ -354,6 +355,7 @@ export default class SettingsPage implements OnInit {
   private readonly files = inject(FilesService);
   private readonly toasts = inject(ToastService);
   private readonly translations = inject(Translations);
+  private readonly stale = inject(StaleRecordService);
   protected readonly settings = this.store.settings;
   protected readonly busy = signal(false);
   /** The accepted foreign currencies (the base is always accepted). */
@@ -382,15 +384,24 @@ export default class SettingsPage implements OnInit {
   });
 
   async ngOnInit(): Promise<void> {
-    const settings = await this.api.get<Settings>('/settings', undefined, { noBranch: true });
-    this.store.set(settings);
-    this.form.patchValue({ ...settings, receiptFooter: settings.receiptFooter ?? '' });
-    this.foreign.set((settings.acceptedCurrencies ?? []).filter((c) => c !== settings.currency));
+    await this.load();
     this.catalogue.set(
       await this.api
         .get<CurrencyInfo[]>('/currencies', undefined, { silent: true, noBranch: true })
         .catch(() => []),
     );
+  }
+
+  /** Reads the settings into the form as they are on the server, their version included. */
+  private async load(): Promise<void> {
+    const settings = await this.api.get<Settings>('/settings', undefined, { noBranch: true });
+    this.store.set(settings);
+    this.form.reset({
+      ...this.form.getRawValue(),
+      ...settings,
+      receiptFooter: settings.receiptFooter ?? '',
+    });
+    this.foreign.set((settings.acceptedCurrencies ?? []).filter((c) => c !== settings.currency));
   }
 
   protected addCurrency(select: HTMLSelectElement): void {
@@ -422,6 +433,8 @@ export default class SettingsPage implements OnInit {
       return;
     }
     const v = this.form.getRawValue();
+    // The version as last loaded or saved: the page may save several times without reloading.
+    const version = this.settings()?.version;
     this.busy.set(true);
     try {
       const saved = await this.api.put<Settings>(
@@ -433,11 +446,14 @@ export default class SettingsPage implements OnInit {
           receiptFooter: v.receiptFooter || null,
           acceptedCurrencies: [this.settings()?.currency, ...this.foreign()].filter(Boolean),
         },
-        { silent: true, noBranch: true },
+        { silent: true, noBranch: true, headers: ifMatch(version) },
       );
       this.store.set(saved);
       this.toasts.success(this.translations.t('toast.settingsSaved'));
     } catch (failure) {
+      if (await this.stale.handle(failure, () => this.load())) {
+        return;
+      }
       if (!applyApiError(this.form, failure)) {
         this.toasts.error((failure as Error).message);
       }

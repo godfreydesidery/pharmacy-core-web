@@ -4,6 +4,7 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { map } from 'rxjs';
 import { Api } from '../../core/api/api.service';
+import { StaleRecordService, ifMatch } from '../../core/api/concurrency';
 import {
   BulkResult,
   Category,
@@ -38,6 +39,8 @@ const CUSTOMER_TYPES: CustomerType[] = [
 
 interface PlanDraft {
   uid: string | null;
+  /** The plan's version as the form opened, sent as `If-Match` on its save; null for a new plan. */
+  version: number | null;
   name: string;
   target: 'everyone' | 'type' | 'customer' | 'insurer';
   customerType: CustomerType | '';
@@ -927,6 +930,7 @@ export default class PricingPlansPage {
   private readonly http = inject(HttpClient);
   private readonly toasts = inject(ToastService);
   private readonly confirm = inject(ConfirmService);
+  private readonly stale = inject(StaleRecordService);
   private readonly translations = inject(Translations);
   private readonly session = inject(SessionStore);
 
@@ -1191,6 +1195,7 @@ export default class PricingPlansPage {
   protected newPlan(): void {
     this.draft.set({
       uid: null,
+      version: null,
       name: '',
       target: 'everyone',
       customerType: '',
@@ -1206,9 +1211,21 @@ export default class PricingPlansPage {
     });
   }
 
-  protected editPlan(c: PlanCard): void {
+  /** The plan's version: the card's, or else read from the plan itself. */
+  private async planVersion(c: PlanCard): Promise<number | null> {
+    if (!c.uid) return null;
+    if (typeof c.version === 'number') return c.version;
+    const plan = await this.api.get<PriceList>(`/price-lists/${c.uid}`, undefined, {
+      noBranch: true,
+    });
+    return plan.version ?? null;
+  }
+
+  protected async editPlan(c: PlanCard): Promise<void> {
+    const version = await this.planVersion(c);
     this.draft.set({
       uid: c.uid,
+      version,
       name: c.name,
       target: c.payerUid
         ? 'insurer'
@@ -1274,7 +1291,17 @@ export default class PricingPlansPage {
     this.busy.set(true);
     try {
       if (d.uid) {
-        await this.api.put(`/price-lists/${d.uid}`, this.body(d), { noBranch: true });
+        const uid = d.uid;
+        try {
+          await this.api.put(`/price-lists/${uid}`, this.body(d), {
+            noBranch: true,
+            headers: ifMatch(d.version),
+          });
+        } catch (failure) {
+          // Someone else changed the plan: Reload reads it again into the form.
+          if (await this.stale.handle(failure, () => this.reloadPlan(uid))) return;
+          throw failure;
+        }
       } else {
         const made = await this.api.post<PriceList>('/price-lists', this.body(d), {
           noBranch: true,
@@ -1289,12 +1316,33 @@ export default class PricingPlansPage {
     }
   }
 
+  /** Reads the plans again and opens the plan as someone else left it. */
+  private async reloadPlan(uid: string): Promise<void> {
+    await this.refresh();
+    const fresh = (this.cards.value() ?? []).find((c) => c.uid === uid);
+    if (fresh) {
+      await this.editPlan(fresh);
+    } else {
+      this.draft.set(null);
+    }
+  }
+
   protected async toggleActive(c: PlanCard): Promise<void> {
     if (!c.uid) return;
-    this.editPlan(c);
+    await this.editPlan(c);
     const d = this.draft()!;
     d.active = !c.active;
-    await this.api.put(`/price-lists/${c.uid}`, this.body(d), { noBranch: true });
+    try {
+      await this.api.put(`/price-lists/${c.uid}`, this.body(d), {
+        noBranch: true,
+        headers: ifMatch(d.version),
+      });
+    } catch (failure) {
+      this.draft.set(null);
+      // Someone else changed the plan: Reload shows it as it is now.
+      if (await this.stale.handle(failure, () => this.cards.reload())) return;
+      throw failure;
+    }
     this.draft.set(null);
     this.toasts.success(this.translations.t(d.active ? 'plans.activated' : 'plans.deactivated'));
     await this.cards.reload();

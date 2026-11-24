@@ -14,6 +14,9 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   'errors.route_not_found': 'This action is not available.',
   'errors.conflict': 'This conflicts with an existing record.',
   'errors.stale_version': 'Someone changed this record meanwhile; reload and try again.',
+  'errors.precondition_failed': 'Someone else changed this record; reload to see their change.',
+  'errors.precondition_required':
+    'This change must name the version of the record it edits; reload and try again.',
   'errors.forbidden': 'Your role does not allow this.',
   'errors.unauthenticated': 'Sign in to continue.',
 
@@ -122,7 +125,8 @@ export const ERRORS_EN: Readonly<Record<string, string>> = {
   // catalogue
   'errors.duplicate_sku': 'Another product already has this code.',
   'errors.duplicate_gtin': 'Another product already has this barcode (GTIN).',
-  'errors.invalid_gtin': 'The barcode (GTIN) must be 8 to 14 digits.',
+  'errors.invalid_gtin':
+    'This barcode is not a valid GTIN (EAN-13, UPC-A, GTIN-8 or GTIN-14): its check digit is wrong.',
   'errors.invalid_atc_code': 'This is not a WHO ATC code, such as N02BE01.',
   'errors.invalid_generic_name': 'A medicine needs its generic (INN) name.',
   'errors.invalid_dosage_form': 'A medicine needs its dosage form.',

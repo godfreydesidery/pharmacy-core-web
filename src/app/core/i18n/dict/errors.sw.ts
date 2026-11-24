@@ -9,6 +9,10 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   'errors.route_not_found': 'Kitendo hiki hakipatikani.',
   'errors.conflict': 'Hii inagongana na rekodi iliyopo.',
   'errors.stale_version': 'Mtu mwingine amebadilisha rekodi hii; pakia upya kisha ujaribu tena.',
+  'errors.precondition_failed':
+    'Mtu mwingine amebadilisha rekodi hii; pakia upya ili kuona mabadiliko yake.',
+  'errors.precondition_required':
+    'Badiliko hili lazima litaje toleo la rekodi linalohariri; pakia upya kisha ujaribu tena.',
   'errors.forbidden': 'Jukumu lako haliruhusu hili.',
   'errors.unauthenticated': 'Ingia ili kuendelea.',
 
@@ -116,7 +120,8 @@ export const ERRORS_SW: Readonly<Record<string, string>> = {
   // catalogue
   'errors.duplicate_sku': 'Bidhaa nyingine tayari ina msimbo huu.',
   'errors.duplicate_gtin': 'Bidhaa nyingine tayari ina msimbopau (GTIN) huu.',
-  'errors.invalid_gtin': 'Msimbopau (GTIN) uwe na tarakimu 8 hadi 14.',
+  'errors.invalid_gtin':
+    'Msimbopau huu si GTIN halali (EAN-13, UPC-A, GTIN-8 au GTIN-14): tarakimu yake ya kuhakiki si sahihi.',
   'errors.invalid_atc_code': 'Huu si msimbo wa ATC wa WHO, kama N02BE01.',
   'errors.invalid_generic_name': 'Dawa inahitaji jina lake la kitaalamu (INN).',
   'errors.invalid_dosage_form': 'Dawa inahitaji aina yake ya dawa (kidonge, sharubati…).',
