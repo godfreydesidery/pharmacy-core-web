@@ -96,4 +96,56 @@ export const UX_EN: Readonly<Record<string, string>> = {
   'receipt.serials': 'S/N {{serials}}',
   'receipt.batchExpiry': 'Batch {{batch}} · exp {{date}}',
   'receipt.batch': 'Batch {{batch}}',
+
+  // the till (UX-5, UX-11, A11Y-5/6)
+  'pos.qtyClamped':
+    'Only {{count}} of {{name}} can be sold here; the quantity was set to {{count}}.',
+  'pos.discountClamped': 'A discount is from 0 to 100%; it was set to {{value}}%.',
+  'pos.qtyOf': 'Quantity of {{name}}',
+  'pos.newCustomer': 'New customer',
+  'pos.newCustomerName': 'Name',
+  'pos.newCustomerPhone': 'Phone (optional)',
+  'pos.newCustomerPhoneHint': 'For receipts by SMS and to find them next time.',
+  'pos.newCustomerSave': 'Save and add to sale',
+  'pos.customerCreated': '{{name}} added as a customer and attached to this sale',
+  'pos.totalAnnounce':
+    'Total {{total}}, {lines, plural, one {# line} other {# lines}}, {units, plural, one {# unit} other {# units}}',
+  'pos.scheduleControlled': 'Controlled drug: every detail goes into the register',
+  'pos.schedulePrescription': 'Prescription only',
+
+  // confirmations with their figures (UX-12)
+  'ux.confirm.items': 'Items',
+  'ux.confirm.total': 'Total',
+  'ux.confirm.vat': 'Input VAT',
+  'ux.confirm.supplier': 'Supplier',
+  'ux.confirm.product': 'Product',
+  'ux.confirm.batch': 'Batch',
+  'ux.confirm.change': 'Change',
+  'ux.confirm.reason': 'Reason',
+  'ux.confirm.amount': 'Amount',
+  'ux.confirm.method': 'Paid by',
+  'ux.confirm.receipts': 'Settles',
+  'ux.confirm.receiptsCount': '{count, plural, one {# goods receipt} other {# goods receipts}}',
+  'ux.confirm.receiptsNone': 'No receipt: the payment is on account',
+  'ux.confirm.unitsOff':
+    '{count, plural, one {# unit off the stock} other {# units off the stock}}',
+  'ux.confirm.unitsOn':
+    '{count, plural, one {# unit added to the stock} other {# units added to the stock}}',
+  'ux.confirm.refund': 'Refund (about)',
+  'ux.confirm.refundWays': 'Paid back by',
+  'ux.confirm.receipt.title': 'Record this goods receipt?',
+  'ux.confirm.receipt.text':
+    'The stock is added at once and what the pharmacy owes the supplier goes up.',
+  'ux.confirm.receipt.ok': 'Record receipt',
+  'ux.confirm.adjust.title': 'Record this stock adjustment?',
+  'ux.confirm.adjust.text': 'The stock changes at once; only another adjustment can undo it.',
+  'ux.confirm.adjust.ok': 'Record adjustment',
+  'ux.confirm.payment.title': 'Record this supplier payment?',
+  'ux.confirm.payment.text':
+    'It is booked in the accounts at once and lowers what the pharmacy owes.',
+  'ux.confirm.payment.ok': 'Record payment',
+  'ux.confirm.return.title': 'Record this return and refund?',
+  'ux.confirm.return.text':
+    'The refund goes back the way the sale was paid, and the items come back as chosen.',
+  'ux.confirm.return.ok': 'Record return',
 };

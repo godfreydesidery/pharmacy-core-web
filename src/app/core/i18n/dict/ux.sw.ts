@@ -92,4 +92,55 @@ export const UX_SW: Readonly<Record<string, string>> = {
   'receipt.serials': 'Namba {{serials}}',
   'receipt.batchExpiry': 'Bechi {{batch}} · inaisha {{date}}',
   'receipt.batch': 'Bechi {{batch}}',
+
+  // the till (UX-5, UX-11, A11Y-5/6)
+  'pos.qtyClamped': 'Ni {{count}} tu za {{name}} zinazoweza kuuzwa hapa; idadi imewekwa {{count}}.',
+  'pos.discountClamped': 'Punguzo ni kati ya 0 na 100%; limewekwa {{value}}%.',
+  'pos.qtyOf': 'Idadi ya {{name}}',
+  'pos.newCustomer': 'Mteja mpya',
+  'pos.newCustomerName': 'Jina',
+  'pos.newCustomerPhone': 'Simu (si lazima)',
+  'pos.newCustomerPhoneHint': 'Kwa risiti kwa SMS na kumpata wakati ujao.',
+  'pos.newCustomerSave': 'Hifadhi na uongeze kwenye mauzo',
+  'pos.customerCreated': '{{name}} ameongezwa kama mteja na ameunganishwa na mauzo haya',
+  'pos.totalAnnounce':
+    'Jumla {{total}}, {lines, plural, one {mstari #} other {mistari #}}, {units, plural, one {kipimo #} other {vipimo #}}',
+  'pos.scheduleControlled': 'Dawa inayodhibitiwa: kila taarifa inaingia kwenye rejista',
+  'pos.schedulePrescription': 'Kwa cheti cha daktari tu',
+
+  // confirmations with their figures (UX-12)
+  'ux.confirm.items': 'Bidhaa',
+  'ux.confirm.total': 'Jumla',
+  'ux.confirm.vat': 'VAT ya manunuzi',
+  'ux.confirm.supplier': 'Msambazaji',
+  'ux.confirm.product': 'Bidhaa',
+  'ux.confirm.batch': 'Bechi',
+  'ux.confirm.change': 'Mabadiliko',
+  'ux.confirm.reason': 'Sababu',
+  'ux.confirm.amount': 'Kiasi',
+  'ux.confirm.method': 'Imelipwa kwa',
+  'ux.confirm.receipts': 'Inalipia',
+  'ux.confirm.receiptsCount':
+    '{count, plural, one {pokezi # la bidhaa} other {mapokezi # ya bidhaa}}',
+  'ux.confirm.receiptsNone': 'Hakuna pokezi: malipo ni ya akaunti',
+  'ux.confirm.unitsOff':
+    '{count, plural, one {kipande # kinatolewa stoo} other {vipande # vinatolewa stoo}}',
+  'ux.confirm.unitsOn':
+    '{count, plural, one {kipande # kinaongezwa stoo} other {vipande # vinaongezwa stoo}}',
+  'ux.confirm.refund': 'Kurejeshwa (takriban)',
+  'ux.confirm.refundWays': 'Inarejeshwa kwa',
+  'ux.confirm.receipt.title': 'Uandike pokezi hili la bidhaa?',
+  'ux.confirm.receipt.text': 'Stoo inaongezwa mara moja na deni la msambazaji linaongezeka.',
+  'ux.confirm.receipt.ok': 'Andika pokezi',
+  'ux.confirm.adjust.title': 'Uandike marekebisho haya ya stoo?',
+  'ux.confirm.adjust.text':
+    'Stoo inabadilika mara moja; marekebisho mengine tu yanaweza kuyatengua.',
+  'ux.confirm.adjust.ok': 'Andika marekebisho',
+  'ux.confirm.payment.title': 'Uandike malipo haya kwa msambazaji?',
+  'ux.confirm.payment.text': 'Yanaandikwa kwenye hesabu mara moja na kupunguza deni la duka.',
+  'ux.confirm.payment.ok': 'Andika malipo',
+  'ux.confirm.return.title': 'Uandike marejesho haya na kurejesha pesa?',
+  'ux.confirm.return.text':
+    'Pesa zinarejeshwa kwa njia mauzo yalivyolipwa, na bidhaa zinarudi kama ulivyochagua.',
+  'ux.confirm.return.ok': 'Andika marejesho',
 };

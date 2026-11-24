@@ -144,6 +144,11 @@ export class LookupComponent {
     this.text.set(value);
   }
 
+  /** What the box shows now: typed, or the chosen item's label. */
+  typed(): string {
+    return this.text();
+  }
+
   protected focus(): void {
     this.open.set(true);
     void this.search(this.keepText() ? '' : this.text());

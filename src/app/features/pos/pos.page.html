@@ -83,13 +83,27 @@
                   max="100"
                   [value]="discountPercent()"
                   [disabled]="locked()"
-                  (change)="setDiscount(+$any($event.target).value)"
+                  (change)="setDiscount($any($event.target).value, $any($event.target))"
                   [attr.aria-label]="'pos.discount' | t"
                   [attr.aria-describedby]="
-                    discountPercent() > maxDiscount() ? 'deep-discount' : null
+                    discountNote()
+                      ? 'discount-note'
+                      : discountPercent() > maxDiscount()
+                        ? 'deep-discount'
+                        : null
                   "
                 />
               </div>
+              @if (discountNote(); as note) {
+                <small
+                  id="discount-note"
+                  class="clamp-note"
+                  role="status"
+                  data-testid="discount-note"
+                >
+                  {{ note }}
+                </small>
+              }
               @if (discountPercent() > maxDiscount()) {
                 <small id="deep-discount" class="muted" data-testid="deep-discount">
                   {{ 'pos.deepDiscount' | t: { max: maxDiscount() } }}
@@ -125,6 +139,16 @@
                 [detail]="customerDetail"
                 (picked)="pickCustomer($event)"
               />
+              @if (session.can('partners.manage') && !customer()) {
+                <button
+                  type="button"
+                  class="chip sm new-customer"
+                  data-testid="pos-new-customer"
+                  (click)="openNewCustomer()"
+                >
+                  <app-icon name="plus" [size]="12" /> {{ 'pos.newCustomer' | t }}
+                </button>
+              }
             }
             @if (tillPlans(); as tp) {
               <div class="field plan-pick">
@@ -264,6 +288,10 @@
             <div class="grand">
               <span>{{ 'pos.total' | t }} ({{ base() }})</span
               ><b class="text-primary">{{ totals().total | money }}</b>
+            </div>
+            <!-- The total, read out politely when it changes (A11Y-5). -->
+            <div class="sr-only" aria-live="polite" aria-atomic="true" data-testid="pos-total-live">
+              {{ totalAnnouncement() }}
             </div>
             <div class="pay-edit" [class.locked]="locked()" [attr.inert]="locked() ? '' : null">
               @for (payment of payments(); track $index; let i = $index) {
@@ -575,14 +603,20 @@
         <!-- Entry row: find an item, set the quantity, add it, without leaving the page. -->
         <div class="entry">
           <div class="entry-search">
-            <span class="lbl">{{ 'pos.item' | t }}</span>
-            <!-- select2-style picker: the box shows the chosen item; opening it drops a search. -->
+            <span class="lbl" id="till-item-label">{{ 'pos.item' | t }}</span>
+            <!--
+              select2-style picker: the box shows the chosen item; opening it drops a search. The
+              search field is an ARIA combobox (A11Y-5): it owns the list, and the highlighted item
+              is its active descendant, so the focus stays in the field while arrows move.
+            -->
             <button
               #pickerBox
+              id="till-picker"
               type="button"
               class="s2-box"
               [class.open]="suggestOpen()"
               aria-haspopup="listbox"
+              aria-labelledby="till-item-label till-picker-value"
               [attr.aria-expanded]="suggestOpen()"
               (mousedown)="$event.preventDefault(); notePointer($event)"
               (click)="togglePicker()"
@@ -590,7 +624,7 @@
               autofocus
             >
               <app-icon name="scan" [size]="18" />
-              <span class="s2-value" [class.placeholder]="!chosen()">{{
+              <span id="till-picker-value" class="s2-value" [class.placeholder]="!chosen()">{{
                 chosen()?.name ?? ('pos.selectItem' | t)
               }}</span>
               <app-icon class="s2-arrow" name="chevron-right" [size]="16" />
@@ -601,7 +635,14 @@
                   <input
                     #searchBox
                     id="till-search"
+                    role="combobox"
                     autocomplete="off"
+                    aria-autocomplete="list"
+                    aria-controls="till-options"
+                    aria-expanded="true"
+                    [attr.aria-activedescendant]="activeOption()"
+                    [attr.aria-label]="'pos.searchNameGenericSkuOrScan' | t"
+                    aria-describedby="till-search-state"
                     [placeholder]="'pos.searchNameGenericSkuOrScan' | t"
                     [value]="q()"
                     (input)="search($any($event.target).value)"
@@ -609,17 +650,27 @@
                     (blur)="closePicker(false)"
                   />
                 </div>
-                <div class="s2-results" role="listbox">
+                <div
+                  class="s2-results"
+                  id="till-options"
+                  role="listbox"
+                  aria-labelledby="till-item-label"
+                >
                   @if (!searching()) {
-                    <div class="opt empty">{{ 'pos.typeAtLeast' | t: { count: 2 } }}</div>
+                    <div class="opt empty" id="till-search-state" role="presentation">
+                      {{ 'pos.typeAtLeast' | t: { count: 2 } }}
+                    </div>
                   } @else {
                     @for (p of suggestions(); track p.productUid; let i = $index) {
                       <button
                         type="button"
+                        tabindex="-1"
                         class="opt"
                         role="option"
+                        [id]="optionId(i)"
                         [class.on]="i === highlight()"
                         [attr.aria-selected]="i === highlight()"
+                        [attr.aria-disabled]="available(p) <= 0 ? 'true' : null"
                         [disabled]="available(p) <= 0"
                         (mousedown)="$event.preventDefault()"
                         (mousemove)="hover(i, $event)"
@@ -636,7 +687,7 @@
                         }}</span>
                       </button>
                     } @empty {
-                      <div class="opt empty">
+                      <div class="opt empty" id="till-search-state" role="presentation">
                         {{
                           (products.loading() || q() !== query()
                             ? 'pos.searching'
@@ -744,13 +795,22 @@
                     <small class="block muted">
                       {{ line.product.genericName ?? ''
                       }}{{ line.product.strength ? ' · ' + line.product.strength : '' }}
-                      @if (line.product.schedule !== 'OTC') {
+                      @if (line.product.schedule === 'CONTROLLED') {
+                        <!-- Told apart by its letters, not only its colour (A11Y-6). -->
                         <span
-                          class="badge"
-                          [class]="
-                            line.product.schedule === 'CONTROLLED' ? 'badge red' : 'badge purple'
-                          "
-                          >Rx</span
+                          class="badge red"
+                          data-testid="schedule-cd"
+                          [title]="'pos.scheduleControlled' | t"
+                          ><span aria-hidden="true">CD</span
+                          ><span class="sr-only">{{ 'pos.scheduleControlled' | t }}</span></span
+                        >
+                      } @else if (line.product.schedule !== 'OTC') {
+                        <span
+                          class="badge purple"
+                          data-testid="schedule-rx"
+                          [title]="'pos.schedulePrescription' | t"
+                          ><span aria-hidden="true">Rx</span
+                          ><span class="sr-only">{{ 'pos.schedulePrescription' | t }}</span></span
                         >
                       }
                       @if (quoted()[line.product.productUid]; as q) {
@@ -811,9 +871,15 @@
                       <input
                         type="number"
                         [value]="line.quantity"
-                        (change)="setQty(line, +$any($event.target).value)"
+                        (change)="setQty(line, $any($event.target).value, $any($event.target))"
                         min="0"
-                        [attr.aria-label]="'pos.qty' | t"
+                        [attr.max]="available(line.product)"
+                        [attr.aria-label]="'pos.qtyOf' | t: { name: line.product.name }"
+                        [attr.aria-describedby]="
+                          qtyNote()?.productUid === line.product.productUid
+                            ? 'qty-note-' + line.product.productUid
+                            : null
+                        "
                       />
                       <button
                         type="button"
@@ -823,6 +889,17 @@
                         <app-icon name="plus" [size]="14" />
                       </button>
                     </div>
+                    @if (qtyNote(); as note) {
+                      @if (note.productUid === line.product.productUid) {
+                        <small
+                          class="clamp-note block"
+                          role="status"
+                          data-testid="qty-note"
+                          [id]="'qty-note-' + line.product.productUid"
+                          >{{ note.text }}</small
+                        >
+                      }
+                    }
                   </td>
                   <td class="r num">
                     {{ priceOf(line) | money }}
@@ -899,10 +976,10 @@
   [product]="serialFor()"
   [selected]="serialsOnSale()"
   (picked)="pickedSerials($event)"
-  (closed)="serialFor.set(null)"
+  (closed)="closeSerials()"
 />
 
-<app-modal [open]="parkedOpen()" [title]="'pos.parkedSales' | t" (closed)="parkedOpen.set(false)">
+<app-modal [open]="parkedOpen()" [title]="'pos.parkedSales' | t" (closed)="closeParked()">
   @if (parkedList().length) {
     <p class="muted" style="margin-top: 0">{{ 'pos.parkedHint' | t }}</p>
     <div class="parked">
@@ -945,19 +1022,19 @@
     />
   }
   <ng-container footer>
-    <button class="btn" type="button" (click)="parkedOpen.set(false)">{{ 'pos.close' | t }}</button>
+    <button class="btn" type="button" (click)="closeParked()">{{ 'pos.close' | t }}</button>
     <button
       class="btn primary"
       type="button"
       [disabled]="!lines().length || locked()"
-      (click)="parkSale(); parkedOpen.set(false)"
+      (click)="parkSale(); closeParked()"
     >
       <app-icon name="clock" [size]="16" /> {{ 'pos.parkThisSale' | t }}
     </button>
   </ng-container>
 </app-modal>
 
-<app-modal [open]="rxOpen()" [title]="'pos.prescription' | t" (closed)="rxOpen.set(false)">
+<app-modal [open]="rxOpen()" [title]="'pos.prescription' | t" (closed)="closeRx()">
   <form class="form-grid" [formGroup]="rxForm" (ngSubmit)="savePrescription()">
     <div class="field full">
       <div class="notice tone-purple">
@@ -1030,23 +1107,74 @@
     </div>
   </form>
   <ng-container footer>
-    <button class="btn" type="button" (click)="rxOpen.set(false)">{{ 'pos.cancel' | t }}</button>
+    <button class="btn" type="button" (click)="closeRx()">{{ 'pos.cancel' | t }}</button>
     <button class="btn primary" type="button" (click)="savePrescription()">
       {{ 'pos.saveAndCompleteSale' | t }}
     </button>
   </ng-container>
 </app-modal>
 
-<app-modal [open]="!!receipt()" [title]="'pos.saleCompleted' | t" (closed)="receipt.set(null)">
+<app-modal [open]="!!receipt()" [title]="'pos.saleCompleted' | t" (closed)="closeReceipt()">
   @if (receipt(); as sale) {
     <app-receipt [sale]="sale" />
   }
   <ng-container footer>
-    <button class="btn" type="button" (click)="receipt.set(null); focusSearch()">
+    <button class="btn" type="button" (click)="closeReceipt()">
       {{ 'pos.newSale' | t }}
     </button>
     <button class="btn primary" type="button" (click)="print()">
       <app-icon name="printer" [size]="16" /> {{ 'pos.printReceipt' | t }}
+    </button>
+  </ng-container>
+</app-modal>
+
+<app-modal
+  [open]="newCustomerOpen()"
+  [title]="'pos.newCustomer' | t"
+  [dirty]="newCustomerForm.dirty"
+  (closed)="closeNewCustomer()"
+>
+  <form class="form-grid" [formGroup]="newCustomerForm" (ngSubmit)="saveNewCustomer()">
+    <app-field
+      class="full"
+      [label]="'pos.newCustomerName' | t"
+      [required]="true"
+      [error]="newCustomerErr('name')"
+    >
+      <input
+        class="input"
+        formControlName="name"
+        required
+        autocomplete="off"
+        data-testid="nc-name"
+      />
+    </app-field>
+    <app-field
+      class="full"
+      [label]="'pos.newCustomerPhone' | t"
+      [hint]="'pos.newCustomerPhoneHint' | t"
+      [error]="newCustomerErr('phone')"
+    >
+      <input
+        class="input"
+        type="tel"
+        formControlName="phone"
+        autocomplete="off"
+        data-testid="nc-phone"
+      />
+    </app-field>
+    <button type="submit" hidden></button>
+  </form>
+  <ng-container footer>
+    <button class="btn" type="button" (click)="closeNewCustomer()">{{ 'pos.cancel' | t }}</button>
+    <button
+      class="btn primary"
+      type="button"
+      data-testid="nc-save"
+      [disabled]="newCustomerBusy()"
+      (click)="saveNewCustomer()"
+    >
+      {{ 'pos.newCustomerSave' | t }}
     </button>
   </ng-container>
 </app-modal>

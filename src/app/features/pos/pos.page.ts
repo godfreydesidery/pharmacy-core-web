@@ -11,6 +11,7 @@ import {
   Component,
   DestroyRef,
   ElementRef,
+  afterNextRender,
   computed,
   inject,
   signal,
@@ -900,9 +901,51 @@ export default class PosPage {
     this.focusSearch();
   }
 
-  /** Puts the cursor on the item box, ready to type the next item. */
+  /**
+   * Puts the cursor on the item box, ready to type (or scan) the next item: on opening the till,
+   * after each item and after the till's own dialogs close (UX-6). Not while a dialog is open, and
+   * not when the cashier has meanwhile moved to another field.
+   */
   protected focusSearch(): void {
-    setTimeout(() => this.pickerBox()?.nativeElement.focus());
+    const before = document.activeElement;
+    const attempt = (left: number) => {
+      const box = this.pickerBox()?.nativeElement;
+      const active = document.activeElement;
+      const moved =
+        active instanceof HTMLElement &&
+        active !== before &&
+        active !== document.body &&
+        !!active.closest('input, select, textarea');
+      if (!box || moved || this.closed) {
+        return;
+      }
+      // A dialog just answered leaves the page at the next render; one still open keeps the focus.
+      if (this.modalOpen() || document.querySelector('[aria-modal="true"]')) {
+        if (left > 0) setTimeout(() => attempt(left - 1), 60);
+        return;
+      }
+      box.focus({ preventScroll: true });
+    };
+    setTimeout(() => attempt(5));
+  }
+
+  /** Opening the till (by a link, the menu or a reload) puts the cursor on the item box (UX-6). */
+  private readonly focusOnOpen = afterNextRender(() => this.focusSearch());
+
+  /** One of the till's dialogs closed: the cursor goes back to the item box (UX-6). */
+  protected closeParked(): void {
+    this.parkedOpen.set(false);
+    this.focusSearch();
+  }
+
+  protected closeRx(): void {
+    this.rxOpen.set(false);
+    this.focusSearch();
+  }
+
+  protected closeReceipt(): void {
+    this.receipt.set(null);
+    this.focusSearch();
   }
 
   /** Units at or below this show amber: running low at this branch. */
@@ -926,6 +969,96 @@ export default class PosPage {
     this.pickCustomer(null);
     this.customerLookup()?.setText('');
   }
+
+  // ---------------------------------------------------------------- quick new customer (UX-11)
+
+  /** "New customer" at the till: a name and, if given, a phone; then attached to the sale. */
+  protected readonly newCustomerOpen = signal(false);
+  protected readonly newCustomerBusy = signal(false);
+  protected readonly newCustomerForm = inject(FormBuilder).nonNullable.group({
+    name: ['', [Validators.required, Validators.maxLength(200)]],
+    phone: ['', [Validators.pattern(/^\+?[0-9 ()-]{6,20}$/)]],
+  });
+
+  protected newCustomerErr(name: 'name' | 'phone'): string | null {
+    return controlError(this.newCustomerForm.controls[name]);
+  }
+
+  protected openNewCustomer(): void {
+    if (this.locked()) {
+      return;
+    }
+    // What was typed in the search becomes the name: the cashier looked for them first.
+    const typed = this.customer() ? '' : (this.customerLookup()?.typed() ?? '');
+    this.newCustomerForm.reset({ name: typed.trim(), phone: '' });
+    this.newCustomerOpen.set(true);
+  }
+
+  protected closeNewCustomer(): void {
+    this.newCustomerOpen.set(false);
+    this.focusSearch();
+  }
+
+  /** Creates the customer (`POST /customers`, a retail customer) and puts them on the sale. */
+  protected async saveNewCustomer(): Promise<void> {
+    if (this.newCustomerBusy() || this.locked() || !validate(this.newCustomerForm)) {
+      return;
+    }
+    const value = this.newCustomerForm.getRawValue();
+    this.newCustomerBusy.set(true);
+    try {
+      const customer = await this.api.post<Customer>(
+        '/customers',
+        {
+          name: value.name.trim(),
+          phone: value.phone.trim() || null,
+          type: 'RETAIL',
+          active: true,
+        },
+        { silent: true, noBranch: true },
+      );
+      this.pickCustomer(customer);
+      this.customerLookup()?.setText(customer.name);
+      this.toasts.success(this.translations.t('pos.customerCreated', { name: customer.name }));
+      this.closeNewCustomer();
+    } catch (failure) {
+      if (!applyApiError(this.newCustomerForm, failure)) {
+        this.toasts.error((failure as Error).message);
+      }
+    } finally {
+      this.newCustomerBusy.set(false);
+    }
+  }
+
+  // ---------------------------------------------------------------- announcements (A11Y-5)
+
+  /**
+   * What a screen reader hears when the sale changes (a polite live region): the total and the
+   * number of lines and units, once the figures settle.
+   */
+  protected readonly totalAnnouncement = computed(() => {
+    const totals = this.totals();
+    if (!this.lines().length) {
+      return this.translations.t('pos.cartIsEmpty');
+    }
+    return this.translations.t('pos.totalAnnounce', {
+      total: formatMoney(totals.total, this.base()),
+      lines: this.lines().length,
+      units: totals.items,
+    });
+  });
+
+  /** The id of an item in the picker's list, for aria-activedescendant. */
+  protected optionId(index: number): string {
+    return `till-option-${index}`;
+  }
+
+  /** The highlighted item's id while the list shows items, for the search field (combobox). */
+  protected readonly activeOption = computed(() => {
+    const list = this.suggestions();
+    const index = this.highlight();
+    return this.suggestOpen() && list.length && index < list.length ? this.optionId(index) : null;
+  });
 
   // ---------------------------------------------------------------- batches
 
@@ -1298,6 +1431,7 @@ export default class PosPage {
       !!this.receipt() ||
       !!this.serialFor() ||
       this.parkedOpen() ||
+      this.newCustomerOpen() ||
       !!this.confirm.current()
     );
   }
@@ -1363,10 +1497,20 @@ export default class PosPage {
       this.loadBatches(product.productUid);
       this.syncCash();
     }
-    this.serialFor.set(null);
+    this.closeSerials();
   }
 
-  protected setQty(line: CartLine, quantity: number): void {
+  protected closeSerials(): void {
+    this.serialFor.set(null);
+    this.focusSearch();
+  }
+
+  /**
+   * A line's quantity as typed or stepped. It is clamped to what the till can sell, and the box
+   * then shows the quantity kept (not the rejected number), with a note under it saying why
+   * (UX-5). A blank box puts the quantity back; zero removes the line.
+   */
+  protected setQty(line: CartLine, quantity: number | string, input?: HTMLInputElement): void {
     if (this.locked()) {
       return;
     }
@@ -1374,9 +1518,34 @@ export default class PosPage {
       this.serialFor.set(line.product);
       return;
     }
-    this.lines.set(setQuantity(this.lines(), line.product.productUid, quantity));
+    const uid = line.product.productUid;
+    const typed = typeof quantity === 'string' ? quantity.trim() : String(quantity);
+    const wanted = Math.floor(Number(typed));
+    if (typed === '' || !Number.isFinite(wanted)) {
+      if (input) input.value = String(line.quantity);
+      return;
+    }
+    const lines = setQuantity(this.lines(), uid, wanted);
+    const kept = lines.find((l) => l.product.productUid === uid)?.quantity ?? 0;
+    this.lines.set(lines);
+    if (input && kept > 0) {
+      input.value = String(kept);
+    }
+    this.qtyNote.set(
+      kept > 0 && wanted > kept
+        ? {
+            productUid: uid,
+            text: this.translations.t('pos.qtyClamped', { count: kept, name: line.product.name }),
+          }
+        : null,
+    );
     this.syncCash();
   }
+
+  /** Why a line's quantity is not what was typed (UX-5), shown under its box until the next edit. */
+  protected readonly qtyNote = signal<{ productUid: string; text: string } | null>(null);
+  /** Why the discount is not what was typed (UX-5). */
+  protected readonly discountNote = signal<string | null>(null);
 
   protected pickCustomer(customer: Customer | null): void {
     if (this.locked()) {
@@ -1470,12 +1639,25 @@ export default class PosPage {
     }
   }
 
-  protected setDiscount(value: number): void {
+  /**
+   * The sale-wide discount, from 0 to 100 %. A number outside is clamped, the box shows the
+   * percentage kept and a note says so (UX-5). Above the pharmacy's maximum a manager approves
+   * when the sale is completed (Batch 4).
+   */
+  protected setDiscount(value: number | string, input?: HTMLInputElement): void {
     if (this.locked()) {
       return;
     }
-    // Above the pharmacy's maximum a manager approves when the sale is completed (Batch 4).
-    this.discountPercent.set(Math.min(Math.max(Number(value) || 0, 0), 100));
+    const typed = Number(typeof value === 'string' ? value.trim() || 0 : value);
+    const wanted = Number.isFinite(typed) ? typed : 0;
+    const kept = Math.min(Math.max(wanted, 0), 100);
+    this.discountPercent.set(kept);
+    if (input) {
+      input.value = String(kept);
+    }
+    this.discountNote.set(
+      kept !== wanted ? this.translations.t('pos.discountClamped', { value: kept }) : null,
+    );
     this.syncCash();
   }
 
@@ -1646,6 +1828,8 @@ export default class PosPage {
     this.startedAt.set(new Date());
     this.entryQty.set(1);
     this.chosen.set(null);
+    this.qtyNote.set(null);
+    this.discountNote.set(null);
   }
 
   protected savePrescription(): void {
