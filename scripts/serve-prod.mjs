@@ -46,7 +46,9 @@ function clientIp(req) {
 // Where uploaded files are fetched from when they live in S3/R2 (an origin like
 // https://files.example.com); the local store is served by the API on this origin.
 const filesOrigin = process.env.FILES_ORIGIN ? ` ${process.env.FILES_ORIGIN}` : '';
-const proxied = ['/api/', '/actuator/health'];
+// /problems/ serves the descriptions of the API's problem types (RFC 9457 `type`, relative to this
+// origin for the browser), so a type link resolves here as it does on the API.
+const proxied = ['/api/', '/actuator/health', '/problems/'];
 const stream = '/api/v1/notifications/stream';
 const types = {
   '.html': 'text/html; charset=utf-8',
