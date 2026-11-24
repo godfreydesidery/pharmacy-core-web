@@ -127,22 +127,28 @@ export class ExportComponent {
 
 /**
  * GETs a file from the API (such as a pharmacy's data export) and saves it under the name the API
- * gave it; a refusal becomes a toast in the API's own words. True when it was saved.
+ * gave it; a refusal becomes a toast in the API's own words. True when it was saved. A file the
+ * API makes on a POST (a customer's personal data, which also records the request) passes
+ * `{ method: 'POST', body }`.
  */
 export async function downloadFrom(
   http: HttpClient,
   path: string,
   toasts: ToastService,
   fallback: string,
+  request: { method?: 'GET' | 'POST'; body?: unknown } = {},
 ): Promise<boolean> {
+  const options = {
+    responseType: 'blob' as const,
+    observe: 'response' as const,
+    context: new HttpContext().set(SILENT, true),
+  };
   try {
     save(
       await firstValueFrom(
-        http.get(apiUrl(path), {
-          responseType: 'blob',
-          observe: 'response',
-          context: new HttpContext().set(SILENT, true),
-        }),
+        request.method === 'POST'
+          ? http.post(apiUrl(path), request.body ?? {}, options)
+          : http.get(apiUrl(path), options),
       ),
     );
     return true;

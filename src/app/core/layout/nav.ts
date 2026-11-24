@@ -118,6 +118,11 @@ export const TENANT_NAV: NavItem[] = [
       { label: 'Stock-takes', path: '/inventory/stock-counts', permission: 'inventory.view' },
       { label: 'Repack & compound', path: '/inventory/repack', permission: 'inventory.adjust' },
       { label: 'Controlled drugs', path: '/inventory/controlled', permission: 'inventory.view' },
+      {
+        label: 'Adverse reactions',
+        path: '/inventory/adverse-reactions',
+        permission: 'health.view',
+      },
       { label: 'Recalls', path: '/inventory/recalls', permission: 'inventory.view' },
       { label: 'Destructions', path: '/inventory/destructions', permission: 'inventory.view' },
       { label: 'Adjustments', path: '/inventory/adjustments', permission: 'inventory.adjust' },
@@ -234,6 +239,7 @@ export const TENANT_NAV: NavItem[] = [
       },
       { label: 'Notifications', path: '/admin/notifications', permission: 'settings.manage' },
       { label: 'Audit log', path: '/admin/audit', permission: 'settings.manage' },
+      { label: 'Data requests', path: '/admin/privacy-requests', permission: 'data.export' },
     ],
   },
 ];

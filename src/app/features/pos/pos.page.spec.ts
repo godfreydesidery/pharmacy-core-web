@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
 import { Signal, WritableSignal } from '@angular/core';
+import { FormGroup } from '@angular/forms';
 import { Api, Query, RequestOptions } from '../../core/api/api.service';
 import { ApiError } from '../../core/api/api-error';
 import {
@@ -10,6 +11,7 @@ import {
   SellableProduct,
   Settings,
 } from '../../core/api/models';
+import { isoDay } from '../../core/format/format';
 import { SettingsStore } from '../../core/format/settings.store';
 import { LeaveGuard } from '../../core/session/leave-guard';
 import { SessionStore } from '../../core/session/session.store';
@@ -548,6 +550,112 @@ describe('POS page', () => {
       await vi.advanceTimersByTimeAsync(20_000);
       await sending;
       expect(api.count('GET', '/pos/payment-requests/req-1')).toBe(polls);
+    });
+  });
+
+  describe('a prescription medicine (STD-7)', () => {
+    const RX = { ...AMOXICILLIN, schedule: 'PRESCRIPTION' as const };
+    /** The prescription members these tests drive (protected in the component). */
+    interface RxPage {
+      rxOpen: WritableSignal<boolean>;
+      rxForm: FormGroup;
+      savePrescription(): void;
+    }
+    let rx: RxPage;
+    const filled = {
+      prescriberName: 'Dr Mushi',
+      prescriberRegistration: 'MCT-1234',
+      reference: 'RX-9',
+      patientName: 'Asha Juma',
+    };
+
+    beforeEach(async () => {
+      rx = page as unknown as RxPage;
+      api.posts.set('/sales', (body) => Promise.resolve(saleOf(body as CheckoutRequest)));
+      page.add(RX, 1);
+      await settle();
+      page.payments.set([{ method: 'CASH', amount: 10, reference: null }]);
+      await page.checkout();
+      await settle();
+    });
+
+    it('asks for the prescription, its date included (at most today, valid 6 months)', () => {
+      expect(rx.rxOpen()).toBe(true);
+      expect(api.salesPosts()).toEqual([]);
+      const date = element('[data-testid="rx-date"]') as HTMLInputElement;
+      expect(date.type).toBe('date');
+      expect(date.max).toBe(isoDay());
+      expect(date.closest('.field')?.textContent).toContain('valid 6 months');
+    });
+
+    it('requires the registration number, the patient and the date', async () => {
+      rx.rxForm.patchValue({ prescriberName: 'Dr Mushi', reference: 'RX-9' });
+      rx.savePrescription();
+      await settle();
+      expect(api.salesPosts()).toEqual([]);
+      for (const name of ['prescriberRegistration', 'patientName', 'prescriptionDate']) {
+        expect(rx.rxForm.get(name)?.hasError('required'), name).toBe(true);
+      }
+      expect(toasts.error).toHaveBeenCalled();
+    });
+
+    it('refuses a date after today before sending', async () => {
+      rx.rxForm.patchValue({ ...filled, prescriptionDate: isoDay(1) });
+      rx.savePrescription();
+      await settle();
+      expect(api.salesPosts()).toEqual([]);
+      expect(rx.rxForm.get('prescriptionDate')?.hasError('max')).toBe(true);
+    });
+
+    it('sends the prescription with its date', async () => {
+      rx.rxForm.patchValue({ ...filled, prescriptionDate: isoDay(-3) });
+      rx.savePrescription();
+      await settle();
+      expect(api.salesPosts()[0].body.prescription).toEqual({
+        ...filled,
+        prescriptionDate: isoDay(-3),
+      });
+      expect(page.receipt()?.number).toBe('INV-HQ-000123');
+    });
+
+    it('a seller who may not dispense is told to ask the pharmacist', async () => {
+      api.posts.set('/sales', () =>
+        Promise.reject(
+          new ApiError(403, 'dispense_not_allowed', 'Amina may not dispense Amoxicillin 250mg.'),
+        ),
+      );
+      rx.rxForm.patchValue({ ...filled, prescriptionDate: isoDay() });
+      rx.savePrescription();
+      await settle();
+      expect(page.locked()).toBe(false);
+      expect(element('[data-testid="pos-problem"]')?.textContent).toContain(
+        'Only staff allowed to dispense prescription medicines can sell this; ask the pharmacist.',
+      );
+    });
+
+    it('an expired prescription opens the form again with the reason under its date', async () => {
+      api.posts.set('/sales', () =>
+        Promise.reject(
+          new ApiError(
+            422,
+            'prescription_expired',
+            'The prescription is older than 6 months.',
+            'prescription.prescriptionDate',
+            null,
+            null,
+            { validMonths: 6, oldestAllowed: '2026-05-24' },
+          ),
+        ),
+      );
+      rx.rxForm.patchValue({ ...filled, prescriptionDate: '2026-01-02' });
+      rx.savePrescription();
+      await settle();
+      expect(rx.rxOpen()).toBe(true);
+      expect(page.problem()).toContain('older than 6 months');
+      const date = element('[data-testid="rx-date"]') as HTMLInputElement;
+      expect(date.closest('.field')?.querySelector('.error')?.textContent).toContain(
+        'older than 6 months',
+      );
     });
   });
 });

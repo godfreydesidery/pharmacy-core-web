@@ -27,6 +27,8 @@ import { PRICING_SW } from './pricing.sw';
 import { FISCAL_SW } from './fiscal.sw';
 import { STATEMENTS_SW } from './statements.sw';
 import { CONTROLLED_SW } from './controlled.sw';
+import { PRIVACY_SW } from './privacy.sw';
+import { HEALTH_SW } from './health.sw';
 import { CATALOGUE_SW } from './catalogue.sw';
 import { ERRORS_SW } from './errors.sw';
 import { ENUM_SW } from './enum.sw';
@@ -69,6 +71,8 @@ export const SW_AREAS: Readonly<Record<string, string>> = {
   ...PROVIDERS_SW,
   ...PLANS_SW,
   ...CONTROLLED_SW,
+  ...PRIVACY_SW,
+  ...HEALTH_SW,
   ...COUNTS_SW,
   ...PAYABLES_SW,
   ...ACCOUNTS_SW,

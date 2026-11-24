@@ -1,41 +1,16 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
-import { Uid } from '../../core/api/models';
-import { loaded, pagedList } from '../../core/data/data';
+import { ControlledProduct, ControlledRegisterLine } from '../../core/api/models';
+import { pagedList } from '../../core/data/data';
 import { TranslatePipe } from '../../core/i18n/t.pipe';
 import { Translations } from '../../core/i18n/translations.store';
 import { SessionStore } from '../../core/session/session.store';
 import { SHARED } from '../../core/shared';
 
-interface ControlledProduct {
-  productUid: Uid;
-  name: string;
-  strength: string | null;
-  dosageForm: string | null;
-  onHand: number;
-  /** False for a product that was controlled once and is not now: its register stays. */
-  controlledNow?: boolean;
-}
-
-interface RegisterLine {
-  uid: Uid;
-  at: string;
-  type: string;
-  reference: string | null;
-  batchNumber: string | null;
-  quantityIn: number;
-  quantityOut: number;
-  balance: number;
-  patientName: string | null;
-  prescriberName: string | null;
-  prescriberRegistration: string | null;
-  prescriptionReference: string | null;
-  note: string | null;
-  recordedBy: string;
-}
-
 /**
  * Inventory → Controlled drugs: every CONTROLLED product's balance at the branch and, for the one
- * picked, its register: each movement with the running balance and, for sales, the prescription.
+ * picked, its register: each movement with the running balance and, for sales, the prescription
+ * and who dispensed it. The drugs come a page at a time; without `health.view` a line's patient and
+ * prescription are withheld.
  */
 @Component({
   selector: 'app-controlled',
@@ -68,7 +43,7 @@ interface RegisterLine {
             <div class="card-pad">
               <h3>{{ 'controlled.products' | t }}</h3>
             </div>
-            @for (p of products.value() ?? []; track p.productUid) {
+            @for (p of products.items(); track p.productUid) {
               <button
                 type="button"
                 class="drug"
@@ -87,8 +62,9 @@ interface RegisterLine {
                 <span class="badge" [class.red]="p.onHand === 0">{{ p.onHand | num }}</span>
               </button>
             } @empty {
-              <div class="empty">{{ 'controlled.none' | t }}</div>
+              <app-empty [for]="products" icon="shield" [title]="'controlled.none' | t" />
             }
+            <app-pager [list]="products" />
           </div>
           <div class="card">
             @if (selected(); as s) {
@@ -109,6 +85,8 @@ interface RegisterLine {
                       <th class="right">{{ 'controlled.balanceCol' | t }}</th>
                       <th>{{ 'controlled.patient' | t }}</th>
                       <th>{{ 'controlled.prescriber' | t }}</th>
+                      <th>{{ 'controlled.rxDate' | t }}</th>
+                      <th>{{ 'controlled.dispensedBy' | t }}</th>
                       <th>{{ 'controlled.by' | t }}</th>
                     </tr>
                   </thead>
@@ -122,22 +100,31 @@ interface RegisterLine {
                         <td class="right">{{ r.quantityIn || '' }}</td>
                         <td class="right">{{ r.quantityOut || '' }}</td>
                         <td class="right strong">{{ r.balance }}</td>
-                        <td>{{ r.patientName ?? '—' }}</td>
-                        <td>
-                          @if (r.prescriberName) {
-                            {{ r.prescriberName }}
-                            <small class="muted block"
-                              >{{ r.prescriberRegistration }} · {{ r.prescriptionReference }}</small
-                            >
-                          } @else {
-                            {{ r.note ?? '—' }}
-                          }
-                        </td>
+                        @if (r.withheld) {
+                          <td colspan="3" class="muted" data-testid="withheld">
+                            <app-icon name="lock" [size]="14" /> {{ 'controlled.withheld' | t }}
+                          </td>
+                        } @else {
+                          <td>{{ r.patientName ?? '—' }}</td>
+                          <td>
+                            @if (r.prescriberName) {
+                              {{ r.prescriberName }}
+                              <small class="muted block"
+                                >{{ r.prescriberRegistration }} ·
+                                {{ r.prescriptionReference }}</small
+                              >
+                            } @else {
+                              {{ r.note ?? '—' }}
+                            }
+                          </td>
+                          <td>{{ r.prescriptionDate ? (r.prescriptionDate | day) : '—' }}</td>
+                        }
+                        <td>{{ r.dispensedBy ?? '—' }}</td>
                         <td class="muted">{{ r.recordedBy }}</td>
                       </tr>
                     } @empty {
                       <tr>
-                        <td colspan="10" class="empty">{{ 'controlled.noEntries' | t }}</td>
+                        <td colspan="12" class="empty">{{ 'controlled.noEntries' | t }}</td>
                       </tr>
                     }
                   </tbody>
@@ -187,10 +174,11 @@ export default class ControlledPage {
   protected readonly session = inject(SessionStore);
   private readonly translations = inject(Translations);
   protected readonly selected = signal<ControlledProduct | null>(null);
-  protected readonly products = loaded<ControlledProduct[]>(() =>
+  /** The controlled drugs by name, a page at a time (a Page since Batch 9). */
+  protected readonly products = pagedList<ControlledProduct>(() =>
     this.session.branch() ? { path: '/controlled-drugs' } : null,
   );
-  protected readonly register = pagedList<RegisterLine>(() => {
+  protected readonly register = pagedList<ControlledRegisterLine>(() => {
     const s = this.selected();
     return s ? { path: `/controlled-drugs/${s.productUid}/register` } : null;
   }, 50);

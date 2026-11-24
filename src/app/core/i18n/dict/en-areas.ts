@@ -18,6 +18,8 @@ import { RECEIVABLES_EN } from './receivables.en';
 import { REPORTS_EN } from './reports.en';
 import { CATALOGUE_EN } from './catalogue.en';
 import { CONTROLLED_EN } from './controlled.en';
+import { PRIVACY_EN } from './privacy.en';
+import { HEALTH_EN } from './health.en';
 import { COUNTS_EN } from './counts.en';
 import { PAYABLES_EN } from './payables.en';
 import { ACCOUNTS_EN } from './accounts.en';
@@ -71,6 +73,8 @@ export const EN_AREAS: Readonly<Record<string, string>> = {
   ...PROVIDERS_EN,
   ...PLANS_EN,
   ...CONTROLLED_EN,
+  ...PRIVACY_EN,
+  ...HEALTH_EN,
   ...COUNTS_EN,
   ...PAYABLES_EN,
   ...ACCOUNTS_EN,

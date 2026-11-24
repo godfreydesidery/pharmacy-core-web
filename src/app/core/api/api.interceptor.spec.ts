@@ -1,7 +1,8 @@
-import { provideHttpClient, withInterceptors } from '@angular/common/http';
+import { HttpClient, provideHttpClient, withInterceptors } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
 import { Router, provideRouter } from '@angular/router';
+import { firstValueFrom } from 'rxjs';
 import { SessionStore } from '../session/session.store';
 import { ToastService } from '../ui/toast.service';
 import { ApiError } from './api-error';
@@ -250,6 +251,32 @@ describe('apiInterceptor', () => {
     expect(error.reason).toBe('insufficient_stock');
     expect(error.controlPath).toBe('lines.0.quantity');
     expect(toasts.toasts().at(-1)?.message).toBe('Only 2 left');
+  });
+
+  it('reads the problem of a refused file download (a Blob) like any other refusal', async () => {
+    const toasts = TestBed.inject(ToastService);
+    const http2 = TestBed.inject(HttpClient);
+    const result = firstValueFrom(
+      http2.post('/api/v1/customers/c1/data-export', {}, { responseType: 'blob' }),
+    ).catch((e: unknown) => e);
+    http.expectOne('/api/v1/customers/c1/data-export').flush(
+      new Blob(
+        [
+          JSON.stringify({
+            status: 409,
+            reason: 'customer_anonymised',
+            detail: 'CUS-000001 was anonymised.',
+          }),
+        ],
+        { type: 'application/problem+json' },
+      ),
+      { status: 409, statusText: 'Conflict' },
+    );
+    const error = (await result) as ApiError;
+    expect(error).toBeInstanceOf(ApiError);
+    expect(error.reason).toBe('customer_anonymised');
+    expect(error.message).toBe('CUS-000001 was anonymised.');
+    expect(toasts.toasts().at(-1)?.message).toBe('CUS-000001 was anonymised.');
   });
 
   it('signs out and goes to sign-in on 401', async () => {
